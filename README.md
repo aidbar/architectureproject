@@ -5,6 +5,6 @@ Team members:
 1. Aide Barniskyte (course: CS 646)
 2. Jahnavi Shah (course: ECE 452)
 3. Bhavya Lamba (course: CS 446)
-4. TBA
-5. TBA
+4. Elisa Gu (course: CS 446)
+5. Zong Gao Li (course: CS 446)
 6. TBA
