@@ -7,4 +7,4 @@ Team members:
 3. Bhavya Lamba (course: CS 446)
 4. Elisa Gu (course: CS 446)
 5. Zong Gao Li (course: CS 446)
-6. TBA
+6. Fatin Sarker (course: ECE 452)
