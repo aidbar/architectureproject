@@ -6,7 +6,7 @@ A software architecture project created during the courses CS 446/CS 646/ECE 452
 **Team members:** 
 1. Aide Barniskyte (course: CS 646, Quest ID: abarnisk, GitHub username: aidbar)
 2. Jahnavi Shah (course: ECE 452, Quest ID: j36shah, GitHub username: Jahnavi-1704)
-~~3. Bhavya Lamba (course: CS 446)~~ (dropped out of the course)
+   ~~Bhavya Lamba (course: CS 446)~~ (dropped out of the course)
 3. Chris Qu (course: , Quest ID: q3qu, GitHub username: )
 4. Elisa Gu (course: CS 446, Quest ID: z53gu, GtHub username: ElisaGu0923)
 5. Zong Gao Li (course: CS 446, Quest ID: zgli, Github username: zgli-uw)
