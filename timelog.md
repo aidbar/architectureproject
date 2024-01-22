@@ -6,4 +6,5 @@
 | 2024/01/13 |       |     1    |         |        |      |       | Research on project ideas                                       |
 | 2024/01/16 |  1.5  |          |         |        |      |       | Writing the project proposal                                    |
 | 2024/01/17 |       |          |         |        |      |   2   | Research and project proposal                                   |
-| 2024/01/22 |       |     2    |         |        |      |   2   | Writing the project proposal                                    |
+| 2024/01/22 |       |     2    |         |        |      |       | Writing the project proposal                                    |
+| 2024/01/22 |       |          |         |        |      |   2   | Project proposal and group meeting                              |
