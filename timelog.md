@@ -8,3 +8,4 @@
 | 2024/01/17 |       |          |         |        |      |   2   | Research and project proposal                                   |
 | 2024/01/22 |       |     2    |         |        |      |       | Writing the project proposal                                    |
 | 2024/01/22 |       |          |         |        |      |   2   | Project proposal and group meeting                              |
+| 2024/01/22 |       |          |         |        |  2   |       | Group meeting regarding project proposal                        |
