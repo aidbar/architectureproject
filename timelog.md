@@ -11,3 +11,4 @@
 | 2024/01/22 |       |          |         |        |  2   |       | Group meeting regarding project proposal                        |
 | 2024/01/23 |  2.5  |          |         |        |      |       | Editing the project proposal and drawing sequence diagrams      |
 | 2024/01/25 |   1   |          |         |        |      |       | Editing the project proposal presentation slides                |
+| 2024/01/26 |       |          |         |        |      |   1   | Editing project prosopal and presentation prep                  |
