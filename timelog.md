@@ -12,4 +12,5 @@
 | 2024/01/23 |  2.5  |          |         |        |      |       | Editing the project proposal and drawing sequence diagrams      |
 | 2024/01/25 |   1   |          |         |        |      |       | Editing the project proposal presentation slides                |
 | 2024/01/26 |       |          |         |        |      |   1   | Editing project prosopal and presentation prep                  |
+| 2024/01/30 |       |          |         |     1  |      |       | Create Project Mockup                                           |
 | 2024/01/30 |  1.5  |    1.5   |         |   1.5  | 1.5  |  1.5  | Team meeting for finalizing the project proposal                |
