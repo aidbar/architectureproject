@@ -14,3 +14,4 @@
 | 2024/01/26 |       |          |         |        |      |   1   | Editing project prosopal and presentation prep                  |
 | 2024/01/30 |       |          |         |     1  |      |       | Create Project Mockup                                           |
 | 2024/01/30 |  1.5  |    1.5   |         |   1.5  | 1.5  |  1.5  | Team meeting for finalizing the project proposal                |
+| 2024/02/07 |  1    |    1     |     1   |   1    | 1    |  1    | Team meeting for writing the buddy evaluation               |
