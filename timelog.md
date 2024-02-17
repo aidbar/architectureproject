@@ -16,3 +16,4 @@
 | 2024/01/30 |  1.5  |    1.5   |         |   1.5  | 1.5  |  1.5  | Team meeting for finalizing the project proposal                |
 | 2024/02/07 |  1    |    1     |     1   |   1    | 1    |  1    | Team meeting for writing the buddy evaluation                   |
 | 2024/02/15 |  2.5  |    2.5   |    2.5  |   2.5  | 2.5  |  2.5  | Team meeting for discussing the next steps in app development   |
+| 2024/02/15 |       |          |         |    2   |      |       | In-App Routing Implementation & pages setup                     |
