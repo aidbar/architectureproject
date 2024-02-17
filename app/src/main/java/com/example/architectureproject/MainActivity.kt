@@ -1,8 +1,6 @@
 package com.example.architectureproject
 
-import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -38,8 +36,4 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-//    override fun onPause() {
-//        super.onPause()
-//        this.getPreferences(Context.MODE_PRIVATE).edit().remove("id").commit();
-//    }
 }
