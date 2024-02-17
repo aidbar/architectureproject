@@ -17,3 +17,4 @@
 | 2024/02/07 |  1    |    1     |     1   |   1    | 1    |  1    | Team meeting for writing the buddy evaluation                   |
 | 2024/02/15 |  2.5  |    2.5   |    2.5  |   2.5  | 2.5  |  2.5  | Team meeting for discussing the next steps in app development   |
 | 2024/02/15 |       |          |         |    2   |      |       | In-App Routing Implementation & pages setup                     |
+| 2024/02/15 |       |          |         |    4   |      |       | Firestore Setup; Implemented User Authentication                |
