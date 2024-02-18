@@ -88,4 +88,9 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
     implementation("com.google.firebase:firebase-auth")
     implementation ("androidx.browser:browser:1.7.0")
+
+    implementation("com.patrykandpatrick.vico:compose:1.13.1")
+    implementation("com.patrykandpatrick.vico:core:1.13.1")
+    implementation("com.patrykandpatrick.vico:views:1.13.1")
+    implementation("androidx.compose.material:material:1.1.1")
 }
