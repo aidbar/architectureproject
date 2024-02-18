@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -23,7 +24,10 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
     compileOptions {
@@ -63,4 +67,30 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    val voyagerVersion = "1.0.0"
+    // Navigator
+    implementation("cafe.adriel.voyager:voyager-navigator:$voyagerVersion")
+
+    // Screen Model
+    implementation("cafe.adriel.voyager:voyager-screenmodel:$voyagerVersion")
+
+    // BottomSheetNavigator
+    implementation("cafe.adriel.voyager:voyager-bottom-sheet-navigator:$voyagerVersion")
+
+    // TabNavigator
+    implementation("cafe.adriel.voyager:voyager-tab-navigator:$voyagerVersion")
+
+    // Transitions
+    implementation("cafe.adriel.voyager:voyager-transitions:$voyagerVersion")
+
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation ("androidx.browser:browser:1.7.0")
+
+    implementation("com.patrykandpatrick.vico:compose:1.13.1")
+    implementation("com.patrykandpatrick.vico:core:1.13.1")
+    implementation("com.patrykandpatrick.vico:views:1.13.1")
+    implementation("androidx.compose.material:material:1.1.1")
 }
