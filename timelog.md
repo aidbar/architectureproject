@@ -18,3 +18,4 @@
 | 2024/02/15 |  2.5  |    2.5   |    2.5  |   2.5  | 2.5  |  2.5  | Team meeting for discussing the next steps in app development   |
 | 2024/02/15 |       |          |         |    2   |      |       | In-App Routing Implementation & pages setup                     |
 | 2024/02/15 |       |          |         |    4   |      |       | Firestore Setup; Implemented User Authentication                |
+| 2024/02/17 |       |    6     |         |        |      |       | HomePage UI setup                                               |
