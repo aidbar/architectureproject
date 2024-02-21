@@ -126,7 +126,7 @@ data class AuthScreen(val activity: Activity) : Screen {
                             OnCompleteListener {
                                 if (it.isSuccessful) {
                                     sharedPref.edit().putString("id", it.result.user?.displayName).apply()
-                                    navigator?.push(MainScreen())
+                                    navigator?.push(NewAccountSetupScreen())
                                 } else {
 //                                    Log.d("Regis failed", it.result.toString())
                                     Toast.makeText(
