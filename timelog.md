@@ -19,3 +19,4 @@
 | 2024/02/15 |       |          |         |    2   |      |       | In-App Routing Implementation & pages setup                     |
 | 2024/02/15 |       |          |         |    4   |      |       | Firestore Setup; Implemented User Authentication                |
 | 2024/02/17 |       |    6     |         |        |      |       | HomePage UI setup                                               |
+| 2024/02/20 |       |          |         |    4   |      |       | Profile Setup Page & Lifestyle questions page                   |
