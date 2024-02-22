@@ -1,4 +1,4 @@
-package com.example.architectureproject
+package com.example.architectureproject.tracking
 
 interface TrackingDataProvider {
     fun addActivity(activity: TrackingActivity): String

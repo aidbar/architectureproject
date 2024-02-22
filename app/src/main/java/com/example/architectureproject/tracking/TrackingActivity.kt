@@ -1,4 +1,4 @@
-package com.example.architectureproject
+package com.example.architectureproject.tracking
 
 import java.time.ZonedDateTime
 
@@ -21,7 +21,7 @@ open class TrackingActivity(val date: ZonedDateTime, val name: String, private v
 
     fun ecoPositive() = impact().ecoPositive()
 
-    fun computeImpact(): TrackingEntry =
+    protected fun computeImpact(): TrackingEntry =
         impactProvider.computeImpact(this)
 }
 
@@ -42,8 +42,9 @@ class Meal(date: ZonedDateTime,
 class Transportation(date: ZonedDateTime,
                      name: String,
                      impactProvider: TrackingImpactProvider,
-                     stops: List<Stop>,
-                     mode: Mode):
+                     val stops: List<Stop>,
+                     val mode: Mode
+):
     TrackingActivity(date, name, impactProvider) {
     enum class Mode { Car, Bus, Walk, Bicycle, Train, Plane, Boat, LRT }
     data class Stop(val name: String, val long: Double, val lat: Double)
