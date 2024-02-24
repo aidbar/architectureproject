@@ -10,11 +10,11 @@ import java.util.TreeMap
 import java.util.UUID
 
 class DummyTrackingDataProvider : TrackingDataProvider {
-    val activities = hashMapOf<String, TrackingActivity>()
-    val activitiesByDay = TreeMap<Int, HashMap<String, TrackingActivity>>()
+    private val activities = hashMapOf<String, TrackingActivity>()
+    private val activitiesByDay = TreeMap<Int, HashMap<String, TrackingActivity>>()
 
     companion object {
-        val SECONDS_PER_DAY: Long = 24 * 60 * 60
+        private const val SECONDS_PER_DAY: Long = 24 * 60 * 60
         private fun dayOf(date: ZonedDateTime): Int =
             (date.toEpochSecond() / SECONDS_PER_DAY).toInt()
     }
@@ -24,9 +24,9 @@ class DummyTrackingDataProvider : TrackingDataProvider {
         activities[uuid] = activity
 
         val day = dayOf(activity.date)
-        val todaysActivities = activitiesByDay.getOrDefault(day, hashMapOf())
-        todaysActivities[uuid] = activity
-        activitiesByDay[day] = todaysActivities
+        val todayActivities = activitiesByDay.getOrDefault(day, hashMapOf())
+        todayActivities[uuid] = activity
+        activitiesByDay[day] = todayActivities
 
         return uuid
     }

@@ -43,6 +43,9 @@ data class TrackingPeriod(val start: ZonedDateTime, val end: ZonedDateTime) {
             return TrackingPeriod(dayStart, dayEnd)
         }
 
+        fun instantOf(date: ZonedDateTime): TrackingPeriod =
+            TrackingPeriod(date, date.plusNanos(1))
+
         fun thisMonth() = monthOf(ZonedDateTime.now())
         fun today() = dayOf(ZonedDateTime.now())
         fun thisWeek() = weekOf(ZonedDateTime.now())
