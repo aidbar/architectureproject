@@ -51,19 +51,19 @@ data class TrackingPeriod(val start: ZonedDateTime, val end: ZonedDateTime) {
         fun thisWeek() = weekOf(ZonedDateTime.now())
         fun thisYear() = yearOf(ZonedDateTime.now())
 
-        fun pastMonth(): TrackingPeriod {
+        fun pastMonths(months: Long = 1): TrackingPeriod {
             val now = ZonedDateTime.now()
-            return TrackingPeriod(now.minusMonths(1), now)
+            return TrackingPeriod(now.minusMonths(months), now.plusDays(1))
         }
 
-        fun pastWeek(): TrackingPeriod {
+        fun pastWeeks(weeks: Long = 1): TrackingPeriod {
             val now = ZonedDateTime.now()
-            return TrackingPeriod(now.minusWeeks(1), now)
+            return TrackingPeriod(now.minusWeeks(weeks), now.plusDays(1))
         }
 
-        fun pastYear(): TrackingPeriod {
+        fun pastYears(years: Long = 1): TrackingPeriod {
             val now = ZonedDateTime.now()
-            return TrackingPeriod(now.minusYears(1), now)
+            return TrackingPeriod(now.minusYears(years), now.plusDays(1))
         }
     }
 }
@@ -72,7 +72,7 @@ data class TrackingPeriod(val start: ZonedDateTime, val end: ZonedDateTime) {
 // For example, Day means fetch one value for every day
 //              Month means aggregate daily values, return 1 value for each month
 enum class TrackingDataGranularity {
-    Day, Week, Month
+    Day, Week, Month, Year
 }
 
 enum class TrackingDataType {
