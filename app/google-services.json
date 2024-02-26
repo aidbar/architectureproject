@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "168650149216",
+    "project_id": "greentrace-cb8f7",
+    "storage_bucket": "greentrace-cb8f7.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:168650149216:android:80de31f46f05d29fd56205",
+        "android_client_info": {
+          "package_name": "com.example.architectureproject"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyALd7ntD0wiRx1WNZENef97Ql0KLNi7m2E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
