@@ -93,4 +93,7 @@ dependencies {
     implementation("com.patrykandpatrick.vico:core:1.13.1")
     implementation("com.patrykandpatrick.vico:views:1.13.1")
     implementation("androidx.compose.material:material:1.1.1")
+
+    //a dependency for the image picker
+    implementation("io.coil-kt:coil-compose:2.6.0")
 }

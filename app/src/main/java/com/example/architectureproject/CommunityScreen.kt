@@ -17,32 +17,34 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Button
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LocationOn
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import cafe.adriel.voyager.core.screen.Screen
 import com.example.architectureproject.ui.theme.ArchitectureProjectTheme
 
@@ -67,7 +69,9 @@ class CommunityScreen :Screen {
             ) {padding ->
                 CommunityList(
                     communityList = Datasource().loadCommunities(),
-                    modifier = Modifier.fillMaxSize().padding(padding)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
                 )
             }
         }
@@ -81,8 +85,7 @@ class CommunityScreen :Screen {
                         println("Community successfully created") // Add logic here to handle confirmation.
                     },
                     dialogTitle = "Create a new community",
-                    dialogText = "Enter the name and location of your new community - you may add a profile picture as well!",
-                    icon = iconStyle.Info
+                    dialogText = "Enter the name and location of your new community - you may add a profile picture as well!"
                 )
             }
         }
@@ -145,42 +148,93 @@ class CommunityScreen :Screen {
     fun CreateCommunityDialog(
         onDismissRequest: () -> Unit,
         onConfirmation: () -> Unit,
+        //painter: Painter,
+        //imageDescription: String,
         dialogTitle: String,
-        dialogText: String,
-        icon: ImageVector,
+        dialogText: String
     ) {
-        AlertDialog(
-            icon = {
-                Icon(icon, contentDescription = "Example Icon")
-            },
-            title = {
-                Text(text = dialogTitle)
-            },
-            text = {
-                Text(text = dialogText)
-            },
-            onDismissRequest = {
-                onDismissRequest()
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onConfirmation()
-                    }
+        var newCommunityName by remember {mutableStateOf("")}
+        var newCommunityLocation by remember {mutableStateOf("")}
+
+        Dialog(onDismissRequest = { onDismissRequest() }) {
+            // Draw a rectangle shape with rounded corners inside the dialog
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(500.dp)
+                    .padding(16.dp),
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text("Confirm")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        onDismissRequest()
+                    /*Image(
+                        painter = painter,
+                        contentDescription = imageDescription,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier
+                            .height(160.dp)
+                    )*/
+                    Text(
+                        text = dialogTitle,
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    Text(
+                        text = dialogText,
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
+                    TextField(
+                        value = newCommunityName,
+                        onValueChange = {newCommunityName = it},
+                        label = {Text("Name")},
+                        modifier = Modifier.padding(10.dp),
+                        singleLine = true
+                    )
+                    TextField(
+                        value = newCommunityLocation,
+                        onValueChange = {newCommunityLocation = it},
+                        label = {Text("Location")},
+                        modifier = Modifier.padding(10.dp),
+                        singleLine = true
+                    )
+                    ImageSelectorComponent()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        TextButton(
+                            onClick = { onDismissRequest() },
+                            modifier = Modifier.padding(8.dp),
+                        ) {
+                            Text("Cancel")
+                        }
+                        TextButton(
+                            onClick = { onConfirmation() },
+                            modifier = Modifier.padding(8.dp),
+                            enabled = newCommunityName.isNotBlank(),
+                            colors = ButtonDefaults.buttonColors()
+                        ) {
+                            Text("Create")
+                        }
                     }
-                ) {
-                    Text("Dismiss")
                 }
             }
-        )
+        }
+        /*when (newCommunityName) {
+            "" -> {
+                inputIsValid = false
+            }
+            else -> {
+                inputIsValid = !newCommunityName.isNullOrBlank()
+            }
+        }*/
     }
 
 }
