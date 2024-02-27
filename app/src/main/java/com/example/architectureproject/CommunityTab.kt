@@ -23,6 +23,6 @@ object CommunityTab:Tab {
 
     @Composable
     override fun Content() {
-//       Navigator(NewActivityScreen())
+       Navigator(CommunityScreen())
     }
 }

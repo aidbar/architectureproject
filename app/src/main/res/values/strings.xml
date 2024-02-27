@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">ArchitectureProject</string>
+    <string name="community1">Community1</string>
+    <string name="community2">Community2</string>
+    <string name="community3">Community3</string>
+    <string name="community4">Expletive</string>
+    <string name="community5">Some f word or sth lol</string>
+    <string name="community6">I should really try to not get used to this</string>
+    <string name="community7">Ermmmmmm</string>
+    <string name="community8">Ughhhhhh</string>
+    <string name="community9">Eeeeeee</string>
+    <string name="community10">This should just be "community10" but that would be too boring, right?</string>
+    <string name="locationTest">Androidlandia</string>
 </resources>
