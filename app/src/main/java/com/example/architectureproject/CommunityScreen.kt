@@ -19,12 +19,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Button
 import androidx.compose.material.Card
+import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -51,23 +54,24 @@ class CommunityScreen :Screen {
     override fun Content() {
         val openCreateCommunityDialog = remember {mutableStateOf(false)}
         ArchitectureProjectTheme {
-            // A surface container using the 'background' color from the theme
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.background
-            ) {
-                Column {
-                    Button(
-                        onClick = { openCreateCommunityDialog.value = !openCreateCommunityDialog.value }
+            Scaffold(
+                floatingActionButton = {
+                    FloatingActionButton(
+                        onClick = {
+                            openCreateCommunityDialog.value = !openCreateCommunityDialog.value
+                        }
                     ) {
-                        Text("Create community")
+                        Icon(iconStyle.Add, "Create new community")
                     }
-                    CommunityList(
-                        communityList = Datasource().loadCommunities(),
-                    )
                 }
+            ) {padding ->
+                CommunityList(
+                    communityList = Datasource().loadCommunities(),
+                    modifier = Modifier.fillMaxSize().padding(padding)
+                )
             }
         }
+
         when {
             openCreateCommunityDialog.value -> {
                 CreateCommunityDialog(
@@ -94,7 +98,9 @@ class CommunityScreen :Screen {
             items(communityList) { community ->
                 CommunityCard(
                     community = community,
-                    modifier = Modifier.padding(8.dp).clickable { println("click event received") }
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .clickable { println("click event received") }
                 )
             }
         }
