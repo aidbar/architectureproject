@@ -11,7 +11,7 @@
 | 2024/01/22 |       |     2    |         |    2   |  2   |       | Group meeting regarding project proposal                        |
 | 2024/01/23 |  2.5  |          |         |        |      |       | Editing the project proposal and drawing sequence diagrams      |
 | 2024/01/25 |   1   |          |         |  0.5   |      |       | Editing the project proposal presentation slides                |
-| 2024/01/26 |       |          |         |        |      |   1   | Editing project prosopal and presentation prep                  |
+| 2024/01/26 |       |          |         |        |      |   1   | Editing project proposal and presentation prep                  |
 | 2024/01/30 |       |          |         |     1  |      |       | Create Project Mockup                                           |
 | 2024/01/30 |  1.5  |    1.5   |         |   1.5  | 1.5  |  1.5  | Team meeting for finalizing the project proposal                |
 | 2024/02/07 |  1    |    1     |     1   |   1    | 1    |  1    | Team meeting for writing the buddy evaluation                   |
@@ -20,4 +20,5 @@
 | 2024/02/15 |       |          |         |    4   |      |       | Firestore Setup; Implemented User Authentication                |
 | 2024/02/17 |       |    6     |         |        |      |       | HomePage UI setup                                               |
 | 2024/02/20 |       |          |         |    4   |      |       | Profile Setup Page & Lifestyle questions page                   |
-| 2024/02/26 |  4.5  |          |         |        |      |       | Scrollable list of the communities user is currently in (placeholder data + data model) |
+| 2024/02/26 |  4.5  |          |         |        |      |       | Scrollable list of the communities the user is currently in (placeholder data + data model) |
+| 2024/02/27 |   5   |          |         |        |      |       | "Create new community" pop-up for the "Community" tab |
