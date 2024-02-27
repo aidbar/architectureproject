@@ -53,4 +53,6 @@ class Transportation(date: ZonedDateTime,
 class Purchase(date: ZonedDateTime,
                name: String,
                impactProvider: TrackingImpactProvider,
-               val plasticBag: Boolean): TrackingActivity(date, name, impactProvider)
+               val plasticBag: Boolean): TrackingActivity(date, name, impactProvider) {
+    enum class Source { New, SecondHand, Refurbished }
+}

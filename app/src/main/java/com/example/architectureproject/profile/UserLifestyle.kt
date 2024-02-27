@@ -1,4 +1,4 @@
-package com.example.architectureproject
+package com.example.architectureproject.profile
 
 import com.example.architectureproject.tracking.Purchase
 import com.example.architectureproject.tracking.Transportation

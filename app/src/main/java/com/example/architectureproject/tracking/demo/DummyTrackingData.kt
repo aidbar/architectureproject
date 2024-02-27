@@ -9,6 +9,7 @@ import java.time.ZonedDateTime
 class DummyTrackingData(impactProvider: TrackingImpactProvider) {
     val activities = listOf(
         Meal(ZonedDateTime.now(), "Breakfast", impactProvider, Meal.Type.Breakfast, listOf()),
+        Meal(ZonedDateTime.now(), "Lunch", impactProvider, Meal.Type.Lunch, listOf()),
         Transportation(ZonedDateTime.now().minusMonths(3), "Driving to work", impactProvider,
             listOf(
                 Transportation.Stop("Home", 43.57588850506251, -79.61096747795044),

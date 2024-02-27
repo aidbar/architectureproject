@@ -42,6 +42,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import com.example.architectureproject.profile.FirebaseUserProvider
+import com.example.architectureproject.profile.UserProvider
 import com.example.architectureproject.tracking.TrackingDataGranularity
 import com.example.architectureproject.tracking.TrackingDataProvider
 import com.example.architectureproject.tracking.TrackingEntry
@@ -68,7 +70,7 @@ enum class GraphOption {
     Weekly, Monthly, Yearly
 }
 class HomeScreen :Screen{
-    var auth = FirebaseAuth.getInstance()
+    val userProvider: UserProvider = FirebaseUserProvider()
     val provider: TrackingDataProvider = DummyTrackingDataProvider()
     val impactProvider: TrackingImpactProvider = DummyTrackingImpactProvider()
 
@@ -99,6 +101,7 @@ class HomeScreen :Screen{
     @Preview
     override fun Content() {
         val navigator = LocalNavigator.current
+        val user = remember { userProvider.userInfo() }
 
         var selectedTab = remember {
             mutableStateOf(GraphOption.Weekly)
@@ -158,7 +161,7 @@ class HomeScreen :Screen{
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Welcome Jane!",  // text = "Welcome, "+auth.currentUser?.email
+                            text = "Welcome ${user.name}!",  // text = "Welcome, "+auth.currentUser?.email
                             color = Color(0xFF009688),
                             fontSize = 25.sp,
                             fontWeight = FontWeight.Bold
