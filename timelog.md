@@ -22,3 +22,4 @@
 | 2024/02/20 |       |          |         |    4   |      |       | Profile Setup Page & Lifestyle questions page                   |
 | 2024/02/26 |  4.5  |          |         |        |      |       | Scrollable list of the communities the user is currently in (placeholder data + data model) |
 | 2024/02/27 |   5   |          |         |        |      |       | "Create new community" pop-up for the "Community" tab |
+| 2024/02/27 |       |          |         |    3   |      |       | Profile/Settings Page Implementation                            |
