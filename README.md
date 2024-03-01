@@ -4,12 +4,15 @@ A software architecture project created during the courses CS 446/CS 646/ECE 452
 **Group number in LEARN**: 1
 
 **Team members:** 
-1. Aide Barniskyte (course: CS 646, Quest ID: abarnisk, GitHub username: aidbar)
-2. Jahnavi Shah (course: ECE 452, Quest ID: j36shah, GitHub username: Jahnavi-1704)
-3. Chris Qu (course: ECE 452, Quest ID: q3qu, GitHub username: kkchris21)
-4. Elisa Gu (course: CS 446, Quest ID: z53gu, GitHub username: ElisaGu0923)
-5. Zong Gao Li (course: CS 446, Quest ID: zgli, Github username: zgli-uw)
-6. Fatin Sarker (course: ECE 452, Quest ID: f2sarker, Github username: fatin2sarker)
+
+| Member          | course  | Quest ID | Github username | 
+|-----------------|---------|----------|-----------------|
+| Aide Barniskyte | CS 686  | abarnisk | aidbar          |
+| Jahnavi Shah    | ECE 452 | j36shah  | Jahnavi-1704    |
+| Chris Qu        | ECE 452 | q3qu     | kkchris21       |
+| Elisa Gu        | CS 446  | z53gu    | ElisaGu0923     |
+| Zong Gao Li     | CS 446  | zgli     | zgli-uw         |
+| Fatin Sarker    | ECE 452 | f2sarker | fatin2sarker    |
 
 **Title:** GreenTrace - Sustainable Living Companion
 
