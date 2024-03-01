@@ -5,7 +5,7 @@ A software architecture project created during the courses CS 446/CS 646/ECE 452
 
 **Team members:** 
 
-| Member          | course  | Quest ID | Github username | 
+| Member          | Course  | Quest ID | Github username | 
 |-----------------|---------|----------|-----------------|
 | Aide Barniskyte | CS 686  | abarnisk | aidbar          |
 | Jahnavi Shah    | ECE 452 | j36shah  | Jahnavi-1704    |
