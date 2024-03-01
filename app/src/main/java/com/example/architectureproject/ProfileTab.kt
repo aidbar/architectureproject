@@ -23,6 +23,6 @@ object ProfileTab:Tab {
 
     @Composable
     override fun Content() {
-//       Navigator(NewActivityScreen())
+       Navigator(ProfileScreen())
     }
 }
