@@ -96,7 +96,7 @@ class AuthScreen : Screen {
                             } else {
                                 Toast.makeText(
                                     context,
-                                    "Failed: " + it.result.toString(),
+                                    "Error: " + it.exception?.message,
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
@@ -127,10 +127,9 @@ class AuthScreen : Screen {
                                     sharedPref.edit().putString("id", it.result.user?.uid).apply()
                                     navigator?.push(NewAccountSetupScreen())
                                 } else {
-//                                    Log.d("Regis failed", it.result.toString())
                                     Toast.makeText(
                                         context,
-                                        "Failed: "+it.result.toString(),
+                                        "Error: " + it.exception?.message,
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
