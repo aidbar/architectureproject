@@ -1,5 +1,6 @@
 package com.example.architectureproject.community
 
+import android.net.Uri
 import com.example.architectureproject.profile.User
 
 interface CommunityManager {

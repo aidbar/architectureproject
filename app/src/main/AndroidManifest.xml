@@ -22,6 +22,14 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter android:label="greentrace_community_handler">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https"
+                    android:host="greentrace-cb8f7.web.app"
+                    android:pathPrefix="/community.html" />
+            </intent-filter>
         </activity>
     </application>
 
