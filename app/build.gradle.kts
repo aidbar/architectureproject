@@ -97,4 +97,6 @@ dependencies {
 
     //a dependency for the image picker
     implementation("io.coil-kt:coil-compose:2.6.0")
+
+    implementation("com.lightspark:compose-qr-code:1.0.1")
 }

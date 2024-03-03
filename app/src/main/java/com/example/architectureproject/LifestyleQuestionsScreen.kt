@@ -209,7 +209,7 @@ data class StartQuestionsScreen(val username: String) : Screen {
 
             OutlinedButton(
                 onClick = {
-                    navigator?.push(MainScreen())
+                    navigator?.push(MainScreen(false))
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -536,7 +536,7 @@ class ShoppingQScreen : Screen {
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Button(
-                    onClick = { navigator?.push(MainScreen())},
+                    onClick = { navigator?.push(MainScreen(false))},
                     modifier = Modifier.width(150.dp),
                     enabled = selectedPrimaryOption.isNotEmpty() && selectedSecondaryOption.isNotEmpty()
                 ) {

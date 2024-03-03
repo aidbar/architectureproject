@@ -42,17 +42,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
-import com.example.architectureproject.profile.FirebaseUserProvider
-import com.example.architectureproject.profile.UserProvider
 import com.example.architectureproject.tracking.TrackingDataGranularity
-import com.example.architectureproject.tracking.TrackingDataProvider
 import com.example.architectureproject.tracking.TrackingEntry
-import com.example.architectureproject.tracking.TrackingImpactProvider
 import com.example.architectureproject.tracking.TrackingPeriod
 import com.example.architectureproject.tracking.demo.DummyTrackingData
-import com.example.architectureproject.tracking.demo.DummyTrackingDataProvider
-import com.example.architectureproject.tracking.demo.DummyTrackingImpactProvider
-import com.google.firebase.auth.FirebaseAuth
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
@@ -63,27 +56,23 @@ import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
 import com.patrykandpatrick.vico.core.chart.line.LineChart
 import com.patrykandpatrick.vico.core.component.shape.shader.DynamicShaders
 import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
-import com.patrykandpatrick.vico.core.entry.entryModelOf
 import com.patrykandpatrick.vico.core.entry.entryOf
 
 enum class GraphOption {
     Weekly, Monthly, Yearly
 }
 class HomeScreen :Screen{
-    val userProvider: UserProvider = FirebaseUserProvider()
-    val provider: TrackingDataProvider = DummyTrackingDataProvider()
-    val impactProvider: TrackingImpactProvider = DummyTrackingImpactProvider()
-
     init {
         // Load in dummy data
-        DummyTrackingData(impactProvider).addTo(provider)
+        DummyTrackingData(GreenTraceProviders.impactProvider)
+            .addTo(GreenTraceProviders.trackingProvider!!)
     }
 
     private fun getData(option: GraphOption) =
         when (option) {
-            GraphOption.Weekly -> provider.getImpact(TrackingPeriod.pastWeeks(), TrackingDataGranularity.Day)
-            GraphOption.Monthly -> provider.getImpact(TrackingPeriod.pastYears(), TrackingDataGranularity.Month)
-            GraphOption.Yearly -> provider.getImpact(TrackingPeriod.pastYears(4), TrackingDataGranularity.Year)
+            GraphOption.Weekly -> GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastWeeks(), TrackingDataGranularity.Day)
+            GraphOption.Monthly -> GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastYears(), TrackingDataGranularity.Month)
+            GraphOption.Yearly -> GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastYears(4), TrackingDataGranularity.Year)
         }
 
     private fun getValueFormatter(option: GraphOption, data: List<TrackingEntry>): AxisValueFormatter<AxisPosition.Horizontal.Bottom> {
@@ -101,7 +90,7 @@ class HomeScreen :Screen{
     @Preview
     override fun Content() {
         val navigator = LocalNavigator.current
-        val user = remember { userProvider.userInfo() }
+        val user = remember { GreenTraceProviders.userProvider.userInfo() }
 
         var selectedTab = remember {
             mutableStateOf(GraphOption.Weekly)

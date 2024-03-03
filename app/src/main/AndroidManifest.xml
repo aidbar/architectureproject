@@ -22,6 +22,22 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter android:label="greentrace_community_handler" android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:scheme="http" />
+                <data android:host="greentrace-cb8f7.firebaseapp.com" />
+                <data android:host="greentrace-cb8f7.web.app" />
+            </intent-filter>
+            <intent-filter android:label="greentrace_community_handler2" android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="greentrace" />
+                <data android:host="community" />
+            </intent-filter>
         </activity>
     </application>
 
