@@ -22,4 +22,6 @@
 | 2024/02/20 |       |          |         |    4   |      |       | Profile Setup Page & Lifestyle questions page                   |
 | 2024/02/26 |  4.5  |          |         |        |      |       | Scrollable list of the communities the user is currently in (placeholder data + data model) |
 | 2024/02/27 |   5   |          |         |        |      |       | "Create new community" pop-up for the "Community" tab |
+| 2024/03/01 |       |    2     |         |        |      |       | Research on how to create database in cloud firestore and retrieve documents|
 | 2024/03/01 |  2.5  |   2.5    |  2.5    |  2.5   |  2.5 | 2.5   | Team meeting for preparing for the app demo |
+| 2024/03/03 |       |    4     |         |        |      |       | Setup creation of new user's data in firestore, fetching user's document in HomeScreen, implemented loading screen during document fetching |
