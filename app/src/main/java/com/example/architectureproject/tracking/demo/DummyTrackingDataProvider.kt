@@ -1,5 +1,7 @@
 package com.example.architectureproject.tracking.demo
 
+import com.example.architectureproject.community.CommunityManager
+import com.example.architectureproject.profile.User
 import com.example.architectureproject.tracking.TrackingActivity
 import com.example.architectureproject.tracking.TrackingDataGranularity
 import com.example.architectureproject.tracking.TrackingDataProvider
@@ -10,9 +12,10 @@ import java.time.ZonedDateTime
 import java.util.TreeMap
 import java.util.UUID
 
-class DummyTrackingDataProvider : TrackingDataProvider {
+class DummyTrackingDataProvider(val user: User, val communityManager: CommunityManager) : TrackingDataProvider {
     private val activities = hashMapOf<String, TrackingActivity>()
     private val activitiesByDay = TreeMap<Int, HashMap<String, TrackingActivity>>()
+    private val communities = hashSetOf<String>()
 
     companion object {
         private const val SECONDS_PER_DAY: Long = 24 * 60 * 60
@@ -102,4 +105,14 @@ class DummyTrackingDataProvider : TrackingDataProvider {
             .flatMap {
                 it.value.map { it.value }
             }
+
+    override fun attachCommunity(id: String) {
+        communities.add(id)
+        communityManager.addUserToCommunity(user, id)
+    }
+
+    override fun detachCommunity(id: String) {
+        communities.remove(id)
+        communityManager.removeUserFromCommunity(user, id)
+    }
 }

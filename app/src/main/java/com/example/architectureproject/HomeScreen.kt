@@ -42,6 +42,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import com.example.architectureproject.community.CommunityManager
+import com.example.architectureproject.community.demo.DemoCommunityManager
 import com.example.architectureproject.profile.FirebaseUserProvider
 import com.example.architectureproject.profile.UserProvider
 import com.example.architectureproject.tracking.TrackingDataGranularity
@@ -71,7 +73,8 @@ enum class GraphOption {
 }
 class HomeScreen :Screen{
     val userProvider: UserProvider = FirebaseUserProvider()
-    val provider: TrackingDataProvider = DummyTrackingDataProvider()
+    val communityManager: CommunityManager = DemoCommunityManager()
+    val provider: TrackingDataProvider = DummyTrackingDataProvider(userProvider.userInfo(), communityManager)
     val impactProvider: TrackingImpactProvider = DummyTrackingImpactProvider()
 
     init {
