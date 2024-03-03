@@ -65,14 +65,14 @@ class HomeScreen :Screen{
     init {
         // Load in dummy data
         DummyTrackingData(GreenTraceProviders.impactProvider)
-            .addTo(GreenTraceProviders.trackingProvider)
+            .addTo(GreenTraceProviders.trackingProvider!!)
     }
 
     private fun getData(option: GraphOption) =
         when (option) {
-            GraphOption.Weekly -> GreenTraceProviders.trackingProvider.getImpact(TrackingPeriod.pastWeeks(), TrackingDataGranularity.Day)
-            GraphOption.Monthly -> GreenTraceProviders.trackingProvider.getImpact(TrackingPeriod.pastYears(), TrackingDataGranularity.Month)
-            GraphOption.Yearly -> GreenTraceProviders.trackingProvider.getImpact(TrackingPeriod.pastYears(4), TrackingDataGranularity.Year)
+            GraphOption.Weekly -> GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastWeeks(), TrackingDataGranularity.Day)
+            GraphOption.Monthly -> GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastYears(), TrackingDataGranularity.Month)
+            GraphOption.Yearly -> GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastYears(4), TrackingDataGranularity.Year)
         }
 
     private fun getValueFormatter(option: GraphOption, data: List<TrackingEntry>): AxisValueFormatter<AxisPosition.Horizontal.Bottom> {

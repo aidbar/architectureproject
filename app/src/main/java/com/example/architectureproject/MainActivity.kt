@@ -22,14 +22,29 @@ import com.example.architectureproject.ui.theme.ArchitectureProjectTheme
 
 object GreenTraceProviders {
     val userProvider: UserProvider = FirebaseUserProvider()
-    val communityManager: CommunityManager = DemoCommunityManager()
-    val trackingProvider: TrackingDataProvider = DummyTrackingDataProvider(userProvider.userInfo(), communityManager)
+    var communityManager: CommunityManager? = null
     val impactProvider: TrackingImpactProvider = DummyTrackingImpactProvider()
+    var applicationContext: Context? = null
+        private set
+
+    var trackingProvider: TrackingDataProvider? = null
+        private set
+
+    fun init(applicationContext: Context) {
+        this.applicationContext = applicationContext
+    }
+
+    fun initTracking() {
+        if (trackingProvider != null) return
+        communityManager =  DemoCommunityManager()
+        trackingProvider = DummyTrackingDataProvider(userProvider.userInfo(), communityManager!!)
+    }
 }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        GreenTraceProviders.init(applicationContext)
         val communityJoinURI = intent.data
         setContent {
             ArchitectureProjectTheme {
@@ -38,18 +53,18 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val sharedPref = this.getPreferences(Context.MODE_PRIVATE)
+                    val sharedPref = applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
                     val hasLoggedIn = sharedPref.getString("id", null)
-                    Log.d("hasLoggedIn", hasLoggedIn.toString());
+                    Log.d("hasLoggedIn", hasLoggedIn.toString())
                     if (hasLoggedIn != null) {
                         if (communityJoinURI != null) {
-                            Navigator(CommunityJoinScreen(communityJoinURI))
+                            Navigator(CommunityJoinScreen(communityJoinURI.toString()))
                         }
                         else {
-                            Navigator(MainScreen())
+                            Navigator(MainScreen(false))
                         }
                     }else{
-                        Navigator(AuthScreen(this))
+                        Navigator(AuthScreen())
                     }
                 }
             }

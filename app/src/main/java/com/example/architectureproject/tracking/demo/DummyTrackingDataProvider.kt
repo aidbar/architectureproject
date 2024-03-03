@@ -1,5 +1,6 @@
 package com.example.architectureproject.tracking.demo
 
+import com.example.architectureproject.community.CommunityInfo
 import com.example.architectureproject.community.CommunityManager
 import com.example.architectureproject.profile.User
 import com.example.architectureproject.tracking.TrackingActivity
@@ -115,4 +116,7 @@ class DummyTrackingDataProvider(val user: User, val communityManager: CommunityM
         communities.remove(id)
         communityManager.removeUserFromCommunity(user, id)
     }
+
+    override fun getCommunities() =
+        communities.map { communityManager.getCommunityById(it)!! }
 }
