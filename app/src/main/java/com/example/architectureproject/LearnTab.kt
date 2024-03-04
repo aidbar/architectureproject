@@ -21,6 +21,6 @@ object LearnTab:Tab {
 
     @Composable
     override fun Content() {
-//       Navigator(LearnScreen())
+       Navigator(LearnScreen())
     }
 }
