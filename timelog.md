@@ -25,3 +25,4 @@
 | 2024/03/01 |       |    2     |         |        |      |       | Research on how to create database in cloud firestore and retrieve documents|
 | 2024/03/01 |  2.5  |   2.5    |  2.5    |  2.5   |  2.5 | 2.5   | Team meeting for preparing for the app demo |
 | 2024/03/03 |       |    4     |         |        |      |       | Setup creation of new user's data in firestore, fetching user's document in HomeScreen, implemented loading screen during document fetching |
+| 2024/03/04 |       |          |         |    1   |      |       | Added In-App Privacy Policy                                     |
