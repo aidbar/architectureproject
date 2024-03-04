@@ -53,7 +53,7 @@ import com.example.architectureproject.ui.theme.ArchitectureProjectTheme
 
 class CommunityScreen :Screen {
     //var auth = FirebaseAuth.getInstance()
-    companion object { private val iconStyle = Icons.Rounded }
+    companion object { internal val iconStyle = Icons.Rounded }
 
     @Composable
     @Preview
