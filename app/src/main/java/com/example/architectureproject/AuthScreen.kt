@@ -30,17 +30,17 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.auth.FirebaseAuth
 
-data class AuthScreen(val activity: Activity) : Screen {
-
+class AuthScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
 
         var email by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
+        val context = GreenTraceProviders.applicationContext!!
         var auth = FirebaseAuth.getInstance();
 
-        val sharedPref = activity.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        val sharedPref = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
 
         Column(
             modifier = Modifier
@@ -77,26 +77,26 @@ data class AuthScreen(val activity: Activity) : Screen {
                 onClick = {
                     if (email.isEmpty() || password.isEmpty()){
                         Toast.makeText(
-                            activity,
+                            context,
                             "Fields must not be empty",
                             Toast.LENGTH_SHORT
                         ).show()
                     }else{
-                        auth.signInWithEmailAndPassword(email,password).addOnCompleteListener(activity) {
+                        auth.signInWithEmailAndPassword(email,password).addOnCompleteListener {
                             if (it.isSuccessful) {
-                                it.result.user?.displayName?.let { it1 ->
-                                    Log.d("display name",
+                                it.result.user?.uid?.let { it1 ->
+                                    Log.d("uid",
                                         it1
                                     )
                                 }
 //                                Log.d("user",auth.currentUser.toString())
-                                sharedPref.edit().putString("id", it.result.user?.displayName)
+                                sharedPref.edit().putString("id", it.result.user?.uid)
                                     .apply()
-                                navigator?.push(MainScreen())
+                                navigator?.push(MainScreen(false))
                             } else {
                                 Toast.makeText(
-                                    activity,
-                                    "Failed: " + it.result.toString(),
+                                    context,
+                                    "Error: " + it.exception?.message,
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
@@ -116,26 +116,24 @@ data class AuthScreen(val activity: Activity) : Screen {
                 onClick = {
                     if (email.isEmpty() || password.isEmpty()){
                         Toast.makeText(
-                            activity,
+                            context,
                             "Fields must not be empty",
                             Toast.LENGTH_SHORT
                         ).show()
                     }else{
                     auth.createUserWithEmailAndPassword(email, password)
-                        .addOnCompleteListener(activity,
-                            OnCompleteListener {
+                        .addOnCompleteListener {
                                 if (it.isSuccessful) {
-                                    sharedPref.edit().putString("id", it.result.user?.displayName).apply()
+                                    sharedPref.edit().putString("id", it.result.user?.uid).apply()
                                     navigator?.push(NewAccountSetupScreen())
                                 } else {
-//                                    Log.d("Regis failed", it.result.toString())
                                     Toast.makeText(
-                                        activity,
-                                        "Failed: "+it.result.toString(),
+                                        context,
+                                        "Error: " + it.exception?.message,
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
-                            })
+                            }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()

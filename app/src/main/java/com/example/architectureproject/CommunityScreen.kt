@@ -46,11 +46,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
+import com.example.architectureproject.community.CommunityInfo
 import com.example.architectureproject.ui.theme.ArchitectureProjectTheme
 
 class CommunityScreen :Screen {
     //var auth = FirebaseAuth.getInstance()
-    private val iconStyle = Icons.Rounded
+    companion object { private val iconStyle = Icons.Rounded }
+
     @Composable
     @Preview
     override fun Content() {
@@ -68,7 +72,7 @@ class CommunityScreen :Screen {
                 }
             ) {padding ->
                 CommunityList(
-                    communityList = Datasource().loadCommunities(),
+                    communityList = GreenTraceProviders.trackingProvider!!.getCommunities(),
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
@@ -80,8 +84,12 @@ class CommunityScreen :Screen {
             openCreateCommunityDialog.value -> {
                 CreateCommunityDialog(
                     onDismissRequest = { openCreateCommunityDialog.value = false },
-                    onConfirmation = {
+                    onConfirmation = { name, loc ->
                         openCreateCommunityDialog.value = false
+                        val comm = GreenTraceProviders.communityManager?.createCommunity(
+                            GreenTraceProviders.userProvider.userInfo(), name, loc
+                        )
+                        comm?.let { GreenTraceProviders.trackingProvider?.attachCommunity(it) }
                         println("Community successfully created") // Add logic here to handle confirmation.
                     },
                     dialogTitle = "Create a new community",
@@ -94,7 +102,7 @@ class CommunityScreen :Screen {
 
     @Composable
     fun CommunityList(
-        communityList: List<CommunityDataModelPlaceholderClass>,
+        communityList: List<CommunityInfo>,
         modifier: Modifier = Modifier
     ) {
         LazyColumn(modifier = modifier) {
@@ -111,21 +119,25 @@ class CommunityScreen :Screen {
 
     @Composable
     fun CommunityCard(
-        community: CommunityDataModelPlaceholderClass,
+        community: CommunityInfo,
         modifier: Modifier = Modifier
     ) {
-        Card(modifier = modifier) {
+        val navigator = LocalNavigator.currentOrThrow
+
+        Card(modifier = modifier.clickable {
+            navigator.push(CommunityInfoScreen(community))
+        }) {
             Column {
                 Image(
-                    painter = painterResource(community.imageResourceId),
-                    contentDescription = stringResource(community.nameStringResourceId),
+                    painter = painterResource(community.image),
+                    contentDescription = community.name,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(194.dp),
                     contentScale = ContentScale.Crop
                 )
                 Text(
-                    text = LocalContext.current.getString(community.nameStringResourceId),
+                    text = community.name,
                     modifier = Modifier.padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp),
                     style = MaterialTheme.typography.headlineSmall
                 )
@@ -135,7 +147,7 @@ class CommunityScreen :Screen {
                 ) {
                     Icon(iconStyle.LocationOn, contentDescription = "location", modifier = Modifier.align(Alignment.CenterVertically))
                     Text(
-                        text = LocalContext.current.getString(community.locationStringResourceId),
+                        text = community.location,
                         modifier = Modifier.align(Alignment.CenterVertically),
                         style = MaterialTheme.typography.labelMedium,
                     )
@@ -147,7 +159,7 @@ class CommunityScreen :Screen {
     @Composable
     fun CreateCommunityDialog(
         onDismissRequest: () -> Unit,
-        onConfirmation: () -> Unit,
+        onConfirmation: (String, String) -> Unit,
         //painter: Painter,
         //imageDescription: String,
         dialogTitle: String,
@@ -216,7 +228,7 @@ class CommunityScreen :Screen {
                             Text("Cancel")
                         }
                         TextButton(
-                            onClick = { onConfirmation() },
+                            onClick = { onConfirmation(newCommunityName, newCommunityLocation) },
                             modifier = Modifier.padding(8.dp),
                             enabled = newCommunityName.isNotBlank(),
                             colors = ButtonDefaults.buttonColors()

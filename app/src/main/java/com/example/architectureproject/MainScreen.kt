@@ -22,11 +22,14 @@ import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 
-class MainScreen() : Screen {
+class MainScreen(val fromJoinScreen: Boolean) : Screen {
+    init {
+        GreenTraceProviders.initTracking()
+    }
 
     @Composable
     override fun Content() {
-        TabNavigator(HomeTab) {
+        TabNavigator(if (fromJoinScreen) CommunityTab else HomeTab) {
             Scaffold(bottomBar = {
                 NavigationBar {
                     TabNavigatorItem(tab = HomeTab)
