@@ -3,6 +3,7 @@ package com.example.architectureproject
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -43,6 +46,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.example.architectureproject.community.CommunityInfo
+import com.example.architectureproject.profile.User
 import com.lightspark.composeqr.QrCodeView
 
 data class CommunityInfoScreen(val info: CommunityInfo): Screen {
@@ -142,6 +146,13 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         Text("Invite")
                     }
                 }
+                TextButton(
+                    onClick = { navigator.push(CommunityMembersScreen(info.members.toList()))},
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .align(Alignment.CenterHorizontally),
+                    colors = ButtonDefaults.buttonColors()
+                ) {Text("View members")}
             }
         }
     }
