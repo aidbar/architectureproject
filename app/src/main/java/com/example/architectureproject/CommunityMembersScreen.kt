@@ -50,7 +50,7 @@ import com.example.architectureproject.CommunityScreen.Companion.iconStyle
 import com.example.architectureproject.profile.User
 import com.example.architectureproject.ui.theme.ArchitectureProjectTheme
 
-class CommunityMembersScreen (val members: List<User>) :Screen {
+class CommunityMembersScreen (val isCreator: Boolean, val members: List<User>) :Screen {
     //var auth = FirebaseAuth.getInstance()
     //companion object { internal val iconStyle = Icons.Rounded }
 
