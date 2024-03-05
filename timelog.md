@@ -28,4 +28,5 @@
 | 2024/03/04 |       |          |         |    1   |      |       | Added In-App Privacy Policy                                                                                                                 |
 | 2024/03/03 |       |          |         |        |      | 1.5   | Backend: User class                                                                                                                         |
 | 2024/03/04 |       |          |         |        |      | 2     | LearnScreen                                                                                                                                 |
-| 2024/03/04 |   6   |          |         |        |      |       | Working on CommunityScreen and CommunityMembersScreen
+| 2024/03/04 |   6   |          |         |        |      |       | Working on CommunityScreen and CommunityMembersScreen                                                                                       |
+| 2024/03/05 |  1.5  |          |         |        |      |       | "Edit community" and "remove member from community" buttons for community creator (UI only)                                                 |
