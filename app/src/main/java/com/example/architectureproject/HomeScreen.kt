@@ -165,7 +165,7 @@ class HomeScreen :Screen{
                     )
                     Spacer(modifier = Modifier.height(15.dp))
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().clickable { navigator?.push(PastActivitiesScreen()) },
                         elevation = 17.dp
                     ) {
                         Chart(
