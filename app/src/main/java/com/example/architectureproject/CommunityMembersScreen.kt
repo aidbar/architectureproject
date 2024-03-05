@@ -6,6 +6,7 @@ package com.example.architectureproject
 //import com.patrykandpatrick.vico.core.axis.AxisPosition
 //import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
 //import com.patrykandpatrick.vico.compose.chart.line.lineChart
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,15 +33,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -50,26 +50,17 @@ import com.example.architectureproject.CommunityScreen.Companion.iconStyle
 import com.example.architectureproject.profile.User
 import com.example.architectureproject.ui.theme.ArchitectureProjectTheme
 
-class CommunityMembersScreen (val members: List<User>) :Screen {
+class CommunityMembersScreen (val isCreator: Boolean, val members: List<User>) :Screen {
     //var auth = FirebaseAuth.getInstance()
     //companion object { internal val iconStyle = Icons.Rounded }
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-        //val openCreateCommunityDialog = remember {mutableStateOf(false)}
         val navigator = LocalNavigator.currentOrThrow
+        
         ArchitectureProjectTheme {
             Scaffold(
-                /*floatingActionButton = {
-                    FloatingActionButton(
-                        onClick = {
-                            openCreateCommunityDialog.value = !openCreateCommunityDialog.value
-                        }
-                    ) {
-                        Icon(iconStyle.Add, "Create new member")
-                    }
-                }*/
                 topBar = {
                     TopAppBar(
                         title = { Text("Community members") },
@@ -89,24 +80,6 @@ class CommunityMembersScreen (val members: List<User>) :Screen {
                     )
             }
         }
-
-        /*when {
-            openCreateCommunityDialog.value -> {
-                CreateCommunityDialog(
-                    onDismissRequest = { openCreateCommunityDialog.value = false },
-                    onConfirmation = { name, loc ->
-                        openCreateCommunityDialog.value = false
-                        val comm = GreenTraceProviders.memberManager?.createCommunity(
-                            GreenTraceProviders.userProvider.userInfo(), name, loc
-                        )
-                        comm?.let { GreenTraceProviders.trackingProvider?.attachCommunity(it) }
-                        println("Community successfully created") // Add logic here to handle confirmation.
-                    },
-                    dialogTitle = "Create a new member",
-                    dialogText = "Enter the name and location of your new member - you may add a profile picture as well!"
-                )
-            }
-        }*/
     }
     //}
 
@@ -133,10 +106,12 @@ class CommunityMembersScreen (val members: List<User>) :Screen {
         modifier: Modifier = Modifier
     ) {
         val navigator = LocalNavigator.currentOrThrow
+        val context = LocalContext.current
+        val openRemoveMemberDialog = remember {mutableStateOf(false)}
 
-        Card(modifier = modifier.clickable {
+        Card(/*modifier = modifier.clickable {
             //navigator.push(UserScreen(member))
-        }) {
+        }*/) {
             //Column {
                 /*Image(
                     painter = painterResource(member.image),
@@ -173,29 +148,56 @@ class CommunityMembersScreen (val members: List<User>) :Screen {
                         modifier = Modifier.align(Alignment.CenterVertically),
                         style = MaterialTheme.typography.labelMedium
                     )
+                    //Icon(iconStyle.Delete, contentDescription = "remove member " + member.name + " from this community", modifier = Modifier.align(Alignment.CenterVertically))
+                    TextButton(
+                        onClick = { openRemoveMemberDialog.value = true },
+                        modifier = Modifier.padding(8.dp),
+                        colors = ButtonDefaults.buttonColors()
+                    ) {
+                        Icon(iconStyle.Delete, contentDescription = "remove member " + member.name + " from this community", modifier = Modifier.align(Alignment.CenterVertically))
+                    }
                 }
             //}
+        }
+
+        when {
+            openRemoveMemberDialog.value -> {
+                RemoveMemberDialog(
+                    onDismissRequest = { openRemoveMemberDialog.value = false },
+                    onConfirmation = { /*name, loc ->*/
+                        openRemoveMemberDialog.value = false
+                        /*val comm = GreenTraceProviders.memberManager?.createCommunity(
+                            GreenTraceProviders.userProvider.userInfo(), name, loc
+                        )
+                        comm?.let { GreenTraceProviders.trackingProvider?.attachCommunity(it) }*/
+                        Toast.makeText(context,"Member successfully removed.", Toast.LENGTH_SHORT).show()
+                        println("Member successfully removed") // Add logic here to handle confirmation.
+                    },
+                    memberName = member.name,
+                    dialogTitle = "Remove member",
+                    dialogText = "Remove " + member.name + " from this community?"
+                )
+            }
         }
     }
     //@OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun CreateCommunityDialog(
+    fun RemoveMemberDialog(
         onDismissRequest: () -> Unit,
-        onConfirmation: (String, String) -> Unit,
+        onConfirmation: () -> Unit,
         //painter: Painter,
         //imageDescription: String,
+        memberName: String,
         dialogTitle: String,
         dialogText: String
     ) {
-        var newCommunityName by remember {mutableStateOf("")}
-        var newCommunityLocation by remember {mutableStateOf("")}
 
         Dialog(onDismissRequest = { onDismissRequest() }) {
             // Draw a rectangle shape with rounded corners inside the dialog
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(500.dp)
+                    .height(350.dp)
                     .padding(16.dp),
                 shape = RoundedCornerShape(16.dp),
             ) {
@@ -205,13 +207,6 @@ class CommunityMembersScreen (val members: List<User>) :Screen {
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    /*Image(
-                        painter = painter,
-                        contentDescription = imageDescription,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier
-                            .height(160.dp)
-                    )*/
                     Text(
                         text = dialogTitle,
                         modifier = Modifier.padding(16.dp),
@@ -223,21 +218,6 @@ class CommunityMembersScreen (val members: List<User>) :Screen {
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center
                     )
-                    TextField(
-                        value = newCommunityName,
-                        onValueChange = {newCommunityName = it},
-                        label = {Text("Name")},
-                        modifier = Modifier.padding(10.dp),
-                        singleLine = true
-                    )
-                    TextField(
-                        value = newCommunityLocation,
-                        onValueChange = {newCommunityLocation = it},
-                        label = {Text("Location")},
-                        modifier = Modifier.padding(10.dp),
-                        singleLine = true
-                    )
-                    ImageSelectorComponent()
                     Row(
                         modifier = Modifier
                             .fillMaxWidth(),
@@ -250,12 +230,11 @@ class CommunityMembersScreen (val members: List<User>) :Screen {
                             Text("Cancel")
                         }
                         TextButton(
-                            onClick = { onConfirmation(newCommunityName, newCommunityLocation) },
+                            onClick = { onConfirmation() },
                             modifier = Modifier.padding(8.dp),
-                            enabled = newCommunityName.isNotBlank(),
                             colors = ButtonDefaults.buttonColors()
                         ) {
-                            Text("Create")
+                            Text("Remove")
                         }
                     }
                 }
