@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -49,7 +50,7 @@ class AuthScreen : Screen {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = "Start Your Journey with GreenTrace")
+            Text(text = "Start Your Journey with GreenTrace", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(start = 10.dp))
 
             Spacer(modifier = Modifier.height(32.dp)) // Add space between the buttons
             // Email input field
@@ -70,7 +71,7 @@ class AuthScreen : Screen {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
 
-            Spacer(modifier = Modifier.height(16.dp)) // Add space between the text field and buttons
+            Spacer(modifier = Modifier.height(24.dp)) // Add space between the text field and buttons
 
             // Sign In button
             Button(
