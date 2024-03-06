@@ -30,3 +30,4 @@
 | 2024/03/04 |       |          |         |        |      | 2     | LearnScreen                                                                                                                                 |
 | 2024/03/04 |   6   |          |         |        |      |       | Working on CommunityScreen and CommunityMembersScreen                                                                                       |
 | 2024/03/05 |  1.5  |          |         |        |      |       | "Edit community" and "remove member from community" buttons for community creator (UI only)                                                 |
+| 2024/03/05 |       |          |         |   1.5  |      |       | Implemented Learn Page UI                                                                                                                   |
