@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
@@ -38,21 +39,21 @@ class NewActivityScreen : Screen {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(text = "Create a New Activity", style = MaterialTheme.typography.headlineMedium)
-            Spacer(modifier = Modifier.height(16.dp))
 
-            ActivityTypeInput(activityType = activityType) { selectedType ->
-                // Converts the input to lowercase for comparison and stores it capitalized
-                activityType = selectedType.capitalize()
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActivityButton("Meal", activityType) { activityType = it }
+                ActivityButton("Commute", activityType) { activityType = it }
+                ActivityButton("Purchase", activityType) { activityType = it }
             }
 
-            when (activityType.lowercase()) { // Compares in lowercase
-                "meal" -> MealSection(foodType) { newFoodType -> foodType = newFoodType }
-                "commute" -> CommuteSection(transportationMode, departure, destination, stops) { stops.add("") }
-                "purchase" -> PurchaseSection(plasticBagUsed) { newPlasticBagUsed -> plasticBagUsed = newPlasticBagUsed }
+            when (activityType) {
+                "Meal" -> MealSection(foodType) { newFoodType -> foodType = newFoodType }
+                "Commute" -> CommuteSection(transportationMode, departure, destination, stops) { stops.add("") }
+                "Purchase" -> PurchaseSection(plasticBagUsed) { newPlasticBagUsed -> plasticBagUsed = newPlasticBagUsed }
             }
 
             DatePickerButton(context, date) { selectedDate -> date = selectedDate }
@@ -60,7 +61,6 @@ class NewActivityScreen : Screen {
 
             Button(
                 onClick = {
-                    // Resets all input fields
                     activityType = ""
                     date = LocalDate.now()
                     time = LocalTime.now()
@@ -81,16 +81,17 @@ class NewActivityScreen : Screen {
 }
 
 @Composable
-fun ActivityTypeInput(activityType: String, onActivityTypeChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = activityType,
-        onValueChange = onActivityTypeChange,
-        label = { Text("Activity Type") },
-        modifier = Modifier.fillMaxWidth(),
-        singleLine = true
-    )
+fun ActivityButton(text: String, selectedActivity: String, onClick: (String) -> Unit) {
+    val isSelected = text == selectedActivity
+    Button(
+        onClick = { onClick(text) },
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (isSelected) Color.Gray else Color.LightGray
+        )
+    ) {
+        Text(text)
+    }
 }
-
 @Composable
 fun MealSection(foodType: String, onFoodTypeChange: (String) -> Unit) {
     OutlinedTextField(
