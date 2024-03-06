@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
+import com.example.yourapplication.NewActivityScreen
 
 object NewActivityTab:Tab {
     override val options: TabOptions
@@ -22,6 +23,6 @@ object NewActivityTab:Tab {
 
     @Composable
     override fun Content() {
-//       Navigator(NewActivityScreen())
+       Navigator(NewActivityScreen())
     }
 }
