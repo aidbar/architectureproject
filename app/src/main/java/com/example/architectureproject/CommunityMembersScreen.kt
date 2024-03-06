@@ -74,6 +74,7 @@ class CommunityMembersScreen (val isCreator: Boolean, val members: List<User>) :
             ) {padding ->
                     MembersList(
                         membersList = members, //GreenTraceProviders.trackingProvider!!.getCommunities(),
+                        isCreator = isCreator,
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(padding)
@@ -86,12 +87,14 @@ class CommunityMembersScreen (val isCreator: Boolean, val members: List<User>) :
     @Composable
     fun MembersList(
         membersList: List<User>,
+        isCreator: Boolean,
         modifier: Modifier = Modifier
     ) {
         LazyColumn(modifier = modifier) {
             items(membersList) { member ->
                 MemberCard(
                     member = member,
+                    isCreator = isCreator,
                     modifier = Modifier
                         .padding(8.dp)
                         .clickable { println("click event received") }
@@ -103,6 +106,7 @@ class CommunityMembersScreen (val isCreator: Boolean, val members: List<User>) :
     @Composable
     fun MemberCard(
         member: User,
+        isCreator: Boolean,
         modifier: Modifier = Modifier
     ) {
         val navigator = LocalNavigator.currentOrThrow
@@ -149,12 +153,18 @@ class CommunityMembersScreen (val isCreator: Boolean, val members: List<User>) :
                         style = MaterialTheme.typography.labelMedium
                     )
                     //Icon(iconStyle.Delete, contentDescription = "remove member " + member.name + " from this community", modifier = Modifier.align(Alignment.CenterVertically))
-                    TextButton(
-                        onClick = { openRemoveMemberDialog.value = true },
-                        modifier = Modifier.padding(8.dp),
-                        colors = ButtonDefaults.buttonColors()
-                    ) {
-                        Icon(iconStyle.Delete, contentDescription = "remove member " + member.name + " from this community", modifier = Modifier.align(Alignment.CenterVertically))
+                    if (isCreator) {
+                        TextButton(
+                            onClick = { openRemoveMemberDialog.value = true },
+                            modifier = Modifier.padding(8.dp),
+                            colors = ButtonDefaults.buttonColors()
+                        ) {
+                            Icon(
+                                iconStyle.Delete,
+                                contentDescription = "remove member " + member.name + " from this community",
+                                modifier = Modifier.align(Alignment.CenterVertically)
+                            )
+                        }
                     }
                 }
             //}
