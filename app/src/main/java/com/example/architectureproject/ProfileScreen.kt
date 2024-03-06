@@ -69,13 +69,11 @@ class ProfileScreen : Screen {
                         tint = Color.Black
                     )
                 }
-
-
             }
 
             Text(
-                text = "APP",
-                modifier = Modifier.padding(top = 16.dp),
+                text = "APP Settings",
+                modifier = Modifier.padding(top = 16.dp, start = 10.dp, bottom = 10.dp),
                 fontSize = 16.sp
             )
 
