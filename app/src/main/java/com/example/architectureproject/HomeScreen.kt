@@ -57,15 +57,64 @@ import com.patrykandpatrick.vico.core.chart.line.LineChart
 import com.patrykandpatrick.vico.core.component.shape.shader.DynamicShaders
 import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
 import com.patrykandpatrick.vico.core.entry.entryOf
+import android.content.ContentValues.TAG
+import android.util.Log
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 enum class GraphOption {
     Weekly, Monthly, Yearly
 }
 class HomeScreen :Screen{
+    private var isLoading by mutableStateOf<Boolean>(true)
+
+    private val db = FirebaseFirestore.getInstance()
+    private val user = FirebaseAuth.getInstance().currentUser
+
+    private var userName by mutableStateOf<String?>(null)
     init {
         // Load in dummy data
         DummyTrackingData(GreenTraceProviders.impactProvider)
             .addTo(GreenTraceProviders.trackingProvider!!)
+
+        // Fetch currently authenticated user's document
+        fetchUserDocument()
+    }
+
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun fetchUserDocument() {
+        val uid = user?.uid
+        if (uid != null) {
+            val userDocRef = db.collection("users").document(uid)
+
+            GlobalScope.launch(Dispatchers.Main) {
+                try {
+                    val document = userDocRef.get().await()
+                    if (document != null && document.exists()) {
+                        Log.d(TAG, "Successfully fetched user document")
+                        userName = document.getString("name")
+
+                        // Here retrieve other required user data from the document
+
+                    } else {
+                        Log.e(TAG, "User document doesn't exist or is null")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to fetch user document", e)
+                } finally {
+                    // Set loading state to false when fetching user document is complete
+                    isLoading = false
+                }
+            }
+        }
     }
 
     private fun getData(option: GraphOption) =
@@ -125,181 +174,199 @@ class HomeScreen :Screen{
             )
         )
 
-        LazyColumn(
-            modifier = Modifier
-                .background(Color.White)
-                .fillMaxSize()
+        Box(
+            modifier = Modifier.fillMaxSize()
         ) {
-            item {
-                Column(
-                    modifier = Modifier.padding(start = 20.dp, top = 30.dp, end = 20.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape) // Wrap the icon in a circle
-                                .border(2.dp, Color.Black, CircleShape)
-                        ) {
-                            Icon(
-                                painter = rememberVectorPainter(Icons.Rounded.Person), // Use Icons.Rounded.Person
-                                contentDescription = "Person Icon",
-                                modifier = Modifier.size(32.dp),
-                                tint = Color.Black
+            LazyColumn(
+                modifier = Modifier
+                    .background(Color.White)
+                    .fillMaxSize()
+            ) {
+                item {
+                    Column(
+                        modifier = Modifier.padding(start = 20.dp, top = 30.dp, end = 20.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape) // Wrap the icon in a circle
+                                    .border(2.dp, Color.Black, CircleShape)
+                            ) {
+                                Icon(
+                                    painter = rememberVectorPainter(Icons.Rounded.Person), // Use Icons.Rounded.Person
+                                    contentDescription = "Person Icon",
+                                    modifier = Modifier.size(32.dp),
+                                    tint = Color.Black
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Welcome ${userName}!",
+                                color = Color(0xFF009688),
+                                fontSize = 25.sp,
+                                fontWeight = FontWeight.Bold
                             )
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Welcome ${user.name}!",  // text = "Welcome, "+auth.currentUser?.email
-                            color = Color(0xFF009688),
-                            fontSize = 25.sp,
-                            fontWeight = FontWeight.Bold
+                            text = chartTitle,
+                            color = Color.Black,
+                            fontSize = 15.sp,
+                            modifier = Modifier
+                                .padding(top = 25.dp, start = 80.dp)
                         )
+                        Spacer(modifier = Modifier.height(15.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                navigator?.push(PastActivitiesScreen())
+                            },
+                            elevation = 17.dp
+                        ) {
+                            Chart(
+                                chart = lineChart(
+                                    lines = datasetLineSpec
+                                ),
+                                chartModelProducer = chartModel,
+                                startAxis = rememberStartAxis(),
+                                bottomAxis = rememberBottomAxis(valueFormatter = valueFormatter),
+                            )
+                            Spacer(modifier = Modifier.height(100.dp))
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(30.dp)
+                                .border(
+                                    width = 1.dp,
+                                    color = Color.Black,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .background(color = Color.White, shape = RoundedCornerShape(8.dp)),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .background(
+                                        color = if (selectedTab.value == GraphOption.Weekly) Color(
+                                            0xFF009688
+                                        ) else Color.White,
+                                        shape = RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)
+                                    )
+                                    .weight(1f)
+                                    .padding(vertical = 5.dp)
+                            ) {
+                                Text(
+                                    text = "Weekly",
+                                    modifier = Modifier
+                                        .clickable {
+                                            selectedTab.value = GraphOption.Weekly
+                                        }
+                                        .padding(start = 28.dp, end = 10.dp),
+                                    color = Color.Black
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .background(color = Color.Black)
+                                    .width(1.dp)
+                                    .height(25.dp)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .background(
+                                        color = if (selectedTab.value == GraphOption.Monthly) Color(
+                                            0xFF009688
+                                        ) else Color.White
+                                    )
+                                    .weight(1f)
+                                    .padding(vertical = 5.dp)
+                            ) {
+                                Text(
+                                    text = "Monthly",
+                                    modifier = Modifier
+                                        .clickable {
+                                            selectedTab.value = GraphOption.Monthly
+                                        }
+                                        .padding(start = 25.dp, end = 25.dp),
+                                    color = Color.Black
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .background(color = Color.Black)
+                                    .width(1.dp)
+                                    .height(25.dp)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .background(
+                                        color = if (selectedTab.value == GraphOption.Yearly) Color(
+                                            0xFF009688
+                                        ) else Color.White,
+                                        shape = RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp)
+                                    )
+                                    .weight(1f)
+                                    .padding(vertical = 5.dp)
+                            ) {
+                                Text(
+                                    text = "Yearly",
+                                    modifier = Modifier
+                                        .clickable {
+                                            selectedTab.value = GraphOption.Yearly
+                                        }
+                                        .padding(start = 30.dp, end = 25.dp),
+                                    color = Color.Black
+                                )
+                            }
+                        }
                     }
-                    Text(
-                        text = chartTitle,
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(50.dp))
+                    androidx.compose.material.Text(
+                        text = "Tasks for you",
                         color = Color.Black,
-                        fontSize = 15.sp,
-                        modifier = Modifier
-                            .padding(top = 25.dp, start = 80.dp)
+                        fontSize = 20.sp,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 8.dp, start = 20.dp)
                     )
-                    Spacer(modifier = Modifier.height(15.dp))
+                }
+
+                items(items = tasks, itemContent = { item ->
                     Card(
-                        modifier = Modifier.fillMaxWidth().clickable { navigator?.push(PastActivitiesScreen()) },
-                        elevation = 17.dp
-                    ) {
-                        Chart(
-                            chart = lineChart(
-                                lines = datasetLineSpec
-                            ),
-                            chartModelProducer = chartModel,
-                            startAxis = rememberStartAxis(),
-                            bottomAxis = rememberBottomAxis(valueFormatter = valueFormatter),
-                        )
-                        Spacer(modifier = Modifier.height(100.dp))
-                    }
-                    Row(
+                        border = BorderStroke(3.dp, Color(0xFF009688)),
+                        shape = RoundedCornerShape(8.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(30.dp)
-                            .border(
-                                width = 1.dp,
-                                color = Color.Black,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .background(color = Color.White, shape = RoundedCornerShape(8.dp)),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                            .padding(top = 15.dp, start = 20.dp, end = 20.dp)
+                            .shadow(30.dp),
+                        elevation = 8.dp
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .background(
-                                    color = if (selectedTab.value == GraphOption.Weekly) Color(
-                                        0xFF009688
-                                    ) else Color.White,
-                                    shape = RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)
-                                )
-                                .weight(1f)
-                                .padding(vertical = 5.dp)
-                        ) {
-                            Text(
-                                text = "Weekly",
-                                modifier = Modifier
-                                    .clickable {
-                                        selectedTab.value = GraphOption.Weekly
-                                    }
-                                    .padding(start = 28.dp, end = 10.dp),
-                                color = Color.Black
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .background(color = Color.Black)
-                                .width(1.dp)
-                                .height(25.dp)
+                        androidx.compose.material.Text(
+                            text = item,
+                            color = Color.Black,
+                            fontSize = 16.sp,
+                            modifier = Modifier.padding(16.dp)
                         )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .background(
-                                    color = if (selectedTab.value == GraphOption.Monthly) Color(
-                                        0xFF009688
-                                    ) else Color.White
-                                )
-                                .weight(1f)
-                                .padding(vertical = 5.dp)
-                        ) {
-                            Text(
-                                text = "Monthly",
-                                modifier = Modifier
-                                    .clickable {
-                                        selectedTab.value = GraphOption.Monthly
-                                    }
-                                    .padding(start = 25.dp, end = 25.dp),
-                                color = Color.Black
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .background(color = Color.Black)
-                                .width(1.dp)
-                                .height(25.dp)
-                        )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .background(
-                                    color = if (selectedTab.value == GraphOption.Yearly) Color(
-                                        0xFF009688
-                                    ) else Color.White,
-                                    shape = RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp)
-                                )
-                                .weight(1f)
-                                .padding(vertical = 5.dp)
-                        ) {
-                            Text(
-                                text = "Yearly",
-                                modifier = Modifier
-                                    .clickable {
-                                        selectedTab.value = GraphOption.Yearly
-                                    }
-                                    .padding(start = 30.dp, end = 25.dp),
-                                color = Color.Black
-                            )
-                        }
                     }
-                }
+                })
             }
 
-            item {
-                Spacer(modifier = Modifier.height(50.dp))
-                androidx.compose.material.Text(
-                    text = "Tasks for you",
-                    color = Color.Black,
-                    fontSize = 20.sp,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 8.dp, start = 20.dp)
-                )
-            }
-
-            items(items = tasks, itemContent = { item ->
-                Card(
-                    border = BorderStroke(3.dp, Color(0xFF009688)),
-                    shape = RoundedCornerShape(8.dp),
+            // Show loading screen when fetching the user document from firestore
+            if (isLoading) {
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 15.dp, start = 20.dp, end = 20.dp)
-                        .shadow(30.dp),
-                    elevation = 8.dp
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.5f)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    androidx.compose.material.Text(
-                        text = item,
-                        color = Color.Black,
-                        fontSize = 16.sp,
-                        modifier = Modifier.padding(16.dp)
-                    )
+                    CircularProgressIndicator()
                 }
-            })
+            }
         }
     }
 }

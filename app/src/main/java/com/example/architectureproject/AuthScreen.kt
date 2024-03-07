@@ -122,8 +122,7 @@ class AuthScreen : Screen {
                             Toast.LENGTH_SHORT
                         ).show()
                     }else{
-                    auth.createUserWithEmailAndPassword(email, password)
-                        .addOnCompleteListener {
+                        auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener {
                                 if (it.isSuccessful) {
                                     sharedPref.edit().putString("id", it.result.user?.uid).apply()
                                     navigator?.push(NewAccountSetupScreen())

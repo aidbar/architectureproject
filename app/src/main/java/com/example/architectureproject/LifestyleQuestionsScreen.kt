@@ -50,6 +50,56 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.style.TextAlign
+import android.content.ContentValues
+import android.content.ContentValues.TAG
+import android.util.Log
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+
+data class UserInfo(
+    var name: String,
+    var bio: String,
+    var transportationMethod: String,
+    var difficultyWalking: String,
+    var diet: String,
+    var preference: String,
+    var shoppingMethod: String,
+    var influence: String
+)
+
+var userResponses: UserInfo = UserInfo("", "", "", "", "", "", "", "")
+
+fun createFirestoreUserDocument(userResponses: UserInfo) {
+    val db = FirebaseFirestore.getInstance()
+    val uid = FirebaseAuth.getInstance().currentUser?.uid
+
+    if (uid != null ){
+        val userDocRef = db.collection("users").document(uid)
+
+        // Create a hashmap of data to update
+        val update = hashMapOf<String, Any>(
+            "name" to userResponses.name,
+            "bio" to userResponses.bio,
+            "transportationMethod" to userResponses.transportationMethod,
+            "difficultyWalking" to userResponses.difficultyWalking,
+            "dietRestriction" to userResponses.diet,
+            "shoppingMethod" to userResponses.shoppingMethod,
+            "locallySourcedFoodPreference" to userResponses.preference,
+            "sustainableShoppingPreference" to userResponses.influence
+        )
+
+        // Create the document
+        userDocRef.set(update)
+            .addOnSuccessListener {
+                Log.d(TAG, "User document successfully added!")
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Error adding user document", e)
+            }
+    } else {
+        Log.e(ContentValues.TAG, "Couldn't find uid of currently authenticated user")
+    }
+}
 
 class NewAccountSetupScreen : Screen {
     @Composable
@@ -166,7 +216,11 @@ class ProfileSetupScreen : Screen {
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
-                onClick = { navigator?.push(StartQuestionsScreen(nameState.value.text)) },
+                onClick = {
+                    userResponses.name = nameState.value.text
+                    userResponses.bio = bioState.value.text
+                    navigator?.push(StartQuestionsScreen())
+                },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = nameState.value.text.isNotEmpty()
             ) {
@@ -176,7 +230,7 @@ class ProfileSetupScreen : Screen {
     }
 }
 
-data class StartQuestionsScreen(val username: String) : Screen {
+class StartQuestionsScreen() : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
@@ -192,7 +246,7 @@ data class StartQuestionsScreen(val username: String) : Screen {
                 color = Color(0xFF009688),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                text = "Welcome to GreenTrace, $username.\n",
+                text = "Welcome to GreenTrace, ${userResponses.name}.\n",
                 modifier = Modifier.padding(bottom = 16.dp)
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -209,6 +263,7 @@ data class StartQuestionsScreen(val username: String) : Screen {
 
             OutlinedButton(
                 onClick = {
+                    createFirestoreUserDocument(userResponses)
                     navigator?.push(MainScreen(false))
                 },
                 modifier = Modifier
@@ -320,7 +375,11 @@ class TransportationQScreen : Screen {
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Button(
-                    onClick = { navigator?.push(FoodQScreen()) },
+                    onClick = {
+                        userResponses.transportationMethod = selectedPrimaryOption
+                        userResponses.difficultyWalking = selectedSecondaryOption
+                        navigator?.push(FoodQScreen())
+                    },
                     modifier = Modifier.width(150.dp),
                     enabled = selectedPrimaryOption.isNotEmpty() && selectedSecondaryOption.isNotEmpty()
                 ) {
@@ -417,7 +476,7 @@ class FoodQScreen : Screen {
             ) {
                 OutlinedButton(
                     onClick = {
-                              navigator?.pop()
+                        navigator?.pop()
                     },
                     modifier = Modifier.width(150.dp)
                 ) {
@@ -425,7 +484,11 @@ class FoodQScreen : Screen {
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Button(
-                    onClick = { navigator?.push(ShoppingQScreen()) },
+                    onClick = {
+                        userResponses.diet = selectedRestrictionOption
+                        userResponses.preference = selectedFrequencyOption
+                        navigator?.push(ShoppingQScreen())
+                    },
                     modifier = Modifier.width(150.dp),
                     enabled = selectedFrequencyOption.isNotEmpty() && selectedRestrictionOption.isNotEmpty()
                 ) {
@@ -536,7 +599,13 @@ class ShoppingQScreen : Screen {
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Button(
-                    onClick = { navigator?.push(MainScreen(false))},
+                    onClick = {
+                        userResponses.shoppingMethod = selectedPrimaryOption
+                        userResponses.influence = selectedSecondaryOption
+
+                        createFirestoreUserDocument(userResponses)
+                        navigator?.push(MainScreen(false))
+                    },
                     modifier = Modifier.width(150.dp),
                     enabled = selectedPrimaryOption.isNotEmpty() && selectedSecondaryOption.isNotEmpty()
                 ) {
