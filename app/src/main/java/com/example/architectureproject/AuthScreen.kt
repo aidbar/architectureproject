@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -25,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -113,7 +115,6 @@ class AuthScreen : Screen {
 
             // Register button
             Button(
-
                 onClick = {
                     if (email.isEmpty() || password.isEmpty()){
                         Toast.makeText(
@@ -140,8 +141,18 @@ class AuthScreen : Screen {
             ) {
                 Text("Register")
             }
-        }
 
+            Spacer(modifier = Modifier.height(8.dp)) // Add space between the Register button and the Forgot Password text
+
+            // Forgot Password button
+            Text(
+                text = "Forgot Password?",
+                textDecoration = TextDecoration.Underline,
+                modifier = Modifier.clickable {
+                    navigator?.push(ResetPasswordScreen())
+                }
+            )
+        }
     }
 
 }
