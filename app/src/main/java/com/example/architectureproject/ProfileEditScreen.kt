@@ -1,5 +1,6 @@
 package com.example.architectureproject
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -28,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,13 +40,15 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import coil.compose.rememberAsyncImagePainter
+import kotlinx.coroutines.launch
 
 class ProfileEditScreen:Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        val username = remember { mutableStateOf(TextFieldValue()) }
-        val bio = remember { mutableStateOf(TextFieldValue()) }
+        val info = remember { GreenTraceProviders.userProvider!!.userInfo() }
+        val alias = remember { mutableStateOf(TextFieldValue(info.name)) }
+        val bio = remember { mutableStateOf(TextFieldValue(info.bio)) }
 
         Column(modifier = Modifier
             .fillMaxSize()
@@ -93,7 +97,9 @@ class ProfileEditScreen:Screen {
                 modifier = Modifier.fillMaxWidth(), // This will make the Box fill the entire screen
                 contentAlignment = Alignment.Center // This will align the IconButton in the center of the Box
             ) {
-                IconButton(onClick = { /* Upload image */ }, modifier = Modifier.offset(40.dp,-30.dp).background(MaterialTheme.colorScheme.primary, CircleShape)) {
+                IconButton(onClick = { /* Upload image */ }, modifier = Modifier
+                    .offset(40.dp, (-30).dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)) {
                     Icon(Icons.Filled.Edit, contentDescription = "Edit Profile Picture",
                         modifier = Modifier.size(
                             ButtonDefaults.IconSize), tint = Color.White)
@@ -103,10 +109,10 @@ class ProfileEditScreen:Screen {
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = username.value,
-                onValueChange = { username.value = it },
+                value = alias.value,
+                onValueChange = { alias.value = it },
                 shape = RoundedCornerShape(32.dp),
-                placeholder = { Text(text = "username") },
+                placeholder = { Text(text = "alias") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -122,11 +128,41 @@ class ProfileEditScreen:Screen {
                 modifier = Modifier.fillMaxWidth()
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            val age = remember { mutableStateOf(TextFieldValue(info.age.toString())) }
+            OutlinedTextField(
+                value = age.value,
+                onValueChange = { age.value = it },
+                shape = RoundedCornerShape(32.dp),
+                placeholder = { Text(text = "age") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
             Spacer(modifier = Modifier.height(16.dp))
 
+            val scope = rememberCoroutineScope()
             Button(
-                onClick = {navigator?.pop()},
-                modifier = Modifier.align(Alignment.End).fillMaxWidth()
+                onClick = {
+                    val ageStr = age.value.text.trim()
+                    if (age.value.text.contains(Regex.fromLiteral("[^0-9]"))) {
+                        Log.e("ProfileSetupScreen", "bad age value: $ageStr")
+                        return@Button
+                    }
+
+                    scope.launch {
+                        GreenTraceProviders.userProvider?.userProfile(
+                            alias.value.text,
+                            bio.value.text,
+                            ageStr.toInt()
+                        )?.let { Log.e("ProfileEditScreen", it) }
+                        navigator?.pop()
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .fillMaxWidth()
             ) {
                 Text("Save Changes")
             }

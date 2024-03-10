@@ -1,12 +1,11 @@
 package com.example.architectureproject
 
-import androidx.compose.foundation.background
+import android.util.Log
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
@@ -38,68 +36,18 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.text.style.TextAlign
-import android.content.ContentValues
-import android.content.ContentValues.TAG
-import android.util.Log
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.example.architectureproject.profile.UserLifestyle
+import kotlinx.coroutines.launch
 
-data class UserInfo(
-    var name: String,
-    var bio: String,
-    var transportationMethod: String,
-    var difficultyWalking: String,
-    var diet: String,
-    var preference: String,
-    var shoppingMethod: String,
-    var influence: String
-)
-
-var userResponses: UserInfo = UserInfo("", "", "", "", "", "", "", "")
-
-fun createFirestoreUserDocument(userResponses: UserInfo) {
-    val db = FirebaseFirestore.getInstance()
-    val uid = FirebaseAuth.getInstance().currentUser?.uid
-
-    if (uid != null ){
-        val userDocRef = db.collection("users").document(uid)
-
-        // Create a hashmap of data to update
-        val update = hashMapOf<String, Any>(
-            "name" to userResponses.name,
-            "bio" to userResponses.bio,
-            "transportationMethod" to userResponses.transportationMethod,
-            "difficultyWalking" to userResponses.difficultyWalking,
-            "dietRestriction" to userResponses.diet,
-            "shoppingMethod" to userResponses.shoppingMethod,
-            "locallySourcedFoodPreference" to userResponses.preference,
-            "sustainableShoppingPreference" to userResponses.influence
-        )
-
-        // Create the document
-        userDocRef.set(update)
-            .addOnSuccessListener {
-                Log.d(TAG, "User document successfully added!")
-            }
-            .addOnFailureListener { e ->
-                Log.w(TAG, "Error adding user document", e)
-            }
-    } else {
-        Log.e(ContentValues.TAG, "Couldn't find uid of currently authenticated user")
-    }
-}
+private val userResponses = UserLifestyle.Builder()
 
 class NewAccountSetupScreen : Screen {
     @Composable
@@ -146,6 +94,7 @@ class ProfileSetupScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
+        val scope = rememberCoroutineScope()
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -213,13 +162,36 @@ class ProfileSetupScreen : Screen {
                 placeholder = { Text(text = "Bio") }
             )
 
+            val ageState = remember { mutableStateOf(TextFieldValue()) }
+            OutlinedTextField(
+                value = ageState.value,
+                onValueChange = { ageState.value = it },
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                shape = RoundedCornerShape(32.dp),
+                placeholder = { Text(text = "Age") }
+            )
+
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
                 onClick = {
-                    userResponses.name = nameState.value.text
-                    userResponses.bio = bioState.value.text
-                    navigator?.push(StartQuestionsScreen())
+                    val ageStr = ageState.value.text.trim()
+                    if (ageState.value.text.contains(Regex.fromLiteral("[^0-9]"))) {
+                        Log.e("ProfileSetupScreen", "bad age value: $ageStr")
+                        return@Button
+                    }
+
+                    scope.launch {
+                        GreenTraceProviders.userProvider?.userProfile(
+                            nameState.value.text,
+                            bioState.value.text,
+                            ageStr.toInt()
+                        )?.let { Log.e("updateUserProfile", it) }
+                        navigator?.push(StartQuestionsScreen())
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = nameState.value.text.isNotEmpty()
@@ -246,7 +218,7 @@ class StartQuestionsScreen() : Screen {
                 color = Color(0xFF009688),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                text = "Welcome to GreenTrace, ${userResponses.name}.\n",
+                text = "Welcome to GreenTrace, ${GreenTraceProviders.userProvider!!.userInfo().name}.\n",
                 modifier = Modifier.padding(bottom = 16.dp)
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -263,7 +235,6 @@ class StartQuestionsScreen() : Screen {
 
             OutlinedButton(
                 onClick = {
-                    createFirestoreUserDocument(userResponses)
                     navigator?.push(MainScreen(false))
                 },
                 modifier = Modifier
@@ -289,18 +260,18 @@ class TransportationQScreen : Screen {
         val navigator = LocalNavigator.current
         var expanded by remember { mutableStateOf(false) }
         val primary_options = listOf(
-            "Walking",
-            "Cycling",
-            "Public Transportation (Bus, Train, Subway)",
-            "Personal Vehicle (Car, Motorcycle)",
-            "Carpooling",
-            "Remote/Work from Home (No Commute)"
+            "Walking" to UserLifestyle.TransportationMethod.Walk,
+            "Cycling" to UserLifestyle.TransportationMethod.Cycle,
+            "Public Transportation (Bus, Train, Subway)" to UserLifestyle.TransportationMethod.PublicTransport,
+            "Personal Vehicle (Car, Motorcycle)" to UserLifestyle.TransportationMethod.PersonalVehicle,
+            "Carpooling" to UserLifestyle.TransportationMethod.Carpool,
+            "Remote/Work from Home (No Commute)" to UserLifestyle.TransportationMethod.None
         )
         val secondary_options = listOf(
-            "Yes", "No"
+            "Yes" to true, "No" to false
         )
-        var selectedPrimaryOption by remember { mutableStateOf("") }
-        var selectedSecondaryOption by remember { mutableStateOf("") }
+        var selectedPrimaryOption by remember { mutableStateOf("" to userResponses.transportationPreference) }
+        var selectedSecondaryOption by remember { mutableStateOf("" to false) }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -332,7 +303,7 @@ class TransportationQScreen : Screen {
                         selected = selectedPrimaryOption == option,
                         onClick = { selectedPrimaryOption = option }
                     )
-                    Text(text = option, modifier = Modifier.padding(start = 8.dp))
+                    Text(text = option.first, modifier = Modifier.padding(start = 8.dp))
                 }
             }
             
@@ -354,7 +325,7 @@ class TransportationQScreen : Screen {
                         selected = selectedSecondaryOption == option,
                         onClick = { selectedSecondaryOption = option }
                     )
-                    Text(text = option, modifier = Modifier.padding(start = 8.dp))
+                    Text(text = option.first, modifier = Modifier.padding(start = 8.dp))
                 }
             }
 
@@ -376,12 +347,14 @@ class TransportationQScreen : Screen {
                 Spacer(modifier = Modifier.width(16.dp))
                 Button(
                     onClick = {
-                        userResponses.transportationMethod = selectedPrimaryOption
-                        userResponses.difficultyWalking = selectedSecondaryOption
+                        userResponses.transportationPreference = selectedPrimaryOption.second
+                        if (selectedSecondaryOption.second) {
+                            userResponses.disabilities = setOf(UserLifestyle.Disability.DifficultyWalking)
+                        }
                         navigator?.push(FoodQScreen())
                     },
                     modifier = Modifier.width(150.dp),
-                    enabled = selectedPrimaryOption.isNotEmpty() && selectedSecondaryOption.isNotEmpty()
+                    enabled = selectedPrimaryOption.first.isNotEmpty() && selectedSecondaryOption.first.isNotEmpty()
                 ) {
                     Text("NEXT")
                 }
@@ -398,19 +371,19 @@ class FoodQScreen : Screen {
         val navigator = LocalNavigator.current
         var expanded by remember { mutableStateOf(false) }
         val restriction_options = listOf(
-            "No Restrictions",
-            "Vegetarian (No Meat)",
-            "Vegan (No Animal Products)",
-            "Pescatarian (Fish, No Other Meat)"
+            "No Restrictions" to UserLifestyle.Diet.None,
+            "Vegetarian (No Meat)" to UserLifestyle.Diet.Vegetarian,
+            "Vegan (No Animal Products)" to UserLifestyle.Diet.Vegan,
+            "Pescatarian (Fish, No Other Meat)" to UserLifestyle.Diet.Pescatarian
         )
         val frequency_options = listOf(
-            "Always",
-            "Sometimes",
-            "Rarely",
-            "Never",
+            "Always" to UserLifestyle.Frequency.Always,
+            "Sometimes" to UserLifestyle.Frequency.Sometimes,
+            "Rarely" to UserLifestyle.Frequency.Rarely,
+            "Never" to UserLifestyle.Frequency.Never
         )
-        var selectedRestrictionOption by remember { mutableStateOf("") }
-        var selectedFrequencyOption by remember { mutableStateOf("") }
+        var selectedRestrictionOption by remember { mutableStateOf("" to userResponses.diet) }
+        var selectedFrequencyOption by remember { mutableStateOf("" to userResponses.locallySourcedFoodPreference) }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -441,7 +414,7 @@ class FoodQScreen : Screen {
                         selected = selectedRestrictionOption == option,
                         onClick = { selectedRestrictionOption = option }
                     )
-                    Text(text = option, modifier = Modifier.padding(start = 8.dp))
+                    Text(text = option.first, modifier = Modifier.padding(start = 8.dp))
                 }
             }
 
@@ -463,7 +436,7 @@ class FoodQScreen : Screen {
                         selected = selectedFrequencyOption == option,
                         onClick = { selectedFrequencyOption = option }
                     )
-                    Text(text = option, modifier = Modifier.padding(start = 8.dp))
+                    Text(text = option.first, modifier = Modifier.padding(start = 8.dp))
                 }
             }
 
@@ -485,12 +458,12 @@ class FoodQScreen : Screen {
                 Spacer(modifier = Modifier.width(16.dp))
                 Button(
                     onClick = {
-                        userResponses.diet = selectedRestrictionOption
-                        userResponses.preference = selectedFrequencyOption
+                        userResponses.diet = selectedRestrictionOption.second
+                        userResponses.locallySourcedFoodPreference = selectedFrequencyOption.second
                         navigator?.push(ShoppingQScreen())
                     },
                     modifier = Modifier.width(150.dp),
-                    enabled = selectedFrequencyOption.isNotEmpty() && selectedRestrictionOption.isNotEmpty()
+                    enabled = selectedFrequencyOption.first.isNotEmpty() && selectedRestrictionOption.first.isNotEmpty()
                 ) {
                     Text("NEXT")
                 }
@@ -505,18 +478,19 @@ class ShoppingQScreen : Screen {
         val navigator = LocalNavigator.current
         var expanded by remember { mutableStateOf(false) }
         val primary_options = listOf(
-            "In-Store",
-            "Online",
-            "Combination of Both"
+            "In-Store" to UserLifestyle.ShoppingMethod.InStore,
+            "Online" to UserLifestyle.ShoppingMethod.Online,
+            "Combination of Both" to UserLifestyle.ShoppingMethod.Both
         )
         val secondary_options = listOf(
-            "Greatly",
-            "Moderately",
-            "Slightly",
-            "Not at All",
+            "Greatly" to UserLifestyle.Frequency.Always,
+            "Moderately" to UserLifestyle.Frequency.Sometimes,
+            "Slightly" to UserLifestyle.Frequency.Rarely,
+            "Not at All" to UserLifestyle.Frequency.Never,
         )
-        var selectedPrimaryOption by remember { mutableStateOf("") }
-        var selectedSecondaryOption by remember { mutableStateOf("") }
+        var selectedPrimaryOption by remember { mutableStateOf("" to userResponses.shoppingPreference) }
+        var selectedSecondaryOption by remember { mutableStateOf("" to userResponses.sustainabilityInfluence) }
+        val scope = rememberCoroutineScope()
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -553,7 +527,7 @@ class ShoppingQScreen : Screen {
                             selected = selectedPrimaryOption == option,
                             onClick = { selectedPrimaryOption = option }
                         )
-                        Text(text = option, modifier = Modifier.padding(start = 8.dp))
+                        Text(text = option.first, modifier = Modifier.padding(start = 8.dp))
                     }
                 }
 
@@ -576,7 +550,7 @@ class ShoppingQScreen : Screen {
                             selected = selectedSecondaryOption == option,
                             onClick = { selectedSecondaryOption = option }
                         )
-                        Text(text = option, modifier = Modifier.padding(start = 8.dp))
+                        Text(text = option.first, modifier = Modifier.padding(start = 8.dp))
                     }
                 }
             }
@@ -600,14 +574,17 @@ class ShoppingQScreen : Screen {
                 Spacer(modifier = Modifier.width(16.dp))
                 Button(
                     onClick = {
-                        userResponses.shoppingMethod = selectedPrimaryOption
-                        userResponses.influence = selectedSecondaryOption
+                        userResponses.shoppingPreference = selectedPrimaryOption.second
+                        userResponses.sustainabilityInfluence = selectedSecondaryOption.second
 
-                        createFirestoreUserDocument(userResponses)
-                        navigator?.push(MainScreen(false))
+                        scope.launch {
+                            GreenTraceProviders.userProvider!!.userLifestyle(userResponses.build())
+                                ?.let { Log.e("updateLifestyle", it) }
+                            navigator?.push(MainScreen(false))
+                        }
                     },
                     modifier = Modifier.width(150.dp),
-                    enabled = selectedPrimaryOption.isNotEmpty() && selectedSecondaryOption.isNotEmpty()
+                    enabled = selectedPrimaryOption.first.isNotEmpty() && selectedSecondaryOption.first.isNotEmpty()
                 ) {
                     Text("COMPLETE")
                 }

@@ -39,17 +39,6 @@ import kotlinx.coroutines.launch
 class AuthScreen : Screen {
     @Composable
     override fun Content() {
-        var isLoading by remember { mutableStateOf(true) }
-        LaunchedEffect(Unit) {
-            GreenTraceProviders.initUserProvider()
-            isLoading = false
-        }
-
-        if (isLoading) {
-            LoadingScreen()
-            return
-        }
-
         val scope = rememberCoroutineScope()
         val provider = GreenTraceProviders.userProvider!!
         val navigator = LocalNavigator.current
