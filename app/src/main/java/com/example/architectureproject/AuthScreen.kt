@@ -18,9 +18,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,16 +34,18 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
 
 class AuthScreen : Screen {
     @Composable
     override fun Content() {
+        val scope = rememberCoroutineScope()
+        val provider = GreenTraceProviders.userProvider!!
         val navigator = LocalNavigator.current
 
         var email by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
         val context = GreenTraceProviders.applicationContext!!
-        var auth = FirebaseAuth.getInstance();
 
         val sharedPref = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
 
@@ -85,24 +89,20 @@ class AuthScreen : Screen {
                             Toast.LENGTH_SHORT
                         ).show()
                     }else{
-                        auth.signInWithEmailAndPassword(email,password).addOnCompleteListener {
-                            if (it.isSuccessful) {
-                                it.result.user?.uid?.let { it1 ->
-                                    Log.d("uid",
-                                        it1
-                                    )
-                                }
-//                                Log.d("user",auth.currentUser.toString())
-                                sharedPref.edit().putString("id", it.result.user?.uid)
-                                    .apply()
-                                navigator?.push(MainScreen(false))
-                            } else {
+                        scope.launch {
+                            val err = provider.loginUser(email, password)
+                            if (err != null) {
                                 Toast.makeText(
                                     context,
-                                    "Error: " + it.exception?.message,
+                                    "Error: $err",
                                     Toast.LENGTH_SHORT
                                 ).show()
+                                return@launch
                             }
+
+                            sharedPref.edit().putString("id", provider.uid())
+                                .apply()
+                            navigator?.push(MainScreen(false))
                         }
                     }
                 },
@@ -123,18 +123,20 @@ class AuthScreen : Screen {
                             Toast.LENGTH_SHORT
                         ).show()
                     }else{
-                        auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener {
-                                if (it.isSuccessful) {
-                                    sharedPref.edit().putString("id", it.result.user?.uid).apply()
-                                    navigator?.push(NewAccountSetupScreen())
-                                } else {
-                                    Toast.makeText(
-                                        context,
-                                        "Error: " + it.exception?.message,
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
+                        scope.launch {
+                            val error = provider.createAndLoginUser(email, password)
+                            if (error != null) {
+                                Toast.makeText(
+                                    context,
+                                    "Error: " + error,
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                return@launch
                             }
+
+                            sharedPref.edit().putString("id", provider.uid()).apply()
+                            navigator?.push(NewAccountSetupScreen())
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()

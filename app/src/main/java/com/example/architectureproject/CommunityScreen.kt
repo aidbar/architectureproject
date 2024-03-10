@@ -85,7 +85,7 @@ class CommunityScreen :Screen {
                     onConfirmation = { name, loc ->
                         openCreateCommunityDialog.value = false
                         val comm = GreenTraceProviders.communityManager?.createCommunity(
-                            GreenTraceProviders.userProvider.userInfo(), name, loc
+                            GreenTraceProviders.userProvider!!.userInfo(), name, loc
                         )
                         comm?.let { GreenTraceProviders.trackingProvider?.attachCommunity(it) }
                         println("Community successfully created") // Add logic here to handle confirmation.

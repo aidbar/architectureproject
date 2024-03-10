@@ -31,8 +31,8 @@ class DemoCommunityManager: CommunityManager {
             "Demo Community 1",
             "demo1",
             "Waterloo, ON, CA",
-            GreenTraceProviders.userProvider.userInfo(),
-            hashSetOf(GreenTraceProviders.userProvider.userInfo()),
+            GreenTraceProviders.userProvider!!.userInfo(),
+            hashSetOf(GreenTraceProviders.userProvider!!.userInfo()),
             makeInviteLink("demo1"),
             R.drawable.image1
         ))

@@ -55,13 +55,13 @@ data class Article(
     val title: String,
     val url: String,
 //    val backgroundUrl: String
-)
+) : java.io.Serializable
 
 data class Quiz(
     val title: String,
     val description: String,
 //    val backgroundUrl: String
-)
+) : java.io.Serializable
 
 class LearnScreen : Screen {
 

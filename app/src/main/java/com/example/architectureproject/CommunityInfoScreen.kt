@@ -61,7 +61,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
         var userIsTheCreator by remember {mutableStateOf(false)}
         val openEditCommunityDialog = remember{mutableStateOf(false)}
 
-        if (GreenTraceProviders.userProvider.userInfo().uid == info.owner.uid) {
+        if (GreenTraceProviders.userProvider?.userInfo()?.uid == info.owner.uid) {
             userIsTheCreator = true
         }
 
@@ -181,7 +181,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         onConfirmation = { name, loc ->
                             openEditCommunityDialog.value = false
                             val comm = GreenTraceProviders.communityManager?.createCommunity(
-                                GreenTraceProviders.userProvider.userInfo(), name, loc
+                                GreenTraceProviders.userProvider!!.userInfo(), name, loc
                             )
                             comm?.let { GreenTraceProviders.trackingProvider?.attachCommunity(it) }
                             println("Community successfully created") // Add logic here to handle confirmation.
