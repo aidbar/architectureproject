@@ -13,6 +13,7 @@ import cafe.adriel.voyager.navigator.Navigator
 import com.example.architectureproject.community.CommunityManager
 import com.example.architectureproject.community.demo.DemoCommunityManager
 import com.example.architectureproject.profile.FirebaseUserProvider
+import com.example.architectureproject.profile.User
 import com.example.architectureproject.profile.UserProvider
 import com.example.architectureproject.tracking.TrackingDataProvider
 import com.example.architectureproject.tracking.TrackingImpactProvider
@@ -21,7 +22,7 @@ import com.example.architectureproject.tracking.demo.DummyTrackingImpactProvider
 import com.example.architectureproject.ui.theme.ArchitectureProjectTheme
 
 object GreenTraceProviders {
-    val userProvider: UserProvider = FirebaseUserProvider()
+    var userProvider: UserProvider? = null
     var communityManager: CommunityManager? = null
     val impactProvider: TrackingImpactProvider = DummyTrackingImpactProvider()
     var applicationContext: Context? = null
@@ -34,10 +35,15 @@ object GreenTraceProviders {
         this.applicationContext = applicationContext
     }
 
-    fun initTracking() {
+    suspend fun initUserProvider() {
+        userProvider = userProvider ?: FirebaseUserProvider.new()
+    }
+
+    suspend fun initTracking() {
         if (trackingProvider != null) return
-        communityManager =  DemoCommunityManager()
-        trackingProvider = DummyTrackingDataProvider(userProvider.userInfo(), communityManager!!)
+        initUserProvider()
+        communityManager = DemoCommunityManager()
+        trackingProvider = DummyTrackingDataProvider(userProvider!!.userInfo(), communityManager!!)
     }
 }
 

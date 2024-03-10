@@ -74,47 +74,10 @@ enum class GraphOption {
     Weekly, Monthly, Yearly
 }
 class HomeScreen :Screen{
-    private var isLoading by mutableStateOf<Boolean>(true)
-
-    private val db = FirebaseFirestore.getInstance()
-    private val user = FirebaseAuth.getInstance().currentUser
-
-    private var userName by mutableStateOf<String?>(null)
     init {
         // Load in dummy data
         DummyTrackingData(GreenTraceProviders.impactProvider)
             .addTo(GreenTraceProviders.trackingProvider!!)
-
-        // Fetch currently authenticated user's document
-        fetchUserDocument()
-    }
-
-    @OptIn(DelicateCoroutinesApi::class)
-    private fun fetchUserDocument() {
-        val uid = user?.uid
-        if (uid != null) {
-            val userDocRef = db.collection("users").document(uid)
-
-            GlobalScope.launch(Dispatchers.Main) {
-                try {
-                    val document = userDocRef.get().await()
-                    if (document != null && document.exists()) {
-                        Log.d(TAG, "Successfully fetched user document")
-                        userName = document.getString("name")
-
-                        // Here retrieve other required user data from the document
-
-                    } else {
-                        Log.e(TAG, "User document doesn't exist or is null")
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to fetch user document", e)
-                } finally {
-                    // Set loading state to false when fetching user document is complete
-                    isLoading = false
-                }
-            }
-        }
     }
 
     private fun getData(option: GraphOption) =
@@ -139,11 +102,9 @@ class HomeScreen :Screen{
     @Preview
     override fun Content() {
         val navigator = LocalNavigator.current
-        val user = remember { GreenTraceProviders.userProvider.userInfo() }
+        val user = GreenTraceProviders.userProvider!!.userInfo()
 
-        var selectedTab = remember {
-            mutableStateOf(GraphOption.Weekly)
-        }
+        val selectedTab = remember { mutableStateOf(GraphOption.Weekly) }
 
         val tasks = listOf("Use public transport", "Sort waste", "Plant a tree", "Participate in a cleaning drive", "Reduce energy consumption", "Task 6", "Task 7", "Task 8", "Task 9", "Task 10")
 
@@ -202,7 +163,7 @@ class HomeScreen :Screen{
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Welcome ${userName}!",
+                                text = "Welcome ${user.name}!",
                                 color = Color(0xFF009688),
                                 fontSize = 25.sp,
                                 fontWeight = FontWeight.Bold
@@ -354,18 +315,6 @@ class HomeScreen :Screen{
                         )
                     }
                 })
-            }
-
-            // Show loading screen when fetching the user document from firestore
-            if (isLoading) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.5f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
             }
         }
     }

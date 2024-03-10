@@ -55,7 +55,7 @@ class ProfileScreen : Screen {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = GreenTraceProviders.userProvider.userInfo().name,
+                    text = GreenTraceProviders.userProvider!!.userInfo().name,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.align(Alignment.CenterVertically),
                     fontSize = 32.sp
