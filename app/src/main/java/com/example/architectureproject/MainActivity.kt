@@ -22,6 +22,7 @@ import com.example.architectureproject.profile.User
 import com.example.architectureproject.profile.UserProvider
 import com.example.architectureproject.tracking.TrackingDataProvider
 import com.example.architectureproject.tracking.TrackingImpactProvider
+import com.example.architectureproject.tracking.demo.DummyTrackingData
 import com.example.architectureproject.tracking.demo.DummyTrackingDataProvider
 import com.example.architectureproject.tracking.demo.DummyTrackingImpactProvider
 import com.example.architectureproject.ui.theme.ArchitectureProjectTheme
@@ -49,6 +50,10 @@ object GreenTraceProviders {
         if (trackingProvider != null) return
         communityManager = DemoCommunityManager()
         trackingProvider = DummyTrackingDataProvider(userProvider!!.userInfo(), communityManager!!)
+
+        // FIXME: remove demo hack
+        DummyTrackingData(impactProvider)
+            .addTo(GreenTraceProviders.trackingProvider!!)
     }
 }
 

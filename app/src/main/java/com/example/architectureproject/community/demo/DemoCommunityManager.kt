@@ -41,7 +41,7 @@ class DemoCommunityManager: CommunityManager {
     private fun makeInviteLink(id: String): String =
         "http://greentrace-cb8f7.firebaseapp.com/community.html?id=$id"
 
-    override fun createCommunity(owner: User, name: String, location: String): String {
+    override suspend fun createCommunity(owner: User, name: String, location: String): String {
         val id = UUID.randomUUID().toString()
         val info = CommunityInfo(
             name, id, location,
@@ -52,14 +52,18 @@ class DemoCommunityManager: CommunityManager {
         return info.id
     }
 
-    override fun getCommunityById(id: String): CommunityInfo? =
+    override suspend fun getCommunityById(id: String): CommunityInfo? =
         communities[id]
 
-    override fun addUserToCommunity(user: User, id: String) {
+    override suspend fun updateCommunity(id: String, name: String, location: String) {
+        communities[id] = communities[id]!!.copy(name = name, location = location)
+    }
+
+    override suspend fun addUserToCommunity(user: User, id: String) {
         (getCommunityById(id)!!.members as HashSet).add(user)
     }
 
-    override fun removeUserFromCommunity(user: User, id: String) {
+    override suspend fun removeUserFromCommunity(user: User, id: String) {
         (getCommunityById(id)!!.members as HashSet).remove(user)
     }
 

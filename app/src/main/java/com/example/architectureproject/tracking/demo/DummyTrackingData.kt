@@ -4,6 +4,10 @@ import com.example.architectureproject.tracking.Meal
 import com.example.architectureproject.tracking.TrackingDataProvider
 import com.example.architectureproject.tracking.TrackingImpactProvider
 import com.example.architectureproject.tracking.Transportation
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import java.time.ZonedDateTime
 
 class DummyTrackingData(impactProvider: TrackingImpactProvider) {
@@ -17,7 +21,10 @@ class DummyTrackingData(impactProvider: TrackingImpactProvider) {
             ), Transportation.Mode.Car)
     )
 
-    fun addTo(provider: TrackingDataProvider) {
-        activities.forEach { provider.addActivity(it) }
+    suspend fun addTo(provider: TrackingDataProvider) {
+        coroutineScope {
+            activities.map { async(Dispatchers.Default) { provider.addActivity(it) } }
+                .forEach { it.await() }
+        }
     }
 }

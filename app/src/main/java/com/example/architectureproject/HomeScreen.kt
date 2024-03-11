@@ -26,8 +26,11 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,12 +43,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import com.example.architectureproject.tracking.TrackingDataGranularity
 import com.example.architectureproject.tracking.TrackingEntry
 import com.example.architectureproject.tracking.TrackingPeriod
-import com.example.architectureproject.tracking.demo.DummyTrackingData
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
@@ -57,35 +62,45 @@ import com.patrykandpatrick.vico.core.chart.line.LineChart
 import com.patrykandpatrick.vico.core.component.shape.shader.DynamicShaders
 import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
 import com.patrykandpatrick.vico.core.entry.entryOf
-import android.content.ContentValues.TAG
-import android.util.Log
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 enum class GraphOption {
     Weekly, Monthly, Yearly
 }
-class HomeScreen :Screen{
-    init {
-        // Load in dummy data
-        DummyTrackingData(GreenTraceProviders.impactProvider)
-            .addTo(GreenTraceProviders.trackingProvider!!)
+
+class HomeScreenModel : ScreenModel {
+    var selectedTab by mutableStateOf(GraphOption.Weekly)
+    var data by mutableStateOf(listOf<TrackingEntry>())
+    var loaded by mutableStateOf(false)
+    var user by mutableStateOf(GreenTraceProviders.userProvider!!.userInfo())
+    val tasks = mutableStateListOf("Use public transport", "Sort waste", "Plant a tree", "Participate in a cleaning drive", "Reduce energy consumption", "Task 6", "Task 7", "Task 8", "Task 9", "Task 10")
+    fun fetchData() {
+        screenModelScope.launch {
+            data = when (selectedTab) {
+                GraphOption.Weekly -> GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastWeeks(), TrackingDataGranularity.Day)
+                GraphOption.Monthly -> GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastYears(), TrackingDataGranularity.Month)
+                GraphOption.Yearly -> GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastYears(4), TrackingDataGranularity.Year)
+            }
+            loaded = true
+        }
     }
 
-    private fun getData(option: GraphOption) =
-        when (option) {
-            GraphOption.Weekly -> GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastWeeks(), TrackingDataGranularity.Day)
-            GraphOption.Monthly -> GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastYears(), TrackingDataGranularity.Month)
-            GraphOption.Yearly -> GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastYears(4), TrackingDataGranularity.Year)
+    fun init() {
+        user = GreenTraceProviders.userProvider!!.userInfo()
+    }
+}
+
+class HomeScreen :Screen{
+    private fun createValueFormatter(values: List<String>): AxisValueFormatter<AxisPosition.Horizontal.Bottom> {
+        return AxisValueFormatter { position, _ ->
+            val index = position.toInt()
+            if (index in values.indices) {
+                values[index]
+            } else {
+                ""
+            }
         }
+    }
 
     private fun getValueFormatter(option: GraphOption, data: List<TrackingEntry>): AxisValueFormatter<AxisPosition.Horizontal.Bottom> {
         val daysOfWeek = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
@@ -102,20 +117,22 @@ class HomeScreen :Screen{
     @Preview
     override fun Content() {
         val navigator = LocalNavigator.current
-        val user = GreenTraceProviders.userProvider!!.userInfo()
+        val model = rememberScreenModel { HomeScreenModel() }
+        LaunchedEffect(Unit) { model.init() }
+        LaunchedEffect(model.selectedTab) { model.fetchData() }
 
-        val selectedTab = remember { mutableStateOf(GraphOption.Weekly) }
+        if (!model.loaded) {
+            LoadingScreen()
+            return
+        }
 
-        val tasks = listOf("Use public transport", "Sort waste", "Plant a tree", "Participate in a cleaning drive", "Reduce energy consumption", "Task 6", "Task 7", "Task 8", "Task 9", "Task 10")
-
-        val data = getData(selectedTab.value)
         val chartModel = ChartEntryModelProducer(
-            data.mapIndexed { i, it -> entryOf(i, it.value) }
+            model.data.mapIndexed { i, it -> entryOf(i, it.value) }
         )
 
-        val valueFormatter = getValueFormatter(selectedTab.value, data)
+        val valueFormatter = getValueFormatter(model.selectedTab, model.data)
 
-        val chartTitle = when (selectedTab.value) {
+        val chartTitle = when (model.selectedTab) {
             GraphOption.Weekly -> "Your Weekly carbon emission"
             GraphOption.Monthly -> "Your Monthly carbon emission"
             GraphOption.Yearly -> "Your Yearly carbon emission"
@@ -163,7 +180,7 @@ class HomeScreen :Screen{
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Welcome ${user.name}!",
+                                text = "Welcome ${model.user.name}!",
                                 color = Color(0xFF009688),
                                 fontSize = 25.sp,
                                 fontWeight = FontWeight.Bold
@@ -178,9 +195,11 @@ class HomeScreen :Screen{
                         )
                         Spacer(modifier = Modifier.height(15.dp))
                         Card(
-                            modifier = Modifier.fillMaxWidth().clickable {
-                                navigator?.push(PastActivitiesScreen())
-                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    navigator?.push(PastActivitiesScreen())
+                                },
                             elevation = 17.dp
                         ) {
                             Chart(
@@ -210,10 +229,13 @@ class HomeScreen :Screen{
                                 modifier = Modifier
                                     .fillMaxHeight()
                                     .background(
-                                        color = if (selectedTab.value == GraphOption.Weekly) Color(
+                                        color = if (model.selectedTab == GraphOption.Weekly) Color(
                                             0xFF009688
                                         ) else Color.White,
-                                        shape = RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)
+                                        shape = RoundedCornerShape(
+                                            topStart = 8.dp,
+                                            bottomStart = 8.dp
+                                        )
                                     )
                                     .weight(1f)
                                     .padding(vertical = 5.dp)
@@ -222,7 +244,7 @@ class HomeScreen :Screen{
                                     text = "Weekly",
                                     modifier = Modifier
                                         .clickable {
-                                            selectedTab.value = GraphOption.Weekly
+                                            model.selectedTab = GraphOption.Weekly
                                         }
                                         .padding(start = 28.dp, end = 10.dp),
                                     color = Color.Black
@@ -238,7 +260,7 @@ class HomeScreen :Screen{
                                 modifier = Modifier
                                     .fillMaxHeight()
                                     .background(
-                                        color = if (selectedTab.value == GraphOption.Monthly) Color(
+                                        color = if (model.selectedTab == GraphOption.Monthly) Color(
                                             0xFF009688
                                         ) else Color.White
                                     )
@@ -249,7 +271,7 @@ class HomeScreen :Screen{
                                     text = "Monthly",
                                     modifier = Modifier
                                         .clickable {
-                                            selectedTab.value = GraphOption.Monthly
+                                            model.selectedTab = GraphOption.Monthly
                                         }
                                         .padding(start = 25.dp, end = 25.dp),
                                     color = Color.Black
@@ -265,7 +287,7 @@ class HomeScreen :Screen{
                                 modifier = Modifier
                                     .fillMaxHeight()
                                     .background(
-                                        color = if (selectedTab.value == GraphOption.Yearly) Color(
+                                        color = if (model.selectedTab == GraphOption.Yearly) Color(
                                             0xFF009688
                                         ) else Color.White,
                                         shape = RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp)
@@ -277,7 +299,7 @@ class HomeScreen :Screen{
                                     text = "Yearly",
                                     modifier = Modifier
                                         .clickable {
-                                            selectedTab.value = GraphOption.Yearly
+                                            model.selectedTab = GraphOption.Yearly
                                         }
                                         .padding(start = 30.dp, end = 25.dp),
                                     color = Color.Black
@@ -297,7 +319,7 @@ class HomeScreen :Screen{
                     )
                 }
 
-                items(items = tasks, itemContent = { item ->
+                items(items = model.tasks, itemContent = { item ->
                     Card(
                         border = BorderStroke(3.dp, Color(0xFF009688)),
                         shape = RoundedCornerShape(8.dp),
@@ -316,17 +338,6 @@ class HomeScreen :Screen{
                     }
                 })
             }
-        }
-    }
-}
-
-fun createValueFormatter(values: List<String>): AxisValueFormatter<AxisPosition.Horizontal.Bottom> {
-    return AxisValueFormatter<AxisPosition.Horizontal.Bottom> { position, _ ->
-        val index = position.toInt()
-        if (index in values.indices) {
-            values[index]
-        } else {
-            ""
         }
     }
 }

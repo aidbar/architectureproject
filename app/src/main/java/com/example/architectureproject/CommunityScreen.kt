@@ -7,6 +7,7 @@ package com.example.architectureproject
 //import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
 //import com.patrykandpatrick.vico.compose.chart.line.lineChart
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Card
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.icons.Icons
@@ -31,9 +33,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,34 +47,83 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.example.architectureproject.community.CommunityInfo
 import com.example.architectureproject.ui.theme.ArchitectureProjectTheme
+import kotlinx.coroutines.launch
 
-class CommunityScreen :Screen {
-    //var auth = FirebaseAuth.getInstance()
+class CommunityScreenModel : ScreenModel {
+    var openCreateCommunityDialog by mutableStateOf(false)
+    var newCommunityName by mutableStateOf("")
+    var newCommunityLocation by mutableStateOf("")
+    var createDialogScrollState by mutableStateOf(ScrollState(0))
+    var loading by mutableStateOf(true)
+
+    var communities by mutableStateOf(listOf<CommunityInfo>())
+    private suspend fun reloadCommunities() {
+        communities = GreenTraceProviders.trackingProvider!!.getCommunities()
+    }
+
+    fun showCreateCommunityDialog() {
+        if (loading) return
+        newCommunityName = ""
+        newCommunityLocation = ""
+        createDialogScrollState = ScrollState(0)
+        openCreateCommunityDialog = true
+    }
+
+    fun dismissCreateCommunityDialog() {
+        openCreateCommunityDialog = false
+    }
+
+    fun loadCommunities() {
+        screenModelScope.launch { reloadCommunities(); loading = false }
+    }
+
+    fun createCommunity(name: String, loc: String) {
+        loading = true
+        screenModelScope.launch {
+            val comm = GreenTraceProviders.communityManager?.createCommunity(
+                GreenTraceProviders.userProvider!!.userInfo(), name, loc
+            )
+            comm?.let { GreenTraceProviders.trackingProvider?.attachCommunity(it) }
+            reloadCommunities()
+            loading = false
+        }
+    }
+}
+
+class CommunityScreen : Screen {
     companion object { internal val iconStyle = Icons.Rounded }
 
     @Composable
     @Preview
     override fun Content() {
-        val openCreateCommunityDialog = remember {mutableStateOf(false)}
+        val model = rememberScreenModel { CommunityScreenModel() }
+        LaunchedEffect(Unit) { model.loadCommunities() }
+
         ArchitectureProjectTheme {
             Scaffold(
                 floatingActionButton = {
                     FloatingActionButton(
-                        onClick = {
-                            openCreateCommunityDialog.value = !openCreateCommunityDialog.value
-                        }
+                        onClick = { model.showCreateCommunityDialog() }
                     ) {
                         Icon(iconStyle.Add, "Create new community")
                     }
                 }
             ) {padding ->
+                if (model.loading) {
+                    LoadingScreen()
+                    return@Scaffold
+                }
+
                 CommunityList(
-                    communityList = GreenTraceProviders.trackingProvider!!.getCommunities(),
+                    communityList = model.communities,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
@@ -79,16 +132,13 @@ class CommunityScreen :Screen {
         }
 
         when {
-            openCreateCommunityDialog.value -> {
+            model.openCreateCommunityDialog -> {
                 CreateCommunityDialog(
-                    onDismissRequest = { openCreateCommunityDialog.value = false },
+                    onDismissRequest = { model.dismissCreateCommunityDialog() },
                     onConfirmation = { name, loc ->
-                        openCreateCommunityDialog.value = false
-                        val comm = GreenTraceProviders.communityManager?.createCommunity(
-                            GreenTraceProviders.userProvider!!.userInfo(), name, loc
-                        )
-                        comm?.let { GreenTraceProviders.trackingProvider?.attachCommunity(it) }
+                        model.createCommunity(name, loc)
                         println("Community successfully created") // Add logic here to handle confirmation.
+                        model.dismissCreateCommunityDialog()
                     },
                     dialogTitle = "Create a new community",
                     dialogText = "Enter the name and location of your new community - you may add a profile picture as well!"
@@ -163,8 +213,7 @@ class CommunityScreen :Screen {
         dialogTitle: String,
         dialogText: String
     ) {
-        var newCommunityName by remember {mutableStateOf("")}
-        var newCommunityLocation by remember {mutableStateOf("")}
+        val model = rememberScreenModel { CommunityScreenModel() }
 
         Dialog(onDismissRequest = { onDismissRequest() }) {
             // Draw a rectangle shape with rounded corners inside the dialog
@@ -177,7 +226,8 @@ class CommunityScreen :Screen {
             ) {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize(),
+                        .fillMaxSize()
+                        .verticalScroll(model.createDialogScrollState),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
@@ -200,15 +250,15 @@ class CommunityScreen :Screen {
                         textAlign = TextAlign.Center
                     )
                     TextField(
-                        value = newCommunityName,
-                        onValueChange = {newCommunityName = it},
+                        value = model.newCommunityName,
+                        onValueChange = { model.newCommunityName = it },
                         label = {Text("Name (required)")},
                         modifier = Modifier.padding(10.dp),
                         singleLine = true
                     )
                     TextField(
-                        value = newCommunityLocation,
-                        onValueChange = {newCommunityLocation = it},
+                        value = model.newCommunityLocation,
+                        onValueChange = { model.newCommunityLocation = it },
                         label = {Text("Location")},
                         modifier = Modifier.padding(10.dp),
                         singleLine = true
@@ -226,9 +276,9 @@ class CommunityScreen :Screen {
                             Text("Cancel")
                         }
                         TextButton(
-                            onClick = { onConfirmation(newCommunityName, newCommunityLocation) },
+                            onClick = { onConfirmation(model.newCommunityName, model.newCommunityLocation) },
                             modifier = Modifier.padding(8.dp),
-                            enabled = newCommunityName.isNotBlank(),
+                            enabled = model.newCommunityName.isNotBlank(),
                             colors = ButtonDefaults.buttonColors()
                         ) {
                             Text("Create")
