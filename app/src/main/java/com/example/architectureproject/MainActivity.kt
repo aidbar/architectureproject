@@ -16,9 +16,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.navigator.Navigator
 import com.example.architectureproject.community.CommunityManager
-import com.example.architectureproject.community.demo.DemoCommunityManager
+import com.example.architectureproject.community.FirebaseCommunityManager
 import com.example.architectureproject.profile.FirebaseUserProvider
-import com.example.architectureproject.profile.User
 import com.example.architectureproject.profile.UserProvider
 import com.example.architectureproject.tracking.TrackingDataProvider
 import com.example.architectureproject.tracking.TrackingImpactProvider
@@ -48,8 +47,8 @@ object GreenTraceProviders {
 
     suspend fun initTracking() {
         if (trackingProvider != null) return
-        communityManager = DemoCommunityManager()
-        trackingProvider = DummyTrackingDataProvider(userProvider!!.userInfo(), communityManager!!)
+        communityManager = FirebaseCommunityManager()
+        trackingProvider = DummyTrackingDataProvider()
 
         // FIXME: remove demo hack
         DummyTrackingData(impactProvider)

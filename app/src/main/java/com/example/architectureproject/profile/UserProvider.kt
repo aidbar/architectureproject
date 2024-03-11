@@ -2,10 +2,16 @@ package com.example.architectureproject.profile
 
 import android.content.ContentValues
 import android.util.Log
+import com.example.architectureproject.GreenTraceProviders
+import com.example.architectureproject.community.CommunityInfo
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.getField
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.resume
@@ -21,6 +27,10 @@ interface UserProvider {
     suspend fun userProfile(name: String, bio: String, age: Int): String?
     suspend fun loginUser(email: String, password: String): String?
     suspend fun createAndLoginUser(email: String, password: String): String?
+    suspend fun getUserById(ids: List<String>): List<User>
+    suspend fun attachCommunity(id: String)
+    suspend fun detachCommunity(id: String)
+    suspend fun getCommunities(): List<CommunityInfo>
 }
 
 class FirebaseUserProvider private constructor(
@@ -28,17 +38,14 @@ class FirebaseUserProvider private constructor(
     private var profile: Profile?,
     private var lifestyle: UserLifestyle?
 ): UserProvider {
-    private data class Profile(val name: String, val bio: String, val age: Int)
+    private val db = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
+    private data class Profile(
+        val name: String,
+        val bio: String,
+        val age: Int)
 
-    override fun userInfo(): User {
-        return User(
-            firebaseUser?.email!!,
-            profile?.name!!,
-            profile?.bio!!,
-            profile?.age!!,
-            firebaseUser?.uid!!
-        )
-    }
+    override fun userInfo(): User = userInfoInternal(profile!!, firebaseUser!!)
 
     override fun uid(): String? = firebaseUser?.uid
 
@@ -47,7 +54,6 @@ class FirebaseUserProvider private constructor(
     }
 
     override suspend fun userLifestyle(lifestyle: UserLifestyle): String? {
-        val db = FirebaseFirestore.getInstance()
         val userDocRef = db.collection("userLifestyle").document(uid()!!)
 
         // Create a hashmap of data to update
@@ -76,7 +82,6 @@ class FirebaseUserProvider private constructor(
     override fun hasUserProfile() = profile != null
 
     override suspend fun userProfile(name: String, bio: String, age: Int): String? {
-        val db = FirebaseFirestore.getInstance()
         val userDocRef = db.collection("users").document(uid()!!)
 
         // Create a hashmap of data to update
@@ -86,9 +91,8 @@ class FirebaseUserProvider private constructor(
             "age" to age
         )
 
-
         return suspendCoroutine { cont ->
-            userDocRef.set(update)
+            userDocRef.update(update)
                 .addOnSuccessListener {
                     Log.d(ContentValues.TAG, "User document successfully added!")
                     profile = Profile(name, bio, age)
@@ -99,7 +103,6 @@ class FirebaseUserProvider private constructor(
     }
 
     override suspend fun loginUser(email: String, password: String): String? {
-        val auth = FirebaseAuth.getInstance()
         return suspendCoroutine { cont ->
             auth.signInWithEmailAndPassword(email,password).addOnCompleteListener {
                 if (it.isSuccessful) {
@@ -121,7 +124,6 @@ class FirebaseUserProvider private constructor(
     }
 
     override suspend fun createAndLoginUser(email: String, password: String): String? {
-        val auth = FirebaseAuth.getInstance()
         return suspendCoroutine { cont ->
             auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener {
                 if (it.isSuccessful) {
@@ -135,7 +137,52 @@ class FirebaseUserProvider private constructor(
         }
     }
 
+    override suspend fun getUserById(ids: List<String>): List<User> {
+        val collection = db.collection("users")
+        // FIXME: use a transaction for this?
+        // this is massively parallel, to hopefully be fast enough
+        return coroutineScope { ids.windowed(10, 10, true)
+            .map { async {
+                collection.whereIn(FieldPath.documentId(), it)
+                    .get()
+                    .await()
+                    .documents
+                    .map { userInfoFromProfile(convertUserDocument(it), it.id, "") }
+            } }
+            .flatMap { it.await() }
+        }
+    }
+
+    override suspend fun attachCommunity(id: String) =
+        GreenTraceProviders.communityManager!!.addUserToCommunity(uid()!!, id)
+
+    override suspend fun detachCommunity(id: String) =
+        GreenTraceProviders.communityManager!!.removeUserFromCommunity(uid()!!, id)
+
+    override suspend fun getCommunities() =
+        GreenTraceProviders.communityManager!!.getCommunitiesByUID(uid()!!)
+
     companion object {
+        private fun userInfoInternal(
+            profile: Profile,
+            firebaseUser: FirebaseUser
+        ): User = userInfoFromProfile(profile, firebaseUser.uid, firebaseUser.email!!)
+
+        private fun userInfoFromProfile(profile: Profile, id: String, email: String) =
+            User(
+                email,
+                profile.name,
+                profile.bio,
+                profile.age,
+                id
+            )
+
+        private fun convertUserDocument(document: DocumentSnapshot) = Profile(
+            document.getString("name") ?: "(null)",
+            document.getString("bio") ?: "",
+            document.getField<Int>("age") ?: -1
+        )
+
         private suspend fun loadUserDocument(uid: String?): Profile? {
             if (uid == null) return null
             val db = FirebaseFirestore.getInstance()
@@ -144,11 +191,7 @@ class FirebaseUserProvider private constructor(
                 val document = userDocRef.get().await()
                 if (document != null && document.exists()) {
                     Log.d(ContentValues.TAG, "Successfully fetched user document")
-                    return Profile(
-                        document.getString("name") ?: "(null)",
-                        document.getString("bio") ?: "",
-                        document.getField<Int>("age") ?: -1
-                    )
+                    return convertUserDocument(document)
                 }
             } catch (e: Exception) {
                 Log.e(ContentValues.TAG, "Failed to fetch user document", e)
@@ -157,6 +200,7 @@ class FirebaseUserProvider private constructor(
             return null
         }
 
+        @Suppress("UNCHECKED_CAST")
         private suspend fun loadLifestyleDocument(uid: String?): UserLifestyle? {
             if (uid == null) return null
             val db = FirebaseFirestore.getInstance()

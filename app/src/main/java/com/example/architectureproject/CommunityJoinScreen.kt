@@ -35,26 +35,41 @@ class CommunityJoinScreen(private val communityURIStr: String) : Screen {
     }
 
     @Composable
-    fun CommunityJoinWidget(community: CommunityInfo) {
+    fun CommunityJoinButtons(community: CommunityInfo) {
         val navigator = LocalNavigator.currentOrThrow
         val scope = rememberCoroutineScope()
+        if (community.members.contains(GreenTraceProviders.userProvider!!.userInfo())) {
+            Column {
+                Text("You're already a member of this community")
+                Button(onClick = {
+                    navigator.push(MainScreen(true))
+                }) { Text("Close") }
+            }
+            return
+        }
+
+        Row {
+            Button(onClick = {
+                scope.launch {
+                    GreenTraceProviders.userProvider?.attachCommunity(community.id)
+                    navigator.push(MainScreen(true))
+                }
+            }) {
+                Text("Join")
+            }
+            Button(onClick = {
+                navigator.push(MainScreen(false))
+            }) { Text("Cancel") }
+        }
+    }
+
+    @Composable
+    fun CommunityJoinWidget(community: CommunityInfo) {
         Column {
             Text(community.name)
             Text(community.location)
             Image(painterResource(community.image), "community image")
-            Row {
-                Button(onClick = {
-                    scope.launch {
-                        GreenTraceProviders.trackingProvider?.attachCommunity(community.id)
-                        navigator.push(MainScreen(true))
-                    }
-                }) {
-                    Text("Join")
-                }
-                Button(onClick = {
-                    navigator.push(MainScreen(false))
-                }) { Text("Cancel") }
-            }
+            CommunityJoinButtons(community)
         }
     }
 

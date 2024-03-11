@@ -36,8 +36,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,7 +64,7 @@ class CommunityScreenModel : ScreenModel {
 
     var communities by mutableStateOf(listOf<CommunityInfo>())
     private suspend fun reloadCommunities() {
-        communities = GreenTraceProviders.trackingProvider!!.getCommunities()
+        communities = GreenTraceProviders.userProvider!!.getCommunities()
     }
 
     fun showCreateCommunityDialog() {
@@ -91,7 +89,7 @@ class CommunityScreenModel : ScreenModel {
             val comm = GreenTraceProviders.communityManager?.createCommunity(
                 GreenTraceProviders.userProvider!!.userInfo(), name, loc
             )
-            comm?.let { GreenTraceProviders.trackingProvider?.attachCommunity(it) }
+            comm?.let { GreenTraceProviders.userProvider?.attachCommunity(it) }
             reloadCommunities()
             loading = false
         }
