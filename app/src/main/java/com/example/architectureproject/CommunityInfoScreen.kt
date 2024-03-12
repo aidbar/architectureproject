@@ -34,7 +34,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,11 +45,45 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.example.architectureproject.community.CommunityInfo
 import com.lightspark.composeqr.QrCodeView
+import kotlinx.coroutines.launch
+
+class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel {
+    var newCommunityName by mutableStateOf(info.name)
+    var newCommunityLocation by mutableStateOf(info.location)
+    var openEditCommunityDialog by mutableStateOf(false)
+    var info by mutableStateOf(info)
+    var loading by mutableStateOf(false)
+
+    var usernameToInvite by mutableStateOf("")
+    val userIsTheCreator =
+        GreenTraceProviders.userProvider?.userInfo()?.uid == info.owner.uid
+
+    fun showEditCommunityDialog() {
+        newCommunityName = info.name
+        newCommunityLocation = info.location
+        openEditCommunityDialog = true
+    }
+    fun editCommunity(name: String, loc: String) {
+        loading = true
+        screenModelScope.launch {
+            GreenTraceProviders.communityManager?.updateCommunity(info.id, name, loc)
+            info = GreenTraceProviders.communityManager?.getCommunityById(info.id)!!
+            loading = false
+        }
+    }
+
+    fun dismissEditCommunityDialog() {
+        openEditCommunityDialog = false
+    }
+}
 
 data class CommunityInfoScreen(val info: CommunityInfo): Screen {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -57,18 +91,17 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val context = LocalContext.current
-        var usernameToInvite by remember {mutableStateOf("")}
-        var userIsTheCreator by remember {mutableStateOf(false)}
-        val openEditCommunityDialog = remember{mutableStateOf(false)}
+        val model = rememberScreenModel { CommunityInfoScreenModel(info) }
 
-        if (GreenTraceProviders.userProvider?.userInfo()?.uid == info.owner.uid) {
-            userIsTheCreator = true
+        if (model.loading) {
+            LoadingScreen()
+            return
         }
 
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text(info.name) },
+                    title = { Text(model.info.name) },
                     navigationIcon = {
                         IconButton(onClick = { navigator.pop() }) {
                             Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
@@ -77,11 +110,9 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                 )
             },
             floatingActionButton = {
-                if (userIsTheCreator) {
+                if (model.userIsTheCreator) {
                     FloatingActionButton(
-                        onClick = {
-                            openEditCommunityDialog.value = !openEditCommunityDialog.value
-                        }
+                        onClick = { model.showEditCommunityDialog() }
                     ) {
                         Icon(CommunityScreen.iconStyle.Create, "Edit this community")
                     }
@@ -94,7 +125,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                     .verticalScroll(state = rememberScrollState())
                 ) {
                 Image(
-                    painter = painterResource(info.image),
+                    painter = painterResource(model.info.image),
                     contentDescription = "Community image",
                     modifier = Modifier
                         .fillMaxWidth()
@@ -102,7 +133,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                     contentScale = ContentScale.Crop
                 )
                 Text(
-                    text = info.name,
+                    text = model.info.name,
                     modifier = Modifier
                         .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
                         .align(Alignment.CenterHorizontally),
@@ -119,13 +150,13 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         CommunityScreen.iconStyle.LocationOn, contentDescription = "location", modifier = Modifier.align(
                             Alignment.CenterVertically))
                     Text(
-                        text = info.location,
+                        text = model.info.location,
                         modifier = Modifier.align(Alignment.CenterVertically),
                         style = MaterialTheme.typography.labelMedium,
                     )
                 }
                 Text(
-                    text = "Use the QR code or link below to invite others to join " + info.name + ":",
+                    text = "Use the QR code or link below to invite others to join " + model.info.name + ":",
                     modifier = Modifier
                         .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
                         .align(Alignment.CenterHorizontally),
@@ -134,7 +165,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                     style = MaterialTheme.typography.labelMedium
                 )
                 QrCodeView(
-                    data = info.inviteLink,
+                    data = model.info.inviteLink,
                     modifier = Modifier
                         .size(180.dp)
                         .align(Alignment.CenterHorizontally)
@@ -143,30 +174,37 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                 SelectionContainer(modifier = Modifier
                     .align(Alignment.CenterHorizontally)
                     .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)) {
-                    Text(info.inviteLink)
+                    Text(model.info.inviteLink)
                 }
                 Row(modifier = Modifier
                     .align(Alignment.CenterHorizontally)) {
                     TextField(
-                        value = usernameToInvite,
-                        onValueChange = { usernameToInvite = it },
+                        value = model.usernameToInvite,
+                        onValueChange = { model.usernameToInvite = it },
                         label = { Text("Username") },
                         modifier = Modifier.padding(10.dp),
                         singleLine = true
                     )
                     TextButton(
-                        onClick = { if (checkifUserExists(context, usernameToInvite)) {usernameToInvite = ""} },
+                        onClick = { if (checkifUserExists(context, model.usernameToInvite)) {model.usernameToInvite = ""} },
                         modifier = Modifier
                             .padding(8.dp)
                             .align(Alignment.CenterVertically),
-                        enabled = usernameToInvite.isNotBlank(),
+                        enabled = model.usernameToInvite.isNotBlank(),
                         colors = ButtonDefaults.buttonColors()
                     ) {
                         Text("Invite")
                     }
                 }
+
+                val scope = rememberCoroutineScope()
                 TextButton(
-                    onClick = { navigator.push(CommunityMembersScreen(userIsTheCreator, info.members.toList()))},
+                    onClick = { scope.launch {
+                        navigator.push(CommunityMembersScreen(
+                            model.userIsTheCreator,
+                            GreenTraceProviders.communityManager!!.getCommunityMembers(model.info.id)
+                        ))
+                    } },
                     modifier = Modifier
                         .padding(8.dp)
                         .align(Alignment.CenterHorizontally),
@@ -175,17 +213,14 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
             }
 
             when {
-                openEditCommunityDialog.value -> {
+                model.openEditCommunityDialog -> {
                     EditCommunityDialog(
-                        onDismissRequest = { openEditCommunityDialog.value = false },
+                        onDismissRequest = { model.dismissEditCommunityDialog() },
                         onConfirmation = { name, loc ->
-                            openEditCommunityDialog.value = false
-                            val comm = GreenTraceProviders.communityManager?.createCommunity(
-                                GreenTraceProviders.userProvider!!.userInfo(), name, loc
-                            )
-                            comm?.let { GreenTraceProviders.trackingProvider?.attachCommunity(it) }
-                            println("Community successfully created") // Add logic here to handle confirmation.
-                        },
+                            model.editCommunity(name, loc)
+                            println("Community successfully edited") // Add logic here to handle confirmation.
+                            model.dismissEditCommunityDialog()
+                         },
                         dialogTitle = "Edit this community",
                         dialogText = "You may change the name, location and profile picture of this community."
                     )
@@ -215,8 +250,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
         dialogTitle: String,
         dialogText: String
     ) {
-        var newCommunityName by remember {mutableStateOf(info.name)}
-        var newCommunityLocation by remember {mutableStateOf(info.location)}
+        val model = rememberScreenModel { CommunityInfoScreenModel(info) }
 
         Dialog(onDismissRequest = { onDismissRequest() }) {
             // Draw a rectangle shape with rounded corners inside the dialog
@@ -252,15 +286,15 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         textAlign = TextAlign.Center
                     )
                     TextField(
-                        value = newCommunityName,
-                        onValueChange = {newCommunityName = it},
+                        value = model.newCommunityName,
+                        onValueChange = { model.newCommunityName = it },
                         label = {Text("Name")},
                         modifier = Modifier.padding(10.dp),
                         singleLine = true
                     )
                     TextField(
-                        value = newCommunityLocation,
-                        onValueChange = {newCommunityLocation = it},
+                        value = model.newCommunityLocation,
+                        onValueChange = { model.newCommunityLocation = it },
                         label = {Text("Location")},
                         modifier = Modifier.padding(10.dp),
                         singleLine = true
@@ -278,9 +312,9 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                             Text("Cancel")
                         }
                         TextButton(
-                            onClick = { onConfirmation(newCommunityName, newCommunityLocation) },
+                            onClick = { onConfirmation(model.newCommunityName, model.newCommunityLocation) },
                             modifier = Modifier.padding(8.dp),
-                            enabled = newCommunityName.isNotBlank(),
+                            enabled = model.newCommunityName.isNotBlank(),
                             colors = ButtonDefaults.buttonColors()
                         ) {
                             Text("Update")

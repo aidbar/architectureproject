@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
@@ -27,9 +29,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,21 +42,30 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import coil.compose.rememberAsyncImagePainter
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+
+class ProfileEditScreenModel : ScreenModel {
+    private val info = GreenTraceProviders.userProvider!!.userInfo()
+    var alias by mutableStateOf(info.name)
+    var bio by mutableStateOf(info.bio)
+    var age by mutableStateOf(info.age.toString())
+}
 
 class ProfileEditScreen:Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        val info = remember { GreenTraceProviders.userProvider!!.userInfo() }
-        val alias = remember { mutableStateOf(TextFieldValue(info.name)) }
-        val bio = remember { mutableStateOf(TextFieldValue(info.bio)) }
+        val model = rememberScreenModel { ProfileEditScreenModel() }
 
         Column(modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)) {
 
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -109,8 +123,8 @@ class ProfileEditScreen:Screen {
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = alias.value,
-                onValueChange = { alias.value = it },
+                value = model.alias,
+                onValueChange = { model.alias = it },
                 shape = RoundedCornerShape(32.dp),
                 placeholder = { Text(text = "alias") },
                 singleLine = true,
@@ -120,8 +134,8 @@ class ProfileEditScreen:Screen {
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
-                value =bio.value,
-                onValueChange = { bio.value = it },
+                value = model.bio,
+                onValueChange = { model.bio = it },
                 shape = RoundedCornerShape(32.dp),
                 placeholder = { Text(text = "bio") },
                 singleLine = true,
@@ -130,10 +144,9 @@ class ProfileEditScreen:Screen {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            val age = remember { mutableStateOf(TextFieldValue(info.age.toString())) }
             OutlinedTextField(
-                value = age.value,
-                onValueChange = { age.value = it },
+                value = model.age,
+                onValueChange = { model.age = it },
                 shape = RoundedCornerShape(32.dp),
                 placeholder = { Text(text = "age") },
                 singleLine = true,
@@ -145,16 +158,16 @@ class ProfileEditScreen:Screen {
             val scope = rememberCoroutineScope()
             Button(
                 onClick = {
-                    val ageStr = age.value.text.trim()
-                    if (age.value.text.contains(Regex.fromLiteral("[^0-9]"))) {
+                    val ageStr = model.age.trim()
+                    if (ageStr.contains(Regex.fromLiteral("[^0-9]"))) {
                         Log.e("ProfileSetupScreen", "bad age value: $ageStr")
                         return@Button
                     }
 
                     scope.launch {
                         GreenTraceProviders.userProvider?.userProfile(
-                            alias.value.text,
-                            bio.value.text,
+                            model.alias,
+                            model.bio,
                             ageStr.toInt()
                         )?.let { Log.e("ProfileEditScreen", it) }
                         navigator?.pop()
