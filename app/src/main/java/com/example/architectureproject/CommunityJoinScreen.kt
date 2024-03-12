@@ -18,6 +18,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.example.architectureproject.community.CommunityInfo
+import com.example.architectureproject.profile.User
 import kotlinx.coroutines.launch
 
 class CommunityJoinScreen(private val communityURIStr: String) : Screen {
@@ -38,7 +39,13 @@ class CommunityJoinScreen(private val communityURIStr: String) : Screen {
     fun CommunityJoinButtons(community: CommunityInfo) {
         val navigator = LocalNavigator.currentOrThrow
         val scope = rememberCoroutineScope()
-        if (community.members.contains(GreenTraceProviders.userProvider!!.userInfo())) {
+        var members by remember { mutableStateOf(listOf<User>()) }
+        LaunchedEffect(Unit) {
+            members = GreenTraceProviders.communityManager!!.getCommunityMembers(community.id)
+        }
+
+        if (members.isEmpty()) return
+        if (members.contains(GreenTraceProviders.userProvider!!.userInfo())) {
             Column {
                 Text("You're already a member of this community")
                 Button(onClick = {

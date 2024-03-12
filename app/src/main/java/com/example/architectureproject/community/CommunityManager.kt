@@ -9,4 +9,5 @@ interface CommunityManager {
     suspend fun addUserToCommunity(uid: String, id: String)
     suspend fun removeUserFromCommunity(uid: String, id: String)
     suspend fun getCommunitiesByUID(uid: String): List<CommunityInfo>
+    suspend fun getCommunityMembers(id: String): List<User>
 }

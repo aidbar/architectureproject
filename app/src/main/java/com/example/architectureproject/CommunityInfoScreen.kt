@@ -196,8 +196,15 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         Text("Invite")
                     }
                 }
+
+                val scope = rememberCoroutineScope()
                 TextButton(
-                    onClick = { navigator.push(CommunityMembersScreen(model.userIsTheCreator, model.info.members.toList()))},
+                    onClick = { scope.launch {
+                        navigator.push(CommunityMembersScreen(
+                            model.userIsTheCreator,
+                            GreenTraceProviders.communityManager!!.getCommunityMembers(model.info.id)
+                        ))
+                    } },
                     modifier = Modifier
                         .padding(8.dp)
                         .align(Alignment.CenterHorizontally),
@@ -205,7 +212,6 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                 ) {Text("View members")}
             }
 
-            val scope = rememberCoroutineScope()
             when {
                 model.openEditCommunityDialog -> {
                     EditCommunityDialog(

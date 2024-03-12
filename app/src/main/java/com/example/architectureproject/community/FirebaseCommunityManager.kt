@@ -35,28 +35,23 @@ class FirebaseCommunityManager : CommunityManager {
     private fun makeInviteLink(id: String): String =
         "http://greentrace-cb8f7.firebaseapp.com/community.html?id=$id"
 
-    @Suppress("UNCHECKED_CAST")
     private suspend fun convertCommunityDocument(document: DocumentSnapshot): CommunityInfo {
         // firebase apparently does not support joins
         //   this might be a perf nightmare
         // FIXME: should this massively concurrent read be wrapped in a transaction?
-        val members = (document.get("members") as List<String>)
-            .let { GreenTraceProviders.userProvider!!.getUserById(it) }
-
-        val owner = members.first { it.uid == document.getString("owner") }
+        val owner = document.getString("owner")!!
+            .let { GreenTraceProviders.userProvider!!.getUserById(listOf(it)).first() }
 
         return CommunityInfo(
             document.getString("name")!!,
             document.id,
             document.getString("location")!!,
             owner,
-            members.toSet(),
             makeInviteLink(document.id),
             R.drawable.image1 // FIXME: use real image
         )
     }
 
-    @Suppress("UNCHECKED_CAST")
     override suspend fun getCommunityById(id: String): CommunityInfo? {
         val doc = db.collection("communities").document(id)
         val document = doc.get().await()
@@ -95,4 +90,12 @@ class FirebaseCommunityManager : CommunityManager {
                 .map { it.await() }
         }
     }
+
+    @Suppress("UNCHECKED_CAST")
+    override suspend fun getCommunityMembers(id: String): List<User> =
+        db.collection("communities").document(id)
+            .get()
+            .await()
+            .get("members")
+            .let { GreenTraceProviders.userProvider!!.getUserById(it as List<String>) }
 }
