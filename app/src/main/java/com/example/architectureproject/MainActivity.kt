@@ -21,6 +21,7 @@ import com.example.architectureproject.profile.FirebaseUserProvider
 import com.example.architectureproject.profile.UserProvider
 import com.example.architectureproject.tracking.TrackingDataProvider
 import com.example.architectureproject.tracking.TrackingImpactProvider
+import com.example.architectureproject.tracking.demo.DummyMapProvider
 import com.example.architectureproject.tracking.demo.DummyTrackingData
 import com.example.architectureproject.tracking.demo.DummyTrackingDataProvider
 import com.example.architectureproject.tracking.demo.DummyTrackingImpactProvider
@@ -29,6 +30,7 @@ import com.example.architectureproject.ui.theme.ArchitectureProjectTheme
 object GreenTraceProviders {
     var userProvider: UserProvider? = null
     var communityManager: CommunityManager? = null
+    val mapProvider: MapProvider = DummyMapProvider()
     val impactProvider: TrackingImpactProvider = DummyTrackingImpactProvider()
     var applicationContext: Context? = null
         private set
@@ -51,8 +53,9 @@ object GreenTraceProviders {
         trackingProvider = DummyTrackingDataProvider()
 
         // FIXME: remove demo hack
-        DummyTrackingData(impactProvider)
-            .addTo(GreenTraceProviders.trackingProvider!!)
+        DummyTrackingData().addTo(trackingProvider!!)
+
+
     }
 }
 

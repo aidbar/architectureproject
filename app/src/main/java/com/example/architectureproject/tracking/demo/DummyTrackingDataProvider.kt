@@ -1,5 +1,6 @@
 package com.example.architectureproject.tracking.demo
 
+import com.example.architectureproject.GreenTraceProviders
 import com.example.architectureproject.tracking.TrackingActivity
 import com.example.architectureproject.tracking.TrackingDataGranularity
 import com.example.architectureproject.tracking.TrackingDataProvider
@@ -84,7 +85,7 @@ class DummyTrackingDataProvider : TrackingDataProvider {
     ): List<TrackingEntry> =
         getActivities(period)
             .map {
-                it.impact().let {
+                GreenTraceProviders.impactProvider.computeImpact(it).let {
                     it.copy(period = periodOperator(granularity)(it.period.start))
                 }
             }
