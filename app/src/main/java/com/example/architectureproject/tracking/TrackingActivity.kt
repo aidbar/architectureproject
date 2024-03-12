@@ -2,7 +2,10 @@ package com.example.architectureproject.tracking
 
 import java.time.ZonedDateTime
 
-open class TrackingActivity(val date: ZonedDateTime, val name: String, val id: String)
+open class TrackingActivity(val date: ZonedDateTime, val name: String, id: String) {
+    var id = id
+        internal set
+}
 
 class Meal(date: ZonedDateTime,
            name: String,

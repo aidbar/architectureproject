@@ -81,9 +81,10 @@ class DummyTrackingDataProvider : TrackingDataProvider {
 
     override suspend fun getImpact(
         period: TrackingPeriod,
-        granularity: TrackingDataGranularity
+        granularity: TrackingDataGranularity,
+        cid: String
     ): List<TrackingEntry> =
-        getActivities(period)
+        getActivities(period, cid)
             .map {
                 GreenTraceProviders.impactProvider.computeImpact(it).let {
                     it.copy(period = periodOperator(granularity)(it.period.start))
@@ -97,10 +98,14 @@ class DummyTrackingDataProvider : TrackingDataProvider {
                 })
             }
 
-    override suspend fun getActivities(period: TrackingPeriod) =
-        activitiesByDay.tailMap(dayOf(period.start))
-            .headMap(dayOf(period.end))
-            .flatMap {
-                it.value.map { it.value }
-            }
+    override suspend fun getActivities(period: TrackingPeriod, cid: String) =
+        if (cid.isEmpty()) {
+            activitiesByDay.tailMap(dayOf(period.start))
+                .headMap(dayOf(period.end))
+                .flatMap {
+                    it.value.map { it.value }
+                }
+        } else {
+            TODO("unimplemented for communities")
+        }
 }

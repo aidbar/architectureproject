@@ -3,7 +3,7 @@ package com.example.architectureproject.tracking
 import java.time.ZonedDateTime
 
 // Represents period of time data is fetched for
-// Period is start and end exclusive
+// Period is start inclusive and end exclusive
 data class TrackingPeriod(val start: ZonedDateTime, val end: ZonedDateTime) {
     companion object {
         fun dayOf(day: ZonedDateTime): TrackingPeriod {
