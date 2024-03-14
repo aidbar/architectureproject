@@ -41,6 +41,8 @@
 | 2024/03/06 |   1   |    1     |         |    1   |  1   |  1    | Team meeting before the D3 demo                                                                                                             |
 | 2024/03/06 |   0.5 |   0.5    |  0.5    |   0.5  |  0.5 | 0.5   | D3 demo (attending the presentations of other groups and presenting our own presentation                                                    |
 | 2024/03/06 |   2.5 |   2.5    |         |    2.5 | 2.5  |       | Team meeting for working on D3 deliverable document                                                                                         |
-| 2024/03/06 |   1.5 |          |         |        |      |       | Working on D3 deliverable document                                                                 
-| 2024/03/07 |       |    6     |         |        |      |       | Implemented Reset password functionality       
-
+| 2024/03/06 |   1.5 |          |         |        |      |       | Working on D3 deliverable document                                                                                                          |      
+| 2024/03/07 |       |    6     |         |        |      |       | Implemented Reset password functionality                                                                                                    |
+| 2024/03/08 |       |    3     |         |        |      |       | Research on finding freely available News API and query params to retrieve news related to environment and eco-friendly practices           |
+| 2024/03/14 |       |   2.5    |         |        |      |       | Research and reading on coroutines and asynchronous coding pattern in Kotlin                                                                |
+| 2024/03/14 |       |    5     |         |        |      |       | Integrated News API in Kotlin by using coroutines and OkHttp client library                                                                 |
