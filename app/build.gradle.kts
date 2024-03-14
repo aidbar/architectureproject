@@ -89,14 +89,19 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
+
     implementation ("androidx.browser:browser:1.7.0")
 
+    // Chart
     implementation("com.patrykandpatrick.vico:compose:1.13.1")
     implementation("com.patrykandpatrick.vico:core:1.13.1")
     implementation("com.patrykandpatrick.vico:views:1.13.1")
+
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
     implementation("androidx.compose.material:material:1.6.3")
 
-    //a dependency for the image picker
+    // Image picker
     implementation("io.coil-kt:coil-compose:2.6.0")
 
     implementation("com.lightspark:compose-qr-code:1.0.1")

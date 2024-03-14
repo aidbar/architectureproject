@@ -35,7 +35,7 @@ import cafe.adriel.voyager.navigator.tab.TabNavigator
 
 @Composable
 fun LoadingScreen() {
-    // Show loading screen when fetching the user document from firestore
+    // Show loading screen when fetching things
     Box(
         modifier = Modifier
             .fillMaxSize()

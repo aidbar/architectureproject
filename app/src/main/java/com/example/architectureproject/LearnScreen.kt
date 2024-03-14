@@ -4,6 +4,7 @@ package com.example.architectureproject
 
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,8 +13,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -21,23 +20,26 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CardElevation
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,13 +50,17 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import coil.compose.rememberAsyncImagePainter
-
-val backgrounUrl: String = "https://source.unsplash.com/random/1920x1080/?landscape"
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import org.json.JSONObject
 
 data class Article(
     val title: String,
     val url: String,
-//    val backgroundUrl: String
+    val imageUrl: String
 ) : java.io.Serializable
 
 data class Quiz(
@@ -65,32 +71,30 @@ data class Quiz(
 
 class LearnScreen : Screen {
 
-    private val articles = listOf(
-        Article("40 Ways to Be More Eco Friendly in 2024", "https://www.greenmatch.co.uk/blog/how-to-be-more-eco-friendly"),
-        Article("The Top 9 Environmentally Friendly Tips to Save the Planet", "https://justenergy.com/blog/the-top-9-environmentally-friendly-tips-to-save-the-planet/"),
-        Article("Eco Friendly: Fundamentals for Decoding Sustainable Choices", "https://www.graygroupintl.com/blog/eco-friendly")
-    )
-
     private val quizzes = listOf(
         Quiz("Water Conservation Quiz", "Test your knowledge on saving water."),
         Quiz("Plastic-Free Life", "How well do you know about reducing plastic usage?"),
-                Quiz("Carbon Footprint Quiz", "See if you can identify which choices yield the smallest carbon footprint."),
-    Quiz("Recycling 101 Quiz", "Do you actually know what everyday items are recyclable?")
+        Quiz("Carbon Footprint Quiz", "See if you can identify which choices yield the smallest carbon footprint."),
+        Quiz("Recycling 101 Quiz", "Do you actually know what everyday items are recyclable?")
     )
 
     @Composable
     override fun Content() {
-        val navigator = LocalNavigator.current
-        val context = LocalContext.current
+        val articles = remember { mutableStateOf<List<Article>?>(emptyList()) }
+
+        LaunchedEffect(Unit) {
+            fetchArticles(articles)
+        }
+
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxHeight()
                 .padding(16.dp)
         ) {
             item {
                 Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)){
+                    .padding(vertical = 16.dp)){
                     Text(text = "Learning Hub", style = MaterialTheme.typography.titleLarge)
                     Icon(Icons.Default.Search, contentDescription = "Search")
                 }
@@ -103,36 +107,11 @@ class LearnScreen : Screen {
                 }
             }
 
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                ) {
-                    articles.forEach { article ->
-                        Card(
-                            modifier = Modifier
-                                .padding(end = 16.dp)
-                                .width(200.dp)
-                                .clickable {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(article.url))
-                                    context.startActivity(intent)
-                                },
-                            elevation = CardDefaults.cardElevation(
-                                defaultElevation = 6.dp
-                            ),
-                            colors = CardDefaults.cardColors(containerColor = Color(243,244,248))
-                        ) {
-                            Box(modifier = Modifier.height(150.dp)){
-                                Image(painter = rememberAsyncImagePainter(model = backgrounUrl), contentDescription = "background", modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(
-                                        RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
-                                    ), contentScale = ContentScale.Crop);
-                            }
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(text = article.title, style = MaterialTheme.typography.titleSmall, color = Color(33,36,39))
-                            }
+            articles.value?.let {
+                item {
+                    LazyRow {
+                        items(it.size) { index ->
+                            ArticleCard(article = articles.value!![index])
                         }
                     }
                 }
@@ -161,7 +140,95 @@ class LearnScreen : Screen {
                 }
             }
         }
+    }
 
+    private suspend fun fetchArticles(articles: MutableState<List<Article>?>) {
+        withContext(Dispatchers.IO) {
+            val client = OkHttpClient()
+
+            val query = "green%20living"
+            val url = "https://newsdata.io/api/1/news?apikey=pub_9776cec1c68b5a1afc4c88f91a0207adacc5&q=$query&language=en&category=education,environment"
+            val request = Request.Builder()
+                .url(url)
+                .build()
+
+            try {
+                val response: Response = client.newCall(request).execute()
+                val jsonData: String? = response.body?.string()
+
+                if (response.isSuccessful && jsonData != null) {
+                    val jsonObject = JSONObject(jsonData)
+                    val jsonArray = jsonObject.getJSONArray("results")
+                    val fetchedArticles = mutableListOf<Article>()
+
+                    for (i in 0 until jsonArray.length()) {
+                        val articleObject = jsonArray.getJSONObject(i)
+                        val title = articleObject.getString("title")
+                        val url = articleObject.getString("link")
+                        val imageUrl = articleObject.getString("image_url")
+
+                        val article = Article(title, url, imageUrl)
+                        fetchedArticles.add(article)
+                    }
+
+                    articles.value = fetchedArticles
+                    Log.d("Articles", "Successfully fetched ${fetchedArticles.size} articles")
+                } else {
+                    Log.e("FetchArticles", "Error in fetching articles: ${response.code}")
+                }
+            } catch (e: Exception) {
+                Log.e("FetchArticles", "Exception occurred: ${e.message}", e)
+            }
+        }
+    }
+}
+
+@Composable
+fun ArticleCard(article: Article) {
+    val context = LocalContext.current
+
+    Card(
+        modifier = Modifier
+            .padding(4.dp)
+            .width(300.dp)
+            .height(230.dp)
+            .clickable {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(article.url))
+                context.startActivity(intent)
+            },
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 6.dp
+        ),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Image(
+                painter = rememberAsyncImagePainter(article.imageUrl),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp)
+                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
+                contentScale = ContentScale.Crop
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .background(Color.LightGray)
+                    .align(Alignment.BottomStart)
+            ) {
+                Box(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = article.title,
+                        color = Color(33, 36, 39)
+                    )
+                }
+            }
+        }
     }
 }
 
