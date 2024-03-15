@@ -46,3 +46,4 @@
 | 2024/03/08 |       |    3     |         |        |      |       | Research on finding freely available News API and query params to retrieve news related to environment and eco-friendly practices           |
 | 2024/03/14 |       |   2.5    |         |        |      |       | Research and reading on coroutines and asynchronous coding pattern in Kotlin                                                                |
 | 2024/03/14 |       |    5     |         |        |      |       | Integrated News API in Kotlin by using coroutines and OkHttp client library                                                                 |
+| 2024/03/15 |       |    4.5   |         |        |      |       | Implemented Quiz screen and 4 static quizzes along with calculating quiz score functionality                                                |
