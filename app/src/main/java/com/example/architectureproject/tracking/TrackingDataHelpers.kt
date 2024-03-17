@@ -39,8 +39,8 @@ object TrackingDataHelpers {
         granularity: TrackingDataGranularity
     ) =
         activities.map {
-            computeImpact(it).let {
-                it.copy(period = periodOperator(granularity)(it.period.start))
+            computeImpact(it).let { entry ->
+                entry.copy(period = periodOperator(granularity)(entry.period.start))
             }
         }
             .groupBy { it.period.start.toEpochSecond() }

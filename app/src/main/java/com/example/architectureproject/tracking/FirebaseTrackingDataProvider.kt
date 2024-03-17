@@ -1,7 +1,6 @@
 package com.example.architectureproject.tracking
 
 import com.example.architectureproject.GreenTraceProviders
-import com.example.architectureproject.tracking.TrackingDataHelpers.fillGapsOrdered
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.FirebaseFirestore
@@ -48,9 +47,9 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
         val toUpdate = lst.map {
             it.first to deltas.map { (date, delta) ->
                 val period = it.second(date)
-                val docid =
+                val docId =
                     "${if (community) "c" else "u"}_${id}_${it.first[0]}_${period.start.toEpochSecond()}"
-                val ref = db.collection("statistics").document(docid)
+                val ref = db.collection("statistics").document(docId)
                 Triple(period, ref, txn.get(ref)) to delta
             }
         }
@@ -97,8 +96,8 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
             // delete
             db.runTransaction {
                 val doc = it.get(ref)
-                val date = doc.getField<Long>("date")!!.let {
-                    ZonedDateTime.ofInstant(Instant.ofEpochSecond(it), ZoneId.of(
+                val date = doc.getField<Long>("date")!!.let { epoch ->
+                    ZonedDateTime.ofInstant(Instant.ofEpochSecond(epoch), ZoneId.of(
                         doc.getField<String>("date_zone")!!
                     ))
                 }
@@ -113,8 +112,8 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
         val impact = GreenTraceProviders.impactProvider.computeImpact(new)
         db.runTransaction {
             val doc = it.get(ref)
-            val date = doc.getField<Long>("date")!!.let {
-                ZonedDateTime.ofInstant(Instant.ofEpochSecond(it), ZoneId.of(
+            val date = doc.getField<Long>("date")!!.let { epoch ->
+                ZonedDateTime.ofInstant(Instant.ofEpochSecond(epoch), ZoneId.of(
                     doc.getField<String>("date_zone")!!
                 ))
             }
@@ -142,7 +141,7 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
     ): List<TrackingEntry> = db.collection("statistics")
         .whereEqualTo(
             if (cid.isEmpty()) "user" else "community",
-            if (cid.isEmpty()) GreenTraceProviders.userProvider!!.uid()!! else cid
+            cid.ifEmpty { GreenTraceProviders.userProvider!!.uid()!! }
         )
         .whereEqualTo("type", granularity.name.lowercase())
         .where(Filter.or(
@@ -169,7 +168,7 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
             val impact = it.getField<Float>("impact")!!
             start to TrackingEntry(subPeriod, TrackingDataType.Emissions, impact)
         }
-        .let { fillGapsOrdered(period, granularity, it) }
+        .let { TrackingDataHelpers.fillGapsOrdered(period, granularity, it) }
 
     override suspend fun getActivities(
         period: TrackingPeriod,

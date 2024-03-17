@@ -35,10 +35,13 @@ class FirebaseCommunityManager : CommunityManager {
     private fun makeInviteLink(id: String): String =
         "http://greentrace-cb8f7.firebaseapp.com/community.html?id=$id"
 
-    private suspend fun convertCommunityDocument(document: DocumentSnapshot): CommunityInfo {
+    private suspend fun convertCommunityDocument(document: DocumentSnapshot): CommunityInfo? {
         // firebase apparently does not support joins
         //   this might be a perf nightmare
         // FIXME: should this massively concurrent read be wrapped in a transaction?
+        if (!document.exists())
+            return null
+
         val owner = document.getString("owner")!!
             .let { GreenTraceProviders.userProvider!!.getUserById(listOf(it)).first() }
 
@@ -86,7 +89,7 @@ class FirebaseCommunityManager : CommunityManager {
                 .get()
                 .await()
                 .documents
-                .map { async { convertCommunityDocument(it) } }
+                .map { async { convertCommunityDocument(it)!! } }
                 .map { it.await() }
         }
     }
