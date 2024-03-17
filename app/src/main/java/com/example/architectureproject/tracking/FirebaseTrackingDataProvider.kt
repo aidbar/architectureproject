@@ -1,38 +1,81 @@
 package com.example.architectureproject.tracking
 
 import com.example.architectureproject.GreenTraceProviders
+import com.example.architectureproject.tracking.TrackingDataHelpers.fillGapsOrdered
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Transaction
 import com.google.firebase.firestore.getField
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.tasks.await
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 class FirebaseTrackingDataProvider : TrackingDataProvider {
-    val db = FirebaseFirestore.getInstance()
+    private val db = FirebaseFirestore.getInstance()
     override suspend fun addActivity(activity: TrackingActivity): String {
-        // FIXME: should we even allow users to specify date?
-        //   figuring out which communities a user
-        //   is part of on any given day in the past is difficult
+        // TODO: handle recurring activities
+        // TODO: handle community statistics aggregation (or maybe not?)
 
-        val doc = db.collection("activities").document()
-        val uid = GreenTraceProviders.userProvider!!.uid()
-        val impact = coroutineScope { async {
-            GreenTraceProviders.impactProvider.computeImpact(activity)
-        } }
-        val communities = coroutineScope { async {
-            GreenTraceProviders.userProvider!!.getCommunities().map { it.id }
-        } }
+        val ref = db.collection("activities").document()
+        val uid = GreenTraceProviders.userProvider!!.uid()!!
+        val impact = GreenTraceProviders.impactProvider.computeImpact(activity)
 
-        val update = hashMapOf(
-            "data" to activity,
-            "date" to activity.date,
-            "user" to uid,
-            "communities" to communities.await(),
-            "impact" to impact.await()
+        db.runTransaction {
+            updateStatistics(uid, listOf(activity.date to impact.value), it)
+            it.set(ref, hashMapOf(
+                "data" to activity,
+                "date" to activity.date.toEpochSecond(),
+                "user" to uid,
+                "impact" to impact.value,
+                "date_zone" to activity.date.zone.id
+            ))
+        }
+
+        return ref.id
+    }
+
+    private fun updateStatistics(id: String, deltas: List<Pair<ZonedDateTime, Float>>, txn: Transaction, community: Boolean = false) {
+        val lst = listOf(
+            "daily" to TrackingPeriod::dayOf,
+            "weekly" to TrackingPeriod::weekOf,
+            "monthly" to TrackingPeriod::monthOf,
+            "yearly" to TrackingPeriod::yearOf
         )
 
-        doc.set(update).await()
-        return doc.id
+        // first, perform all reads
+        val toUpdate = lst.map {
+            it.first to deltas.map { (date, delta) ->
+                val period = it.second(date)
+                val docid =
+                    "${if (community) "c" else "u"}_${id}_${it.first[0]}_${period.start.toEpochSecond()}"
+                val ref = db.collection("statistics").document(docid)
+                Triple(period, ref, txn.get(ref)) to delta
+            }
+        }
+
+        // then perform all writes
+        toUpdate.forEach { (type, updatesForType) ->
+            updatesForType.map { (meta, delta) ->
+                val (period, ref, doc) = meta
+                if (doc.exists()) {
+                    txn.update(ref, "impact", FieldValue.increment(delta.toDouble()))
+                    return@forEach
+                }
+
+                txn.set(
+                    ref, hashMapOf<String, Any>(
+                        "type" to type,
+                        (if (community) "community" else "user") to id,
+                        "start_date" to period.start.toEpochSecond(),
+                        "end_date" to period.end.toEpochSecond(),
+                        "impact" to delta,
+                        "date_zone" to period.start.zone.id
+                    )
+                )
+            }
+        }
     }
 
     override suspend fun viewActivity(id: String) =
@@ -48,45 +91,85 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
         //   everything else can be edited.
         //   this is because figuring out which communities a user
         //   is part of on any given day in the past is difficult
-        val doc = db.collection("activities").document(id)
+        val ref = db.collection("activities").document(id)
+        val uid = GreenTraceProviders.userProvider!!.uid()!!
         if (new == null) {
             // delete
-            doc.delete().await()
+            db.runTransaction {
+                val doc = it.get(ref)
+                val date = doc.getField<Long>("date")!!.let {
+                    ZonedDateTime.ofInstant(Instant.ofEpochSecond(it), ZoneId.of(
+                        doc.getField<String>("date_zone")!!
+                    ))
+                }
+                val impact = doc.getField<Float>("impact")!!
+
+                updateStatistics(uid, listOf(date to -impact), it)
+                it.delete(ref)
+            }.await()
             return
         }
 
         val impact = GreenTraceProviders.impactProvider.computeImpact(new)
-        val update = hashMapOf(
-            "data" to new,
-            "impact" to impact
-        )
+        db.runTransaction {
+            val doc = it.get(ref)
+            val date = doc.getField<Long>("date")!!.let {
+                ZonedDateTime.ofInstant(Instant.ofEpochSecond(it), ZoneId.of(
+                    doc.getField<String>("date_zone")!!
+                ))
+            }
+            val oldImpact = doc.getField<Float>("impact")!!
 
-        doc.update(update).await()
+            if (date.toEpochSecond() == new.date.toEpochSecond())
+                updateStatistics(uid, listOf(date to impact.value - oldImpact), it)
+            else
+                updateStatistics(uid, listOf(
+                    date to -oldImpact,
+                    new.date to impact.value
+                ), it)
+
+            it.update(ref, hashMapOf(
+                "data" to new,
+                "impact" to impact.value
+            ))
+        }.await()
     }
 
     override suspend fun getImpact(
         period: TrackingPeriod,
         granularity: TrackingDataGranularity,
         cid: String
-    ): List<TrackingEntry> =
-        // we are essentially loading all relevant data, as activity objects, into our app's
-        //   memory. this could be a really bad idea, but it should work
-        // firebase does not have an equivalent to something like
-        //   SELECT date, SUM(impact) FROM activities
-        //   WHERE ${period.start} <= date AND date < ${period.end}
-        //   GROUP BY [DAY/MONTH/YEAR/WEEK](date)
-        //   ORDER BY date
-        // so our solution is to do the equivalent of that, on the client side
-        // our other option would be to issue parallel calls
-        //   where each call performs aggregation to produce one single TrackingEntry
-        //   using Firestore read-time aggregations
-        // the final option would be to pre-aggregate impact data for each possible granularity
-        //   upon the addActivity operation, on a per-user and per-community basis
-        //   and then fetch that here. this may be what we do eventually
-        getActivities(period).let { TrackingDataHelpers.aggregateImpact(
-            it, GreenTraceProviders.impactProvider::computeImpact,
-            period, granularity
-        ) }
+    ): List<TrackingEntry> = db.collection("statistics")
+        .whereEqualTo(
+            if (cid.isEmpty()) "user" else "community",
+            if (cid.isEmpty()) GreenTraceProviders.userProvider!!.uid()!! else cid
+        )
+        .whereEqualTo("type", granularity.name.lowercase())
+        .where(Filter.or(
+            Filter.and(
+                Filter.greaterThanOrEqualTo("start_date", period.start.toEpochSecond()),
+                Filter.lessThan("start_date", period.end.toEpochSecond())
+            ),
+            Filter.and(
+                Filter.greaterThan("end_date", period.start.toEpochSecond()),
+                Filter.lessThanOrEqualTo("end_date", period.end.toEpochSecond())
+            )
+        ))
+        .get()
+        .await()
+        .documents
+        .map {
+            val start = it.getField<Long>("start_date")!!
+            val end = it.getField<Long>("end_date")!!
+            val zone = it.getField<String>("date_zone")!!.let(ZoneId::of)
+            val subPeriod = TrackingPeriod(
+                ZonedDateTime.ofInstant(Instant.ofEpochSecond(start), zone),
+                ZonedDateTime.ofInstant(Instant.ofEpochSecond(end), zone)
+            )
+            val impact = it.getField<Float>("impact")!!
+            start to TrackingEntry(subPeriod, TrackingDataType.Emissions, impact)
+        }
+        .let { fillGapsOrdered(period, granularity, it) }
 
     override suspend fun getActivities(
         period: TrackingPeriod,
@@ -98,8 +181,8 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
             if (cid.isEmpty()) collection.whereEqualTo("user", uid)
             else collection.whereArrayContains("communities", cid)
         return initialQuery
-            .whereGreaterThanOrEqualTo("date", period.start)
-            .whereLessThanOrEqualTo("date", period.end)
+            .whereGreaterThanOrEqualTo("date", period.start.toEpochSecond())
+            .whereLessThanOrEqualTo("date", period.end.toEpochSecond())
             .get()
             .await()
             .documents

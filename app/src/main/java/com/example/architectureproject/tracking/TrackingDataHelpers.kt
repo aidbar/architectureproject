@@ -9,15 +9,17 @@ object TrackingDataHelpers {
             TrackingDataGranularity.Year -> TrackingPeriod::yearOf
         }
 
-    private fun fillGapsOrdered(period: TrackingPeriod,
-                                granularity: TrackingDataGranularity,
-                                map: Map<Long, List<TrackingEntry>>): Map<Long, List<TrackingEntry>> {
+    fun fillGapsOrdered(
+        period: TrackingPeriod,
+        granularity: TrackingDataGranularity,
+        pairs: Iterable<Pair<Long, TrackingEntry>>
+    ): List<TrackingEntry> {
         val periodOp = periodOperator(granularity)
         var cur = periodOp(period.start).start
-        val periods = linkedMapOf<Long, List<TrackingEntry>>()
+        val periods = linkedMapOf<Long, TrackingEntry>()
         while (cur < period.end) {
-            periods[cur.toEpochSecond()] = listOf(
-                TrackingEntry(periodOp(cur), TrackingDataType.Emissions, 0f))
+            periods[cur.toEpochSecond()] =
+                TrackingEntry(periodOp(cur), TrackingDataType.Emissions, 0f)
             cur = when (granularity) {
                 TrackingDataGranularity.Day -> cur::plusDays
                 TrackingDataGranularity.Week -> cur::plusWeeks
@@ -26,9 +28,10 @@ object TrackingDataHelpers {
             }(1)
         }
 
-        periods.putAll(map)
-        return periods
+        periods.putAll(pairs)
+        return periods.map { it.value }
     }
+
     suspend fun aggregateImpact(
         activities: List<TrackingActivity>,
         computeImpact: suspend (TrackingActivity) -> TrackingEntry,
@@ -41,10 +44,10 @@ object TrackingDataHelpers {
             }
         }
             .groupBy { it.period.start.toEpochSecond() }
-            .let { fillGapsOrdered(period, granularity, it) }
             .map {
-                it.value[0].copy(value = it.value.fold(0f) { acc, cur ->
+                it.key to it.value[0].copy(value = it.value.fold(0f) { acc, cur ->
                     acc + cur.value
                 })
             }
+            .let { fillGapsOrdered(period, granularity, it) }
 }
