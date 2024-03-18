@@ -31,7 +31,7 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
                 "date_zone" to activity.date.zone.id,
                 "type" to activity.javaClass.name
             ))
-        }
+        }.await()
 
         return ref.id
     }
@@ -62,7 +62,7 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
                 val (period, ref, doc) = meta
                 if (doc.exists()) {
                     txn.update(ref, "impact", FieldValue.increment(delta.toDouble()))
-                    return@forEach
+                    return@map
                 }
 
                 txn.set(
