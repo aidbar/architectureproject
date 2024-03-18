@@ -28,7 +28,8 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
                 "date" to activity.date.toEpochSecond(),
                 "user" to uid,
                 "impact" to impact.value,
-                "date_zone" to activity.date.zone.id
+                "date_zone" to activity.date.zone.id,
+                "type" to activity.javaClass.name
             ))
         }
 
@@ -189,13 +190,15 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
             .await()
             .documents
             .map {
-                it.getField<TrackingActivity>("data")!!
+                val type = it.getField<String>("type")!!
+                (it.get("data", Class.forName(type))!! as TrackingActivity)
                     .apply {
                         id = it.id
                         val zone = it.getField<String>("date_zone").let(ZoneId::of)
                         date = it.getField<Long>("date")!!.let { epoch ->
                             ZonedDateTime.ofInstant(Instant.ofEpochSecond(epoch), zone)
                         }
+                        impact = it.getField<Float>("impact")!!
                     }
             }
     }
