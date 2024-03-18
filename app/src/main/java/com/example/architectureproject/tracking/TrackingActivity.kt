@@ -1,9 +1,16 @@
 package com.example.architectureproject.tracking
 
+import com.google.firebase.firestore.Exclude
 import java.time.ZonedDateTime
 
-open class TrackingActivity(val date: ZonedDateTime, val name: String, id: String) {
+open class TrackingActivity(date: ZonedDateTime, val name: String, id: String) {
     var id = id
+        internal set
+
+    @Exclude
+    @get:Exclude
+    @set:Exclude
+    var date = date
         internal set
 }
 

@@ -5,6 +5,16 @@ import java.time.ZonedDateTime
 // Represents period of time data is fetched for
 // Period is start inclusive and end exclusive
 data class TrackingPeriod(val start: ZonedDateTime, val end: ZonedDateTime) {
+    fun shiftPeriods(periodSize: TrackingDataGranularity, count: Long): TrackingPeriod {
+        val shiftFunc = when (periodSize) {
+            TrackingDataGranularity.Day -> ZonedDateTime::plusDays
+            TrackingDataGranularity.Week -> ZonedDateTime::plusWeeks
+            TrackingDataGranularity.Month -> ZonedDateTime::plusMonths
+            TrackingDataGranularity.Year -> ZonedDateTime::plusYears
+        }
+        return TrackingPeriod(shiftFunc(start, count), shiftFunc(end, count))
+    }
+
     companion object {
         fun dayOf(day: ZonedDateTime): TrackingPeriod {
             val dayStart = ZonedDateTime.of(

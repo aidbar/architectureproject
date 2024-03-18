@@ -23,7 +23,6 @@ import com.example.architectureproject.tracking.FirebaseTrackingDataProvider
 import com.example.architectureproject.tracking.TrackingDataProvider
 import com.example.architectureproject.tracking.TrackingImpactProvider
 import com.example.architectureproject.tracking.demo.DummyMapProvider
-import com.example.architectureproject.tracking.demo.DummyTrackingData
 import com.example.architectureproject.tracking.demo.DummyTrackingImpactProvider
 import com.example.architectureproject.ui.theme.ArchitectureProjectTheme
 
@@ -53,7 +52,7 @@ object GreenTraceProviders {
         trackingProvider = FirebaseTrackingDataProvider()
 
         // FIXME: remove demo hack
-        DummyTrackingData().addTo(trackingProvider!!)
+        //DummyTrackingData().addTo(trackingProvider!!)
     }
 }
 

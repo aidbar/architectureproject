@@ -37,18 +37,19 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
 
     private fun updateStatistics(id: String, deltas: List<Pair<ZonedDateTime, Float>>, txn: Transaction, community: Boolean = false) {
         val lst = listOf(
-            "daily" to TrackingPeriod::dayOf,
-            "weekly" to TrackingPeriod::weekOf,
-            "monthly" to TrackingPeriod::monthOf,
-            "yearly" to TrackingPeriod::yearOf
+            TrackingDataGranularity.Day to TrackingPeriod::dayOf,
+            TrackingDataGranularity.Week to TrackingPeriod::weekOf,
+            TrackingDataGranularity.Month to TrackingPeriod::monthOf,
+            TrackingDataGranularity.Year to TrackingPeriod::yearOf
         )
 
         // first, perform all reads
         val toUpdate = lst.map {
-            it.first to deltas.map { (date, delta) ->
+            val type = it.first.name.lowercase()
+            type to deltas.map { (date, delta) ->
                 val period = it.second(date)
                 val docId =
-                    "${if (community) "c" else "u"}_${id}_${it.first[0]}_${period.start.toEpochSecond()}"
+                    "${if (community) "c" else "u"}_${id}_${type[0]}_${period.start.toEpochSecond()}"
                 val ref = db.collection("statistics").document(docId)
                 Triple(period, ref, txn.get(ref)) to delta
             }
@@ -149,10 +150,12 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
                 Filter.greaterThanOrEqualTo("start_date", period.start.toEpochSecond()),
                 Filter.lessThan("start_date", period.end.toEpochSecond())
             ),
-            Filter.and(
-                Filter.greaterThan("end_date", period.start.toEpochSecond()),
-                Filter.lessThanOrEqualTo("end_date", period.end.toEpochSecond())
-            )
+            period.shiftPeriods(granularity, -1).let { endPeriod ->
+                Filter.and(
+                    Filter.greaterThan("start_date", endPeriod.start.toEpochSecond()),
+                    Filter.lessThanOrEqualTo("start_date", endPeriod.end.toEpochSecond())
+                )
+            }
         ))
         .get()
         .await()
@@ -187,7 +190,13 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
             .documents
             .map {
                 it.getField<TrackingActivity>("data")!!
-                    .apply { id = it.id }
+                    .apply {
+                        id = it.id
+                        val zone = it.getField<String>("date_zone").let(ZoneId::of)
+                        date = it.getField<Long>("date")!!.let { epoch ->
+                            ZonedDateTime.ofInstant(Instant.ofEpochSecond(epoch), zone)
+                        }
+                    }
             }
     }
 }
