@@ -24,10 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -36,6 +33,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import com.example.architectureproject.tracking.Meal
@@ -47,15 +47,38 @@ import com.example.architectureproject.tracking.Transportation
 import kotlinx.coroutines.launch
 import java.time.ZonedDateTime
 
+class PastActivitiesScreenModel : ScreenModel {
+    val data = mutableStateListOf<Pair<TrackingPeriod, List<TrackingActivity>>>()
+    var loading by mutableStateOf(true)
+    fun loadMore() {
+        screenModelScope.launch {
+            loading = true
+            var activities = listOf<TrackingActivity>()
+            // TODO: fix ugly hardcoded start range
+            val lastPeriod = data.lastOrNull()?.first ?:
+            TrackingPeriod.pastMonths().shiftPeriods(TrackingDataGranularity.Month, -12)
+
+            var period = lastPeriod.shiftPeriods(TrackingDataGranularity.Month, 1)
+            while (activities.isEmpty() && period.start <= ZonedDateTime.now()) {
+                activities = GreenTraceProviders.trackingProvider!!.getActivities(period)
+                period = period.shiftPeriods(TrackingDataGranularity.Month, 1)
+            }
+
+            if (activities.isNotEmpty())
+                data.add(period to activities)
+
+            loading = false
+        }
+    }
+}
+
 class PastActivitiesScreen:Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        val data = remember { mutableStateListOf<Pair<TrackingPeriod, List<TrackingActivity>>>() }
-        val scope = rememberCoroutineScope()
-        var loading by remember { mutableStateOf(true) }
+        val model = rememberScreenModel { PastActivitiesScreenModel() }
 
-        LaunchedEffect(Unit) { loadMore(data); loading = false }
+        LaunchedEffect(Unit) { model.loadMore() }
         LazyColumn(modifier = Modifier.padding(16.dp)) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -71,8 +94,8 @@ class PastActivitiesScreen:Screen {
                 }
             }
 
-            items(data.size) { index ->
-                val (period, activities) = data[index]
+            items(model.data.size) { index ->
+                val (period, activities) = model.data[index]
                 Section(
                     month = "${period.start.month.name} ${period.start.year}",
                     activities = activities
@@ -84,10 +107,8 @@ class PastActivitiesScreen:Screen {
                     Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Button(onClick = {
-                        scope.launch { loading = true; loadMore(data); loading = false }
-                    }, enabled = !loading) {
-                        if (loading)
+                    Button(onClick = { model.loadMore() }, enabled = !model.loading) {
+                        if (model.loading)
                             Text("Loading...")
                         else
                             Text("Load more")
@@ -97,23 +118,7 @@ class PastActivitiesScreen:Screen {
         }
     }
 
-    private suspend fun loadMore(
-        data: SnapshotStateList<Pair<TrackingPeriod, List<TrackingActivity>>>
-    ) {
-        var activities = listOf<TrackingActivity>()
-        // TODO: fix ugly hardcoded start range
-        val lastPeriod = data.lastOrNull()?.first ?:
-            TrackingPeriod.pastMonths().shiftPeriods(TrackingDataGranularity.Month, -12)
 
-        var period = lastPeriod.shiftPeriods(TrackingDataGranularity.Month, 1)
-        while (activities.isEmpty() && period.start <= ZonedDateTime.now()) {
-            activities = GreenTraceProviders.trackingProvider!!.getActivities(period)
-            period = period.shiftPeriods(TrackingDataGranularity.Month, 1)
-        }
-
-        if (activities.isEmpty()) return
-        data.add(period to activities)
-    }
 }
 
 @Composable
