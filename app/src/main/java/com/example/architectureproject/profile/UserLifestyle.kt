@@ -1,8 +1,5 @@
 package com.example.architectureproject.profile
 
-import com.example.architectureproject.tracking.Purchase
-import com.example.architectureproject.tracking.Transportation
-
 data class UserLifestyle(val disabilities: Set<Disability>,
                          val transportationPreference: TransportationMethod,
                          val diet: Diet,
