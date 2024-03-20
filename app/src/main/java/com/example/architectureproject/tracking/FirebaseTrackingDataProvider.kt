@@ -22,12 +22,14 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
         val impact = GreenTraceProviders.impactProvider.computeImpact(activity)
 
         db.runTransaction {
-            updateStatistics(uid, listOf(activity.date to impact.value), it)
+            if (activity.schedule == null)
+                updateStatistics(uid, listOf(activity.date to impact.value), it)
             it.set(ref, hashMapOf(
                 "data" to activity,
                 "date" to activity.date.toEpochSecond(),
                 "user" to uid,
                 "impact" to impact.value,
+                "schedule" to activity.schedule?.let { rec -> RecurrenceSchedule.Raw(rec) },
                 "date_zone" to activity.date.zone.id,
                 "type" to activity.javaClass.name
             ))
@@ -199,6 +201,9 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
                             ZonedDateTime.ofInstant(Instant.ofEpochSecond(epoch), zone)
                         }
                         impact = it.getField<Float>("impact")!!
+                        it.getField<RecurrenceSchedule.Raw>("schedule")?.let { rec ->
+                            schedule = RecurrenceSchedule(rec, zone)
+                        }
                     }
             }
     }
