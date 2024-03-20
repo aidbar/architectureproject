@@ -4,6 +4,7 @@ import com.example.architectureproject.GreenTraceProviders
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Transaction
 import com.google.firebase.firestore.getField
 import kotlinx.coroutines.tasks.await
@@ -176,18 +177,11 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
         }
         .let { TrackingDataHelpers.fillGapsOrdered(period, granularity, it) }
 
-    override suspend fun getActivities(
-        period: TrackingPeriod,
-        cid: String
-    ): List<TrackingActivity> {
-        val collection = db.collection("activities")
-        val uid = GreenTraceProviders.userProvider!!.uid()
-        val initialQuery =
-            if (cid.isEmpty()) collection.whereEqualTo("user", uid)
-            else collection.whereArrayContains("communities", cid)
-        return initialQuery
+    suspend fun activityQueryHelper(baseQuery: Query, period: TrackingPeriod) =
+        baseQuery
             .whereGreaterThanOrEqualTo("date", period.start.toEpochSecond())
             .whereLessThanOrEqualTo("date", period.end.toEpochSecond())
+            //.orderBy("date")
             .get()
             .await()
             .documents
@@ -206,5 +200,27 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
                         }
                     }
             }
+
+
+
+    override suspend fun getActivities(
+        period: TrackingPeriod,
+        cid: String
+    ): List<TrackingActivity> {
+        val collection = db.collection("activities")
+        val uid = GreenTraceProviders.userProvider!!.uid()
+        val initialQuery =
+            if (cid.isEmpty()) collection.whereEqualTo("user", uid)
+            else collection.whereArrayContains("communities", cid)
+        val nonRecurring = activityQueryHelper(
+            initialQuery.whereEqualTo("schedule", null), period
+        )
+        return activityQueryHelper(
+            initialQuery.whereNotEqualTo("schedule", null), period)
+            .flatMap { TrackingDataHelpers.expandRecurringActivity(it, period) }
+            // we really should be using the merge step from merge sort here
+            // and just use orderBy for nonRecurring, and manually sort "expanded"
+            .plus(nonRecurring)
+            .sortedBy { it.date }
     }
 }

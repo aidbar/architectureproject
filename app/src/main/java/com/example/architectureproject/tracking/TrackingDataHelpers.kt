@@ -50,4 +50,25 @@ object TrackingDataHelpers {
                 })
             }
             .let { fillGapsOrdered(period, granularity, it) }
+
+    fun expandRecurringActivity(activity: TrackingActivity, period: TrackingPeriod): List<TrackingActivity> {
+        if (!activity.isRecurring()) return listOf(activity)
+        var date =
+            if (activity.date > period.start) activity.date
+            else period.start
+        val schedule = activity.schedule!!
+        val output = mutableListOf<TrackingActivity>()
+        while (date < schedule.endDate && date < period.end) {
+            val instance = activity.copy().apply { this.date = date }
+            output.add(instance)
+            date = when (schedule.period) {
+                TrackingDataGranularity.Day -> date::plusDays
+                TrackingDataGranularity.Week -> date::plusWeeks
+                TrackingDataGranularity.Month -> date::plusMonths
+                TrackingDataGranularity.Year -> date::plusYears
+            }(1)
+        }
+
+        return output
+    }
 }

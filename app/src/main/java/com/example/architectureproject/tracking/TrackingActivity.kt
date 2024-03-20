@@ -16,33 +16,36 @@ class RecurrenceSchedule(val period: TrackingDataGranularity, val endDate: Zoned
         ZonedDateTime.ofInstant(Instant.ofEpochSecond(raw.endDate), zone))
 }
 
-abstract class TrackingActivity(date: ZonedDateTime, val name: String, id: String, schedule: RecurrenceSchedule?) {
+abstract class TrackingActivity(date: ZonedDateTime, open val name: String, id: String, schedule: RecurrenceSchedule?) {
     private constructor() : this(ZonedDateTime.now(), "", "", null)
-    var id = id
+    open var id = id
         internal set
 
     @Exclude
     @get:Exclude
     @set:Exclude
-    var date = date
+    open var date = date
         internal set
 
     @Exclude
     @get:Exclude
     @set:Exclude
-    var schedule = schedule
+    open var schedule = schedule
         internal set
 
-    var impact: Float = Float.NaN
+    open var impact: Float = Float.NaN
         internal set
+
+    fun isRecurring() = schedule != null
+    abstract fun copy(): TrackingActivity
 }
 
-class Meal(date: ZonedDateTime,
-           name: String,
-           val type: Type,
-           val contents: List<Entry>,
-           id: String = "",
-           schedule: RecurrenceSchedule? = null
+data class Meal(override var date: ZonedDateTime,
+                override var name: String,
+                val type: Type,
+                val contents: List<Entry>,
+                override var id: String = "",
+                override var schedule: RecurrenceSchedule? = null
 ):
     TrackingActivity(date, name, id, schedule) {
         private constructor() : this(ZonedDateTime.now(), "", Type.Breakfast, listOf())
@@ -51,14 +54,17 @@ class Meal(date: ZonedDateTime,
             enum class Type { Meat, Dairy, Poultry, Egg, Fish, Vegetable, Fruit, Grain }
             private constructor() : this(Type.Fruit, 0.0f)
         }
-    }
 
-class Transportation(date: ZonedDateTime,
-                     name: String,
-                     val stops: List<Stop>,
-                     val mode: Mode,
-                     id: String = "",
-                     schedule: RecurrenceSchedule? = null
+    override fun copy() = copy(id = id)
+}
+
+data class Transportation(
+    override var date: ZonedDateTime,
+    override val name: String,
+    val stops: List<Stop>,
+    val mode: Mode,
+    override var id: String = "",
+    override var schedule: RecurrenceSchedule? = null
 ):
     TrackingActivity(date, name, id, schedule) {
     private constructor() : this(ZonedDateTime.now(), "", listOf(), Mode.Walk)
@@ -66,13 +72,16 @@ class Transportation(date: ZonedDateTime,
     data class Stop(val name: String, val long: Double, val lat: Double) {
         private constructor() : this("", 0.0, 0.0)
     }
+
+    override fun copy() = copy(id = id)
 }
 
-class Purchase(date: ZonedDateTime,
-               name: String,
-               val plasticBag: Boolean,
-               id: String = "",
-               schedule: RecurrenceSchedule? = null): TrackingActivity(date, name, id, schedule) {
+data class Purchase(override var date: ZonedDateTime,
+                   override val name: String,
+                   val plasticBag: Boolean,
+                   override var id: String = "",
+                   override var schedule: RecurrenceSchedule? = null): TrackingActivity(date, name, id, schedule) {
     private constructor() : this(ZonedDateTime.now(), "", false)
     enum class Source { New, SecondHand, Refurbished }
+    override fun copy() = copy(id = id)
 }
