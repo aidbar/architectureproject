@@ -1,5 +1,8 @@
 package com.example.architectureproject.tracking
 
+import java.time.Period
+import java.time.ZonedDateTime
+
 object TrackingDataHelpers {
     private fun periodOperator(granularity: TrackingDataGranularity) =
         when (granularity) {
@@ -50,18 +53,37 @@ object TrackingDataHelpers {
                 })
             }
             .let { fillGapsOrdered(period, granularity, it) }
+    private fun findFirstInstanceDayOrWeek(start: ZonedDateTime, schedule: RecurrenceSchedule, periodStart: ZonedDateTime): ZonedDateTime {
+        // the concept of days and weeks is a fixed duration in UTC time (and also unix epoch seconds)
+        // use the fast and simple path for these computations
+        val deltaSecs = periodStart.toEpochSecond() - start.toEpochSecond()
+        val periodSecs = schedule.period * schedule.unit.seconds()
+        val alignedDelta = (periodSecs - deltaSecs % periodSecs) % periodSecs + deltaSecs
+        return start.plusSeconds(alignedDelta)
+    }
+
+    fun findFirstInstance(start: ZonedDateTime, schedule: RecurrenceSchedule, periodStart: ZonedDateTime): ZonedDateTime {
+        if (schedule.unit == TrackingDataGranularity.Day || schedule.unit == TrackingDataGranularity.Week)
+            return findFirstInstanceDayOrWeek(start, schedule, periodStart)
+
+        val between = Period.between(start.toLocalDate(), periodStart.toLocalDate())
+        if (schedule.unit == TrackingDataGranularity.Year)
+            throw UnsupportedOperationException("Yearly recurring activities are unsupported")
+
+        TODO("recurring activities: not implemented for Monthly yet")
+    }
 
     fun expandRecurringActivity(activity: TrackingActivity, period: TrackingPeriod): List<TrackingActivity> {
         if (!activity.isRecurring()) return listOf(activity)
-        var date =
-            if (activity.date > period.start) activity.date
-            else period.start
         val schedule = activity.schedule!!
+        var date =
+            if (activity.date >= period.start) activity.date
+            else findFirstInstance(activity.date, schedule, period.start)
         val output = mutableListOf<TrackingActivity>()
         while (date < schedule.endDate && date < period.end) {
             val instance = activity.copy().apply { this.date = date }
             output.add(instance)
-            date = when (schedule.period) {
+            date = when (schedule.unit) {
                 TrackingDataGranularity.Day -> date::plusDays
                 TrackingDataGranularity.Week -> date::plusWeeks
                 TrackingDataGranularity.Month -> date::plusMonths

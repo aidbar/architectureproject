@@ -82,7 +82,12 @@ data class TrackingPeriod(val start: ZonedDateTime, val end: ZonedDateTime) {
 // For example, Day means fetch one value for every day
 //              Month means aggregate daily values, return 1 value for each month
 enum class TrackingDataGranularity {
-    Day, Week, Month, Year
+    Day, Week, Month, Year;
+    fun seconds(): Long = when (this) {
+        Day -> 24 * 3600
+        Week -> 7 * Day.seconds()
+        else -> -1
+    }
 }
 
 enum class TrackingDataType {

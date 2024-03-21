@@ -5,13 +5,14 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
-class RecurrenceSchedule(val period: TrackingDataGranularity, val endDate: ZonedDateTime) {
-    private constructor() : this(TrackingDataGranularity.Month, ZonedDateTime.now())
-    data class Raw(val period: TrackingDataGranularity, val endDate: Long) {
-        constructor(base: RecurrenceSchedule) : this(base.period, base.endDate.toEpochSecond())
+class RecurrenceSchedule(val unit: TrackingDataGranularity, val period: Int, val endDate: ZonedDateTime) {
+    private constructor() : this(TrackingDataGranularity.Month, 0, ZonedDateTime.now())
+    data class Raw(val unit: TrackingDataGranularity, val period: Int, val endDate: Long) {
+        constructor(base: RecurrenceSchedule) : this(base.unit, base.period, base.endDate.toEpochSecond())
     }
 
     constructor(raw: Raw, zone: ZoneId) : this(
+        raw.unit,
         raw.period,
         ZonedDateTime.ofInstant(Instant.ofEpochSecond(raw.endDate), zone))
 }
