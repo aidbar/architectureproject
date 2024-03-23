@@ -15,7 +15,6 @@ import java.time.ZonedDateTime
 class FirebaseTrackingDataProvider : TrackingDataProvider {
     private val db = FirebaseFirestore.getInstance()
     override suspend fun addActivity(activity: TrackingActivity): String {
-        // TODO: handle recurring activities
         // TODO: handle community statistics aggregation (or maybe not?)
 
         val ref = db.collection("activities").document()
@@ -176,6 +175,18 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
             start to TrackingEntry(subPeriod, TrackingDataType.Emissions, impact)
         }
         .let { TrackingDataHelpers.fillGapsOrdered(period, granularity, it) }
+        .let {
+            val collection = db.collection("activities")
+            val uid = GreenTraceProviders.userProvider!!.uid()!!
+            val initialQuery =
+                if (cid.isEmpty()) collection.whereEqualTo("user", uid)
+                else collection.whereArrayContains("communities", cid)
+            val recurring = activityQueryHelper(
+                initialQuery.whereNotEqualTo("schedule", null),
+                period
+            )
+            TrackingDataHelpers.applyRecurringImpacts(recurring, it)
+        }
 
     suspend fun activityQueryHelper(baseQuery: Query, period: TrackingPeriod) =
         baseQuery

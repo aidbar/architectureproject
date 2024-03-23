@@ -1,7 +1,7 @@
 package com.example.architectureproject.tracking
 
-import java.time.Period
 import java.time.ZonedDateTime
+import kotlin.math.min
 
 object TrackingDataHelpers {
     private fun periodOperator(granularity: TrackingDataGranularity) =
@@ -57,16 +57,16 @@ object TrackingDataHelpers {
         // the concept of days and weeks is a fixed duration in UTC time (and also unix epoch seconds)
         // use the fast and simple path for these computations
         val deltaSecs = periodStart.toEpochSecond() - start.toEpochSecond()
-        val periodSecs = schedule.period * schedule.unit.seconds()
+        val periodSecs = schedule.periodSeconds()
         val alignedDelta = (periodSecs - deltaSecs % periodSecs) % periodSecs + deltaSecs
         return start.plusSeconds(alignedDelta)
     }
 
-    fun findFirstInstance(start: ZonedDateTime, schedule: RecurrenceSchedule, periodStart: ZonedDateTime): ZonedDateTime {
+    private fun findFirstInstance(start: ZonedDateTime, schedule: RecurrenceSchedule, periodStart: ZonedDateTime): ZonedDateTime {
         if (schedule.unit == TrackingDataGranularity.Day || schedule.unit == TrackingDataGranularity.Week)
             return findFirstInstanceDayOrWeek(start, schedule, periodStart)
 
-        val between = Period.between(start.toLocalDate(), periodStart.toLocalDate())
+        //val between = Period.between(start.toLocalDate(), periodStart.toLocalDate())
         if (schedule.unit == TrackingDataGranularity.Year)
             throw UnsupportedOperationException("Yearly recurring activities are unsupported")
 
@@ -93,4 +93,28 @@ object TrackingDataHelpers {
 
         return output
     }
+
+    private fun countOccurrencesDuring(recurring: TrackingActivity, period: TrackingPeriod): Int {
+        val schedule = recurring.schedule!!
+        val first = findFirstInstance(recurring.date, schedule, period.start)
+        // TODO: this won't work for Monthly
+        val end = min(
+            period.end.toEpochSecond(),
+            schedule.endDate?.toEpochSecond() ?: Long.MAX_VALUE
+        ) - 1
+        val length = end - first.toEpochSecond()
+        if (length < 0) return 0
+
+        return (length / schedule.periodSeconds()).toInt() + 1
+    }
+
+    fun applyRecurringImpacts(recurring: Iterable<TrackingActivity>, entries: Iterable<TrackingEntry>) =
+        entries.map { entry ->
+            val addedImpact = recurring.sumOf {
+                val count = countOccurrencesDuring(it, entry.period)
+                count * it.impact.toDouble()
+            }
+
+            entry.copy(value = entry.value + addedImpact.toFloat())
+        }
 }

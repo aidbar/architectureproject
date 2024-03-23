@@ -15,6 +15,8 @@ data class TrackingPeriod(val start: ZonedDateTime, val end: ZonedDateTime) {
         return TrackingPeriod(shiftFunc(start, count), shiftFunc(end, count))
     }
 
+    fun seconds() = end.toEpochSecond() - start.toEpochSecond()
+
     companion object {
         fun dayOf(day: ZonedDateTime): TrackingPeriod {
             val dayStart = ZonedDateTime.of(
