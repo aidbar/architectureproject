@@ -9,6 +9,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.getField
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -92,7 +93,7 @@ class FirebaseUserProvider private constructor(
         )
 
         return suspendCoroutine { cont ->
-            userDocRef.update(update)
+            userDocRef.set(update, SetOptions.merge())
                 .addOnSuccessListener {
                     Log.d(ContentValues.TAG, "User document successfully added!")
                     profile = Profile(name, bio, age)

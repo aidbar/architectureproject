@@ -30,6 +30,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,7 +73,6 @@ class HomeScreenModel : ScreenModel {
     var selectedTab by mutableStateOf(GraphOption.Weekly)
     var data by mutableStateOf(listOf<TrackingEntry>())
     var loaded by mutableStateOf(false)
-    var user by mutableStateOf(GreenTraceProviders.userProvider!!.userInfo())
     val tasks = mutableStateListOf("Use public transport", "Sort waste", "Plant a tree", "Participate in a cleaning drive", "Reduce energy consumption", "Task 6", "Task 7", "Task 8", "Task 9", "Task 10")
     fun fetchData() {
         screenModelScope.launch {
@@ -83,10 +83,6 @@ class HomeScreenModel : ScreenModel {
             }
             loaded = true
         }
-    }
-
-    fun init() {
-        user = GreenTraceProviders.userProvider!!.userInfo()
     }
 }
 
@@ -118,7 +114,7 @@ class HomeScreen :Screen{
     override fun Content() {
         val navigator = LocalNavigator.current
         val model = rememberScreenModel { HomeScreenModel() }
-        LaunchedEffect(Unit) { model.init() }
+        var user = remember { GreenTraceProviders.userProvider!!.userInfo() }
         LaunchedEffect(model.selectedTab) { model.fetchData() }
 
         if (!model.loaded) {
@@ -180,7 +176,7 @@ class HomeScreen :Screen{
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Welcome ${model.user.name}!",
+                                text = "Welcome ${user.name}!",
                                 color = Color(0xFF009688),
                                 fontSize = 25.sp,
                                 fontWeight = FontWeight.Bold
