@@ -49,3 +49,4 @@
 | 2024/03/15 |       |    4.5   |         |        |      |       | Implemented Quiz screen and 4 static quizzes along with calculating quiz score functionality   
 | 2024/03/19 |   2.5 |    2.5   |   2.5   |    2.5 |  2.5 |  2.5  | Team meeting for D4
 | 2024/03/20 |   1   |    1     |    1    |    1   |  1   |   1   |  D5
+| 2024/03/24 |       |          |         |    2.5 |      |       | Carbon footprint calculation algorithm                                                                                                      |
