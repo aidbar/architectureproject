@@ -1,11 +1,13 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-package com.example.yourapplication
+package com.example.architectureproject
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,7 +35,7 @@ class NewActivityScreen : Screen {
         var departure by remember { mutableStateOf("") }
         var destination by remember { mutableStateOf("") }
         val stops = remember { mutableStateListOf("") }
-        var plasticBagUsed by remember { mutableStateOf(false) }
+        var shoppingMethod by remember { mutableStateOf("") }
 
         Column(
             modifier = Modifier
@@ -52,29 +54,44 @@ class NewActivityScreen : Screen {
 
             when (activityType) {
                 "Meal" -> MealSection(foodType) { newFoodType -> foodType = newFoodType }
-                "Commute" -> CommuteSection(transportationMode, departure, destination, stops) { stops.add("") }
-                "Purchase" -> PurchaseSection(plasticBagUsed) { newPlasticBagUsed -> plasticBagUsed = newPlasticBagUsed }
+                "Commute" -> CommuteSection(
+                    transportationMode,
+                    departure,
+                    destination,
+                    stops
+                ) { stops.add("") }
+
+                "Purchase" -> PurchaseSection(shoppingMethod) { newShoppingMethod ->
+                    shoppingMethod = newShoppingMethod
+                }
             }
-
-            DatePickerButton(context, date) { selectedDate -> date = selectedDate }
-            TimePickerButton(context, time) { selectedTime -> time = selectedTime }
-
-            Button(
-                onClick = {
-                    activityType = ""
-                    date = LocalDate.now()
-                    time = LocalTime.now()
-                    foodType = ""
-                    transportationMode = ""
-                    departure = ""
-                    destination = ""
-                    stops.clear()
-                    plasticBagUsed = false
-                    keyboardController?.hide()
-                },
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            ) {
-                Text("Save Activity")
+            if (activityType.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(
+                        10.dp,
+                        Alignment.CenterHorizontally
+                    )// This will space the buttons evenly
+                ) {
+                    Button(
+                        onClick = {
+                            activityType = ""
+                            date = LocalDate.now()
+                            time = LocalTime.now()
+                            foodType = ""
+                            transportationMode = ""
+                            departure = ""
+                            destination = ""
+                            stops.clear()
+                            shoppingMethod = ""
+                            keyboardController?.hide()
+                        }
+                    ) {
+                        Text("Save Activity")
+                    }
+                    DatePickerButton(context, date) { selectedDate -> date = selectedDate }
+                    TimePickerButton(context, time) { selectedTime -> time = selectedTime }
+                }
             }
         }
     }
@@ -92,14 +109,45 @@ fun ActivityButton(text: String, selectedActivity: String, onClick: (String) -> 
         Text(text)
     }
 }
+
 @Composable
 fun MealSection(foodType: String, onFoodTypeChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = foodType,
-        onValueChange = onFoodTypeChange,
-        label = { Text("Type of food consumed") },
-        modifier = Modifier.fillMaxWidth()
-    )
+    var expanded by remember { mutableStateOf(false) }
+    val foodTypes = listOf("Meat", "Dairy", "Poultry", "Egg", "Fish", "Vegetable", "Fruit", "Grain")
+    var selectedFoodType by remember { mutableStateOf(foodType) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        TextField(
+            value = selectedFoodType,
+            onValueChange = { },
+            readOnly = false,
+            label = { Text("Type of food consumed") },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            foodTypes.forEach { type ->
+                DropdownMenuItem(
+                    text = { Text(type) },
+                    onClick = {
+                        selectedFoodType = type
+                        onFoodTypeChange(type)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -110,17 +158,44 @@ fun CommuteSection(
     stops: MutableList<String>,
     onAddStop: () -> Unit
 ) {
-    var transportationMode by remember { mutableStateOf(initialTransportationMode) }
     var departure by remember { mutableStateOf(initialDeparture) }
     var destination by remember { mutableStateOf(initialDestination) }
 
-    OutlinedTextField(
-        value = transportationMode,
-        onValueChange = { transportationMode = it },
-        label = { Text("Transportation Mode") },
-        modifier = Modifier.fillMaxWidth()
-    )
+    var expanded by remember { mutableStateOf(false) }
+    val transportationModes = listOf("car", "bus", "walk", "bike", "train", "plane", "ferry", "LRT")
+    var selectedMode by remember { mutableStateOf(initialTransportationMode) }
 
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        TextField(
+            value = selectedMode,
+            onValueChange = { },
+            readOnly = false,
+            label = { Text("Type of transportation") },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            transportationModes.forEach { type ->
+                DropdownMenuItem(
+                    text = { Text(type) },
+                    onClick = {
+                        selectedMode = type
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
     OutlinedTextField(
         value = departure,
         onValueChange = { departure = it },
@@ -148,42 +223,89 @@ fun CommuteSection(
         )
     }
 
-    Button(onClick = onAddStop) {
+    OutlinedButton(onClick = onAddStop) {
         Text("Add Stop")
     }
 }
 
 @Composable
-fun PurchaseSection(plasticBagUsed: Boolean, onPlasticBagUsedChange: (Boolean) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text("Any plastic bag used? ")
-        Switch(checked = plasticBagUsed, onCheckedChange = onPlasticBagUsedChange)
+fun PurchaseSection(shoppingMethod: String, onShoppingMethodChange: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val shoppingType = listOf("In-Store", "Online", "SecondHand")
+    var selectedShoppingType by remember { mutableStateOf(shoppingMethod) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        TextField(
+            value = selectedShoppingType,
+            onValueChange = { },
+            readOnly = false,
+            label = { Text(text = "Select way of purchase") },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            shoppingType.forEach { type ->
+                DropdownMenuItem(
+                    text = { Text(type) },
+                    onClick = {
+                        selectedShoppingType = type
+                        onShoppingMethodChange(type)
+                        expanded = false
+                    }
+                )
+            }
+        }
     }
 }
 
 @Composable
 fun DatePickerButton(context: Context, date: LocalDate, onDateSelected: (LocalDate) -> Unit) {
     val dateFormatter = DateTimeFormatter.ofPattern("EEE, d MMM yyyy")
-    Button(onClick = { showDatePicker(context, date, onDateSelected) }) {
-        Text("Select Date: ${date.format(dateFormatter)}")
+    OutlinedIconButton(onClick = { showDatePicker(context, date, onDateSelected) }) {
+        Icon(Icons.Default.DateRange, contentDescription = "date")
     }
 }
 
 @Composable
 fun TimePickerButton(context: Context, time: LocalTime, onTimeSelected: (LocalTime) -> Unit) {
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-    Button(onClick = { showTimePicker(context, time, onTimeSelected) }) {
-        Text("Select Time: ${time.format(timeFormatter)}")
+    OutlinedButton(
+        onClick = { showTimePicker(context, time, onTimeSelected) },
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.Transparent,
+            contentColor = MaterialTheme.typography.bodySmall.color
+        ),
+        modifier = Modifier.wrapContentWidth()
+    ) {
+        Text(time.format(timeFormatter))
     }
 }
 
-private fun showDatePicker(context: Context, currentDate: LocalDate, onDateSelected: (LocalDate) -> Unit) {
+private fun showDatePicker(
+    context: Context,
+    currentDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit
+) {
     DatePickerDialog(context, { _, year, month, dayOfMonth ->
         onDateSelected(LocalDate.of(year, month + 1, dayOfMonth))
     }, currentDate.year, currentDate.monthValue - 1, currentDate.dayOfMonth).show()
 }
 
-private fun showTimePicker(context: Context, currentTime: LocalTime, onTimeSelected: (LocalTime) -> Unit) {
+private fun showTimePicker(
+    context: Context,
+    currentTime: LocalTime,
+    onTimeSelected: (LocalTime) -> Unit
+) {
     TimePickerDialog(context, { _, hourOfDay, minute ->
         onTimeSelected(LocalTime.of(hourOfDay, minute))
     }, currentTime.hour, currentTime.minute, true).show()
