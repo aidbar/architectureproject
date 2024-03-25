@@ -49,6 +49,7 @@ import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import com.example.architectureproject.tracking.TrackingDataGranularity
 import com.example.architectureproject.tracking.TrackingEntry
 import com.example.architectureproject.tracking.TrackingPeriod
@@ -86,6 +87,21 @@ class HomeScreenModel : ScreenModel {
     }
 }
 
+data class Recommendation(
+    val task: String,
+    val primaryTag: String,
+    val secondaryTag: String
+)
+
+val recommendationList = listOf(
+    Recommendation("Buy second-hand clothing", "all", "purchase"),
+    Recommendation("Carpool with coworkers/friends", "all", "commute"),
+    Recommendation("Cook a meal at home rather than eating out", "all", "meal"),
+    Recommendation("Switch to eco-friendly cleaning products", "all", "purchase"),
+    Recommendation("Plan your week's meals to reduce food wastage", "all", "meal"),
+    Recommendation("Use ride-share instead of your next Uber trip", "all", "commute"),
+)
+
 class HomeScreen :Screen{
     private fun createValueFormatter(values: List<String>): AxisValueFormatter<AxisPosition.Horizontal.Bottom> {
         return AxisValueFormatter { position, _ ->
@@ -117,6 +133,8 @@ class HomeScreen :Screen{
         var user = remember { GreenTraceProviders.userProvider!!.userInfo() }
         LaunchedEffect(model.selectedTab) { model.fetchData() }
 
+        val randomRecommendations = recommendationList.shuffled().take(3)
+
         if (!model.loaded) {
             LoadingScreen()
             return
@@ -147,6 +165,8 @@ class HomeScreen :Screen{
                 )
             )
         )
+
+        val tabNavigator = LocalTabNavigator.current
 
         Box(
             modifier = Modifier.fillMaxSize()
@@ -315,18 +335,21 @@ class HomeScreen :Screen{
                     )
                 }
 
-                items(items = model.tasks, itemContent = { item ->
+                items(items = randomRecommendations, itemContent = { item ->
                     Card(
                         border = BorderStroke(3.dp, Color(0xFF009688)),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 15.dp, start = 20.dp, end = 20.dp)
-                            .shadow(30.dp),
+                            .shadow(30.dp)
+                            .clickable(onClick = {
+                                tabNavigator.current = NewActivityTab
+                            }),
                         elevation = 8.dp
                     ) {
                         androidx.compose.material.Text(
-                            text = item,
+                            text = item.task,
                             color = Color.Black,
                             fontSize = 16.sp,
                             modifier = Modifier.padding(16.dp)
