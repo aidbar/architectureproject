@@ -50,6 +50,8 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
+import com.example.architectureproject.profile.FirebaseUserProvider
+import com.example.architectureproject.profile.UserLifestyle
 import com.example.architectureproject.tracking.TrackingDataGranularity
 import com.example.architectureproject.tracking.TrackingEntry
 import com.example.architectureproject.tracking.TrackingPeriod
@@ -89,17 +91,7 @@ class HomeScreenModel : ScreenModel {
 
 data class Recommendation(
     val task: String,
-    val primaryTag: String,
-    val secondaryTag: String
-)
-
-val recommendationList = listOf(
-    Recommendation("Buy second-hand clothing", "all", "purchase"),
-    Recommendation("Carpool with coworkers/friends", "all", "commute"),
-    Recommendation("Cook a meal at home rather than eating out", "all", "meal"),
-    Recommendation("Switch to eco-friendly cleaning products", "all", "purchase"),
-    Recommendation("Plan your week's meals to reduce food wastage", "all", "meal"),
-    Recommendation("Use ride-share instead of your next Uber trip", "all", "commute"),
+    val tag: String
 )
 
 class HomeScreen :Screen{
@@ -125,15 +117,76 @@ class HomeScreen :Screen{
         })
     }
 
+    private fun retrieveRecommendations(): List<Recommendation> {
+        val userLifestyle = GreenTraceProviders.userProvider!!.userLifestyle()
+
+        val recommendationList = mutableListOf(
+            Recommendation("Buy second-hand clothing", "purchase"),
+            Recommendation("Carpool with coworkers/friends", "commute"),
+            Recommendation("Cook a meal at home rather than eating out", "meal"),
+            Recommendation("Switch to eco-friendly cleaning products", "purchase"),
+            Recommendation("Plan your week's meals to reduce food wastage", "meal"),
+            Recommendation("Use ride-share instead of your next Uber trip", "commute"),
+            Recommendation("Combine errands to reduce the number of trips", "commute"),
+            Recommendation("Buy in bulk to reduce packaging waste", "purchase")
+        )
+
+        if(userLifestyle.disabilities.isEmpty()) {
+            recommendationList.add(Recommendation("Walk or bike to nearby places instead of driving", "commute"))
+            recommendationList.add(Recommendation("Use electric scooter or bike reach nearby places", "commute"))
+        }
+
+        // locallySourcedFoodPreference
+        if(userLifestyle.locallySourcedFoodPreference == UserLifestyle.Frequency.Always) {
+            recommendationList.add(Recommendation("Explore community-supported agriculture programs in your area", ""))
+        }
+
+        if(userLifestyle.locallySourcedFoodPreference == UserLifestyle.Frequency.Sometimes) {
+            recommendationList.add(Recommendation("Buy food products having local produce labels", "purchase"))
+        }
+
+        if(userLifestyle.locallySourcedFoodPreference == UserLifestyle.Frequency.Always || userLifestyle.locallySourcedFoodPreference == UserLifestyle.Frequency.Sometimes){
+            recommendationList.add(Recommendation("Shop at local farmers' markets for fresh produce", "purchase"))
+            recommendationList.add(Recommendation("Explore local bakeries for bread and pastries", "purchase"))
+        } else {
+            recommendationList.add(Recommendation("Consider researching the benefits of locally sourced foods", ""))
+        }
+
+
+        // dietaryRestrictions
+        if(userLifestyle.diet == UserLifestyle.Diet.None || userLifestyle.diet == UserLifestyle.Diet.Pescatarian) {
+            recommendationList.add(Recommendation("Visit local butcher shops for sustainably sourced meat", "purchase"))
+        }
+
+        if (userLifestyle.diet != UserLifestyle.Diet.Vegan) {
+            recommendationList.add(Recommendation("Support local dairy farms for fresh dairy products", "purchase"))
+        }
+
+        // transportationMode
+        if (userLifestyle.transportationPreference == UserLifestyle.TransportationMethod.PublicTransport) {
+            recommendationList.add(Recommendation("Use public transportation", "commute"))
+        }
+
+        // sustainableShoppingPreference
+        if (userLifestyle.sustainabilityInfluence == UserLifestyle.Frequency.Rarely || userLifestyle.sustainabilityInfluence == UserLifestyle.Frequency.Never) {
+            recommendationList.add(Recommendation("Choose one or two sustainable products to try out each time you shop", ""))
+            recommendationList.add(Recommendation("Consider researching brands that prioritize sustainability and ethical practices", ""))
+        } else {
+            recommendationList.add(Recommendation("Buy products with minimal packaging or packaging made from recyclable materials", "purchase"))
+        }
+
+        return recommendationList.shuffled().take(6)
+    }
+
     @Composable
     @Preview
     override fun Content() {
         val navigator = LocalNavigator.current
         val model = rememberScreenModel { HomeScreenModel() }
-        var user = remember { GreenTraceProviders.userProvider!!.userInfo() }
+        val user = remember { GreenTraceProviders.userProvider!!.userInfo() }
         LaunchedEffect(model.selectedTab) { model.fetchData() }
 
-        val randomRecommendations = recommendationList.shuffled().take(3)
+        val randomRecommendations = retrieveRecommendations()
 
         if (!model.loaded) {
             LoadingScreen()
