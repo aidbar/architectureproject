@@ -1,5 +1,6 @@
 package com.example.architectureproject.tracking
 
+import java.time.Period
 import java.time.ZonedDateTime
 import kotlin.math.min
 
@@ -66,11 +67,14 @@ object TrackingDataHelpers {
         if (schedule.unit == TrackingDataGranularity.Day || schedule.unit == TrackingDataGranularity.Week)
             return findFirstInstanceDayOrWeek(start, schedule, periodStart)
 
-        //val between = Period.between(start.toLocalDate(), periodStart.toLocalDate())
         if (schedule.unit == TrackingDataGranularity.Year)
             throw UnsupportedOperationException("Yearly recurring activities are unsupported")
 
-        TODO("recurring activities: not implemented for Monthly yet")
+        // TODO: monthly is broken still
+        val between = Period.between(start.toLocalDate(), periodStart.toLocalDate())
+        val delta = between.months + if (between.days > 0) 1 else 0
+        val alignedDelta = (schedule.period - delta % schedule.period) % schedule.period + delta
+        return start.plusMonths(alignedDelta.toLong())
     }
 
     fun expandRecurringActivity(activity: TrackingActivity, period: TrackingPeriod): List<TrackingActivity> {
@@ -80,15 +84,15 @@ object TrackingDataHelpers {
             if (activity.date >= period.start) activity.date
             else findFirstInstance(activity.date, schedule, period.start)
         val output = mutableListOf<TrackingActivity>()
-        while (date < schedule.endDate && date < period.end) {
-            val instance = activity.copy().apply { this.date = date }
+        while (schedule.endDate?.let { date < it } != false && date < period.end) {
+            val instance = activity.copy().apply { this.date = date; this.impact = activity.impact }
             output.add(instance)
             date = when (schedule.unit) {
                 TrackingDataGranularity.Day -> date::plusDays
                 TrackingDataGranularity.Week -> date::plusWeeks
                 TrackingDataGranularity.Month -> date::plusMonths
                 TrackingDataGranularity.Year -> date::plusYears
-            }(1)
+            }(schedule.period.toLong())
         }
 
         return output

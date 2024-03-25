@@ -6,15 +6,16 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 
 class RecurrenceSchedule(val unit: TrackingDataGranularity, val period: Int, val endDate: ZonedDateTime? = null) {
-    private constructor() : this(TrackingDataGranularity.Month, 0, ZonedDateTime.now())
+    private constructor() : this(TrackingDataGranularity.Day, 0, ZonedDateTime.now())
     data class Raw(val unit: TrackingDataGranularity, val period: Int, val endDate: Long? = null) {
         constructor(base: RecurrenceSchedule) : this(base.unit, base.period, base.endDate?.toEpochSecond())
+        private constructor() : this(RecurrenceSchedule())
     }
 
     constructor(raw: Raw, zone: ZoneId) : this(
         raw.unit,
         raw.period,
-        ZonedDateTime.ofInstant(raw.endDate?.let { Instant.ofEpochSecond(it) }, zone))
+        raw.endDate?.let { ZonedDateTime.ofInstant(Instant.ofEpochSecond(it), zone) })
 
     fun periodSeconds() = unit.seconds() * period
 }
@@ -26,13 +27,11 @@ abstract class TrackingActivity(date: ZonedDateTime, open val name: String, id: 
 
     @Exclude
     @get:Exclude
-    @set:Exclude
     open var date = date
         internal set
 
     @Exclude
     @get:Exclude
-    @set:Exclude
     open var schedule = schedule
         internal set
 
@@ -43,12 +42,12 @@ abstract class TrackingActivity(date: ZonedDateTime, open val name: String, id: 
     abstract fun copy(): TrackingActivity
 }
 
-data class Meal(override var date: ZonedDateTime,
+data class Meal(@Exclude @get:Exclude override var date: ZonedDateTime,
                 override var name: String,
                 val type: Type,
                 val contents: List<Entry>,
-                override var id: String = "",
-                override var schedule: RecurrenceSchedule? = null
+                @Exclude @get:Exclude override var schedule: RecurrenceSchedule? = null,
+                override var id: String = ""
 ):
     TrackingActivity(date, name, id, schedule) {
         private constructor() : this(ZonedDateTime.now(), "", Type.Breakfast, listOf())
@@ -62,12 +61,12 @@ data class Meal(override var date: ZonedDateTime,
 }
 
 data class Transportation(
-    override var date: ZonedDateTime,
+    @Exclude @get:Exclude override var date: ZonedDateTime,
     override val name: String,
     val stops: List<Stop>,
     val mode: Mode,
-    override var id: String = "",
-    override var schedule: RecurrenceSchedule? = null
+    @Exclude @get:Exclude override var schedule: RecurrenceSchedule? = null,
+    override var id: String = ""
 ):
     TrackingActivity(date, name, id, schedule) {
     private constructor() : this(ZonedDateTime.now(), "", listOf(), Mode.Walk)
@@ -79,11 +78,12 @@ data class Transportation(
     override fun copy() = copy(id = id)
 }
 
-data class Purchase(override var date: ZonedDateTime,
+data class Purchase(@Exclude @get:Exclude override var date: ZonedDateTime,
                    override val name: String,
                    val plasticBag: Boolean,
+                   @Exclude @get:Exclude override var schedule: RecurrenceSchedule? = null,
                    override var id: String = "",
-                   override var schedule: RecurrenceSchedule? = null): TrackingActivity(date, name, id, schedule) {
+): TrackingActivity(date, name, id, schedule) {
     private constructor() : this(ZonedDateTime.now(), "", false)
     enum class Source { New, SecondHand, Refurbished }
     override fun copy() = copy(id = id)

@@ -38,5 +38,17 @@ object GreenTraceProviders {
 
         // FIXME: remove demo hack
         //DummyTrackingData().addTo(trackingProvider!!)
+        /*trackingProvider!!.addActivity(
+            Transportation(ZonedDateTime.ofInstant(
+                Instant.ofEpochSecond(1679723785),
+                ZoneId.of("America/Toronto")
+            ), "Commute 2",
+            listOf(
+                Transportation.Stop("Home", 43.57588850506251, -79.61096747795044),
+                Transportation.Stop("GO Station", 43.595679311751454, -79.64867577582866)
+            ), Transportation.Mode.Car, RecurrenceSchedule(
+                TrackingDataGranularity.Week, 2
+            ))
+        )*/
     }
 }

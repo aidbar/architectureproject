@@ -190,7 +190,6 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
 
     suspend fun activityQueryHelper(baseQuery: Query, period: TrackingPeriod) =
         baseQuery
-            .whereGreaterThanOrEqualTo("date", period.start.toEpochSecond())
             .whereLessThanOrEqualTo("date", period.end.toEpochSecond())
             //.orderBy("date")
             .get()
@@ -224,7 +223,10 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
             if (cid.isEmpty()) collection.whereEqualTo("user", uid)
             else collection.whereArrayContains("communities", cid)
         val nonRecurring = activityQueryHelper(
-            initialQuery.whereEqualTo("schedule", null), period
+            initialQuery
+                .whereEqualTo("schedule", null)
+                .whereGreaterThanOrEqualTo("date", period.start.toEpochSecond()),
+            period
         )
         return activityQueryHelper(
             initialQuery.whereNotEqualTo("schedule", null), period)
