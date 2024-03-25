@@ -118,7 +118,6 @@ class HomeScreen :Screen{
     }
 
     private fun retrieveRecommendations(): List<Recommendation> {
-        val userLifestyle = GreenTraceProviders.userProvider!!.userLifestyle()
 
         val recommendationList = mutableListOf(
             Recommendation("Buy second-hand clothing", "purchase"),
@@ -131,48 +130,51 @@ class HomeScreen :Screen{
             Recommendation("Buy in bulk to reduce packaging waste", "purchase")
         )
 
-        if(userLifestyle.disabilities.isEmpty()) {
-            recommendationList.add(Recommendation("Walk or bike to nearby places instead of driving", "commute"))
-            recommendationList.add(Recommendation("Use electric scooter or bike reach nearby places", "commute"))
-        }
+        if(GreenTraceProviders.userProvider!!.hasUserLifestyle()) {
+            val userLifestyle = GreenTraceProviders.userProvider!!.userLifestyle()
 
-        // locallySourcedFoodPreference
-        if(userLifestyle.locallySourcedFoodPreference == UserLifestyle.Frequency.Always) {
-            recommendationList.add(Recommendation("Explore community-supported agriculture programs in your area", ""))
-        }
+            if(userLifestyle.disabilities.isEmpty()) {
+                recommendationList.add(Recommendation("Walk or bike to nearby places instead of driving", "commute"))
+                recommendationList.add(Recommendation("Use electric scooter or bike reach nearby places", "commute"))
+            }
 
-        if(userLifestyle.locallySourcedFoodPreference == UserLifestyle.Frequency.Sometimes) {
-            recommendationList.add(Recommendation("Buy food products having local produce labels", "purchase"))
-        }
+            // locallySourcedFoodPreference
+            if(userLifestyle.locallySourcedFoodPreference == UserLifestyle.Frequency.Always) {
+                recommendationList.add(Recommendation("Explore community-supported agriculture programs in your area", ""))
+            }
 
-        if(userLifestyle.locallySourcedFoodPreference == UserLifestyle.Frequency.Always || userLifestyle.locallySourcedFoodPreference == UserLifestyle.Frequency.Sometimes){
-            recommendationList.add(Recommendation("Shop at local farmers' markets for fresh produce", "purchase"))
-            recommendationList.add(Recommendation("Explore local bakeries for bread and pastries", "purchase"))
-        } else {
-            recommendationList.add(Recommendation("Consider researching the benefits of locally sourced foods", ""))
-        }
+            if(userLifestyle.locallySourcedFoodPreference == UserLifestyle.Frequency.Sometimes) {
+                recommendationList.add(Recommendation("Buy food products having local produce labels", "purchase"))
+            }
 
+            if(userLifestyle.locallySourcedFoodPreference == UserLifestyle.Frequency.Always || userLifestyle.locallySourcedFoodPreference == UserLifestyle.Frequency.Sometimes){
+                recommendationList.add(Recommendation("Shop at local farmers' markets for fresh produce", "purchase"))
+                recommendationList.add(Recommendation("Explore local bakeries for bread and pastries", "purchase"))
+            } else {
+                recommendationList.add(Recommendation("Consider researching the benefits of locally sourced foods", ""))
+            }
 
-        // dietaryRestrictions
-        if(userLifestyle.diet == UserLifestyle.Diet.None || userLifestyle.diet == UserLifestyle.Diet.Pescatarian) {
-            recommendationList.add(Recommendation("Visit local butcher shops for sustainably sourced meat", "purchase"))
-        }
+            // dietaryRestrictions
+            if(userLifestyle.diet == UserLifestyle.Diet.None || userLifestyle.diet == UserLifestyle.Diet.Pescatarian) {
+                recommendationList.add(Recommendation("Visit local butcher shops for sustainably sourced meat", "purchase"))
+            }
 
-        if (userLifestyle.diet != UserLifestyle.Diet.Vegan) {
-            recommendationList.add(Recommendation("Support local dairy farms for fresh dairy products", "purchase"))
-        }
+            if (userLifestyle.diet != UserLifestyle.Diet.Vegan) {
+                recommendationList.add(Recommendation("Support local dairy farms for fresh dairy products", "purchase"))
+            }
 
-        // transportationMode
-        if (userLifestyle.transportationPreference == UserLifestyle.TransportationMethod.PublicTransport) {
-            recommendationList.add(Recommendation("Use public transportation", "commute"))
-        }
+            // transportationMode
+            if (userLifestyle.transportationPreference == UserLifestyle.TransportationMethod.PublicTransport) {
+                recommendationList.add(Recommendation("Use public transportation", "commute"))
+            }
 
-        // sustainableShoppingPreference
-        if (userLifestyle.sustainabilityInfluence == UserLifestyle.Frequency.Rarely || userLifestyle.sustainabilityInfluence == UserLifestyle.Frequency.Never) {
-            recommendationList.add(Recommendation("Choose one or two sustainable products to try out each time you shop", ""))
-            recommendationList.add(Recommendation("Consider researching brands that prioritize sustainability and ethical practices", ""))
-        } else {
-            recommendationList.add(Recommendation("Buy products with minimal packaging or packaging made from recyclable materials", "purchase"))
+            // sustainableShoppingPreference
+            if (userLifestyle.sustainabilityInfluence == UserLifestyle.Frequency.Rarely || userLifestyle.sustainabilityInfluence == UserLifestyle.Frequency.Never) {
+                recommendationList.add(Recommendation("Choose one or two sustainable products to try out each time you shop", ""))
+                recommendationList.add(Recommendation("Consider researching brands that prioritize sustainability and ethical practices", ""))
+            } else {
+                recommendationList.add(Recommendation("Buy products with minimal packaging or packaging made from recyclable materials", "purchase"))
+            }
         }
 
         return recommendationList.shuffled().take(6)
@@ -395,10 +397,10 @@ class HomeScreen :Screen{
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 15.dp, start = 20.dp, end = 20.dp)
-                            .shadow(30.dp)
-                            .clickable(onClick = {
-                                tabNavigator.current = NewActivityTab
-                            }),
+                            .shadow(30.dp),
+//                            .clickable(onClick = {
+//                                tabNavigator.current = NewActivityTab
+//                            }),
                         elevation = 8.dp
                     ) {
                         androidx.compose.material.Text(
