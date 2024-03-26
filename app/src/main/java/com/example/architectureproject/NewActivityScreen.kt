@@ -20,6 +20,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import com.example.architectureproject.ui.theme.*
 
 class NewActivityScreen : Screen {
 
@@ -85,7 +86,8 @@ class NewActivityScreen : Screen {
                             stops.clear()
                             shoppingMethod = ""
                             keyboardController?.hide()
-                        }
+                        },
+                        colors = ButtonDefaults.buttonColors(Green40)
                     ) {
                         Text("Save Activity")
                     }
@@ -103,7 +105,7 @@ fun ActivityButton(text: String, selectedActivity: String, onClick: (String) -> 
     Button(
         onClick = { onClick(text) },
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (isSelected) Color.Gray else Color.LightGray
+            containerColor = if (isSelected) Green40 else GreenGrey40
         )
     ) {
         Text(text)
@@ -272,7 +274,7 @@ fun PurchaseSection(shoppingMethod: String, onShoppingMethodChange: (String) -> 
 fun DatePickerButton(context: Context, date: LocalDate, onDateSelected: (LocalDate) -> Unit) {
     val dateFormatter = DateTimeFormatter.ofPattern("EEE, d MMM yyyy")
     OutlinedIconButton(onClick = { showDatePicker(context, date, onDateSelected) }) {
-        Icon(Icons.Default.DateRange, contentDescription = "date")
+        Icon(Icons.Default.DateRange, contentDescription = "date", tint = Green40)
     }
 }
 
