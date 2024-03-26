@@ -56,11 +56,12 @@ class PastActivitiesScreenModel : ScreenModel {
             var activities = listOf<TrackingActivity>()
             // TODO: fix ugly hardcoded start range
             val lastPeriod = data.lastOrNull()?.first ?:
-            TrackingPeriod.pastMonths().shiftPeriods(TrackingDataGranularity.Month, -12)
+            TrackingPeriod.thisMonth().shiftPeriods(TrackingDataGranularity.Month, -13)
 
             var period = lastPeriod.shiftPeriods(TrackingDataGranularity.Month, 1)
-            while (activities.isEmpty() && period.start <= ZonedDateTime.now()) {
+            while (period.start <= ZonedDateTime.now()) {
                 activities = GreenTraceProviders.trackingProvider!!.getActivities(period)
+                if (activities.isNotEmpty()) break
                 period = period.shiftPeriods(TrackingDataGranularity.Month, 1)
             }
 

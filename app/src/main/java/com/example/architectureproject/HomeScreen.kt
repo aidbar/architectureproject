@@ -80,9 +80,15 @@ class HomeScreenModel : ScreenModel {
     fun fetchData() {
         screenModelScope.launch {
             data = when (selectedTab) {
-                GraphOption.Weekly -> GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastWeeks(), TrackingDataGranularity.Day)
-                GraphOption.Monthly -> GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastYears(), TrackingDataGranularity.Month)
-                GraphOption.Yearly -> GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastYears(4), TrackingDataGranularity.Year)
+                GraphOption.Weekly -> TrackingDataGranularity.Day.let {
+                    GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastWeeks().align(it), it)
+                }
+                GraphOption.Monthly -> TrackingDataGranularity.Month.let {
+                    GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastYears().align(it), it)
+                }
+                GraphOption.Yearly -> TrackingDataGranularity.Year.let {
+                    GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastYears(4).align(it), it)
+                }
             }
             loaded = true
         }

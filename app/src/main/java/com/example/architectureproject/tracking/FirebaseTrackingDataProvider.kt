@@ -4,6 +4,7 @@ import com.example.architectureproject.GreenTraceProviders
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Transaction
 import com.google.firebase.firestore.getField
 import kotlinx.coroutines.tasks.await
@@ -14,7 +15,6 @@ import java.time.ZonedDateTime
 class FirebaseTrackingDataProvider : TrackingDataProvider {
     private val db = FirebaseFirestore.getInstance()
     override suspend fun addActivity(activity: TrackingActivity): String {
-        // TODO: handle recurring activities
         // TODO: handle community statistics aggregation (or maybe not?)
 
         val ref = db.collection("activities").document()
@@ -22,12 +22,14 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
         val impact = GreenTraceProviders.impactProvider.computeImpact(activity)
 
         db.runTransaction {
-            updateStatistics(uid, listOf(activity.date to impact.value), it)
+            if (activity.schedule == null)
+                updateStatistics(uid, listOf(activity.date to impact.value), it)
             it.set(ref, hashMapOf(
                 "data" to activity,
                 "date" to activity.date.toEpochSecond(),
                 "user" to uid,
                 "impact" to impact.value,
+                "schedule" to activity.schedule?.let { rec -> RecurrenceSchedule.Raw(rec) },
                 "date_zone" to activity.date.zone.id,
                 "type" to activity.javaClass.name
             ))
@@ -173,19 +175,23 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
             start to TrackingEntry(subPeriod, TrackingDataType.Emissions, impact)
         }
         .let { TrackingDataHelpers.fillGapsOrdered(period, granularity, it) }
+        .let {
+            val collection = db.collection("activities")
+            val uid = GreenTraceProviders.userProvider!!.uid()!!
+            val initialQuery =
+                if (cid.isEmpty()) collection.whereEqualTo("user", uid)
+                else collection.whereArrayContains("communities", cid)
+            val recurring = activityQueryHelper(
+                initialQuery.whereNotEqualTo("schedule", null),
+                period
+            )
+            TrackingDataHelpers.applyRecurringImpacts(recurring, it)
+        }
 
-    override suspend fun getActivities(
-        period: TrackingPeriod,
-        cid: String
-    ): List<TrackingActivity> {
-        val collection = db.collection("activities")
-        val uid = GreenTraceProviders.userProvider!!.uid()
-        val initialQuery =
-            if (cid.isEmpty()) collection.whereEqualTo("user", uid)
-            else collection.whereArrayContains("communities", cid)
-        return initialQuery
-            .whereGreaterThanOrEqualTo("date", period.start.toEpochSecond())
+    suspend fun activityQueryHelper(baseQuery: Query, period: TrackingPeriod) =
+        baseQuery
             .whereLessThanOrEqualTo("date", period.end.toEpochSecond())
+            //.orderBy("date")
             .get()
             .await()
             .documents
@@ -199,7 +205,35 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
                             ZonedDateTime.ofInstant(Instant.ofEpochSecond(epoch), zone)
                         }
                         impact = it.getField<Float>("impact")!!
+                        it.getField<RecurrenceSchedule.Raw>("schedule")?.let { rec ->
+                            schedule = RecurrenceSchedule(rec, zone)
+                        }
                     }
             }
+
+
+
+    override suspend fun getActivities(
+        period: TrackingPeriod,
+        cid: String
+    ): List<TrackingActivity> {
+        val collection = db.collection("activities")
+        val uid = GreenTraceProviders.userProvider!!.uid()
+        val initialQuery =
+            if (cid.isEmpty()) collection.whereEqualTo("user", uid)
+            else collection.whereArrayContains("communities", cid)
+        val nonRecurring = activityQueryHelper(
+            initialQuery
+                .whereEqualTo("schedule", null)
+                .whereGreaterThanOrEqualTo("date", period.start.toEpochSecond()),
+            period
+        )
+        return activityQueryHelper(
+            initialQuery.whereNotEqualTo("schedule", null), period)
+            .flatMap { TrackingDataHelpers.expandRecurringActivity(it, period) }
+            // we really should be using the merge step from merge sort here
+            // and just use orderBy for nonRecurring, and manually sort "expanded"
+            .plus(nonRecurring)
+            .sortedBy { it.date }
     }
 }
