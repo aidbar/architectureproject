@@ -1,5 +1,6 @@
 package com.example.architectureproject
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -13,8 +14,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
@@ -26,8 +29,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,19 +42,30 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import coil.compose.rememberAsyncImagePainter
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+
+class ProfileEditScreenModel : ScreenModel {
+    private val info = GreenTraceProviders.userProvider!!.userInfo()
+    var alias by mutableStateOf(info.name)
+    var bio by mutableStateOf(info.bio)
+    var age by mutableStateOf(info.age.toString())
+}
 
 class ProfileEditScreen:Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        val username = remember { mutableStateOf(TextFieldValue()) }
-        val bio = remember { mutableStateOf(TextFieldValue()) }
+        val model = rememberScreenModel { ProfileEditScreenModel() }
 
         Column(modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)) {
 
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -93,7 +111,9 @@ class ProfileEditScreen:Screen {
                 modifier = Modifier.fillMaxWidth(), // This will make the Box fill the entire screen
                 contentAlignment = Alignment.Center // This will align the IconButton in the center of the Box
             ) {
-                IconButton(onClick = { /* Upload image */ }, modifier = Modifier.offset(40.dp,-30.dp).background(MaterialTheme.colorScheme.primary, CircleShape)) {
+                IconButton(onClick = { /* Upload image */ }, modifier = Modifier
+                    .offset(40.dp, (-30).dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)) {
                     Icon(Icons.Filled.Edit, contentDescription = "Edit Profile Picture",
                         modifier = Modifier.size(
                             ButtonDefaults.IconSize), tint = Color.White)
@@ -103,10 +123,10 @@ class ProfileEditScreen:Screen {
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = username.value,
-                onValueChange = { username.value = it },
+                value = model.alias,
+                onValueChange = { model.alias = it },
                 shape = RoundedCornerShape(32.dp),
-                placeholder = { Text(text = "username") },
+                placeholder = { Text(text = "alias") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -114,19 +134,48 @@ class ProfileEditScreen:Screen {
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
-                value =bio.value,
-                onValueChange = { bio.value = it },
+                value = model.bio,
+                onValueChange = { model.bio = it },
                 shape = RoundedCornerShape(32.dp),
                 placeholder = { Text(text = "bio") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = model.age,
+                onValueChange = { model.age = it },
+                shape = RoundedCornerShape(32.dp),
+                placeholder = { Text(text = "age") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
             Spacer(modifier = Modifier.height(16.dp))
 
+            val scope = rememberCoroutineScope()
             Button(
-                onClick = {navigator?.pop()},
-                modifier = Modifier.align(Alignment.End).fillMaxWidth()
+                onClick = {
+                    val ageStr = model.age.trim()
+                    if (ageStr.contains(Regex.fromLiteral("[^0-9]"))) {
+                        Log.e("ProfileSetupScreen", "bad age value: $ageStr")
+                        return@Button
+                    }
+
+                    scope.launch {
+                        GreenTraceProviders.userProvider?.userProfile(
+                            model.alias,
+                            model.bio,
+                            ageStr.toInt()
+                        )?.let { Log.e("ProfileEditScreen", it) }
+                        navigator?.pop()
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .fillMaxWidth()
             ) {
                 Text("Save Changes")
             }
