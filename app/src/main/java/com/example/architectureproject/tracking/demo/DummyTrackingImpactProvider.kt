@@ -1,5 +1,6 @@
 package com.example.architectureproject.tracking.demo
 
+import com.example.architectureproject.GreenTraceProviders
 import com.example.architectureproject.MapProvider
 import com.example.architectureproject.tracking.Meal
 import com.example.architectureproject.tracking.Purchase
@@ -33,21 +34,20 @@ class DummyMapProvider : MapProvider {
 
 }
 
-class DummyTrackingImpactProvider : TrackingImpactProvider(false) {
-    private val map: MapProvider = DummyMapProvider()
+class DummyTrackingImpactProvider : TrackingImpactProvider() {
     private fun computeMealEmissions(@Suppress("UNUSED_PARAMETER") meal: Meal): Float {
         return 2300f;
     }
 
     private fun computeTransportationEmissions(transport: Transportation): Float {
-        return 400f * map.computeDistance(transport.stops)
+        return 400f * GreenTraceProviders.mapProvider.computeDistance(transport.stops)
     }
 
     private fun computePurchaseEmissions(purchase: Purchase): Float {
         return Random.nextFloat() * 1000f + (if (purchase.plasticBag) 6920f else 0f)
     }
 
-    override fun computeImpact(activity: TrackingActivity): TrackingEntry {
+    override suspend fun computeImpact(activity: TrackingActivity): TrackingEntry {
         val period = TrackingPeriod.instantOf(activity.date)
         val emissions = when (activity) {
             is Meal -> computeMealEmissions(activity)

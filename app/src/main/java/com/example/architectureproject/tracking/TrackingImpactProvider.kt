@@ -1,5 +1,5 @@
 package com.example.architectureproject.tracking
 
-abstract class TrackingImpactProvider(val needsCache: Boolean) {
-    abstract fun computeImpact(activity: TrackingActivity): TrackingEntry
+abstract class TrackingImpactProvider {
+    abstract suspend fun computeImpact(activity: TrackingActivity): TrackingEntry
 }
