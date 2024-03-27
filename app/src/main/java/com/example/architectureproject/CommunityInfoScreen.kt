@@ -4,6 +4,7 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,9 +19,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Card
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Create
 import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -34,10 +41,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -45,6 +54,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -54,6 +64,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.example.architectureproject.community.CommunityInfo
 import com.lightspark.composeqr.QrCodeView
 import kotlinx.coroutines.launch
+
 
 class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel {
     var newCommunityName by mutableStateOf(info.name)
@@ -93,15 +104,127 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
         val context = LocalContext.current
         val model = rememberScreenModel { CommunityInfoScreenModel(info) }
 
+        val showDialog = remember { mutableStateOf(false) }
+
         if (model.loading) {
             LoadingScreen()
             return
         }
 
+        if(showDialog.value) {
+            AlertDialog(
+                onDismissRequest = { showDialog.value = false },
+                title = {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Add Member",
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.align(Alignment.CenterVertically)
+                                .padding(start = 16.dp, end = 0.dp)
+                        )
+                        IconButton(
+                            onClick = { showDialog.value = false },
+                            modifier = Modifier.align(Alignment.CenterVertically)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close"
+                            )
+                        }
+                    }
+                },
+                dismissButton = {
+
+                },
+                text = {
+                    Column {
+                        Text(
+                            text = "Use the QR code or link below to invite others to join " + model.info.name + ":",
+                            modifier = Modifier
+                                .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
+                                .align(Alignment.CenterHorizontally),
+                            textAlign = TextAlign.Center,
+                            fontSize = 19.sp,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        QrCodeView(
+                            data = model.info.inviteLink,
+                            modifier = Modifier
+                                .size(180.dp)
+                                .align(Alignment.CenterHorizontally)
+                                .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
+                        )
+                        SelectionContainer(modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)) {
+                            Text(model.info.inviteLink)
+                        }
+
+                        Text(
+                            text = "(OR) Send them an email invite below:",
+                            modifier = Modifier
+                                .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
+                                .align(Alignment.CenterHorizontally),
+                            textAlign = TextAlign.Center,
+                            fontSize = 19.sp,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        TextField(
+                            value = model.usernameToInvite,
+                            onValueChange = { model.usernameToInvite = it },
+                            label = { Text("Username") },
+                            modifier = Modifier.padding(10.dp),
+                            singleLine = true
+                        )
+                        TextButton(
+                            onClick = { if (checkifUserExists(context, model.usernameToInvite)) {model.usernameToInvite = ""} },
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth(),
+                            enabled = model.usernameToInvite.isNotBlank(),
+                            colors = ButtonDefaults.buttonColors()
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text("Invite")
+                            }
+                        }
+
+                    }
+                },
+                confirmButton = {
+
+                }
+            )
+        }
+
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text(model.info.name) },
+                    title = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(model.info.name)
+                            IconButton(
+                                onClick = {
+                                    showDialog.value = true
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Add,
+                                    contentDescription = "Add member",
+                                    modifier = Modifier.size(30.dp)
+                                )
+                            }
+                        }
+                    },
                     navigationIcon = {
                         IconButton(onClick = { navigator.pop() }) {
                             Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
@@ -132,14 +255,14 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         .height(250.dp),
                     contentScale = ContentScale.Crop
                 )
-                Text(
-                    text = model.info.name,
-                    modifier = Modifier
-                        .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
-                        .align(Alignment.CenterHorizontally),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.headlineSmall
-                )
+//                Text(
+//                    text = model.info.name,
+//                    modifier = Modifier
+//                        .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
+//                        .align(Alignment.CenterHorizontally),
+//                    textAlign = TextAlign.Center,
+//                    style = MaterialTheme.typography.headlineSmall
+//                )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(5.dp),
                     modifier = Modifier
@@ -154,47 +277,6 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         modifier = Modifier.align(Alignment.CenterVertically),
                         style = MaterialTheme.typography.labelMedium,
                     )
-                }
-                Text(
-                    text = "Use the QR code or link below to invite others to join " + model.info.name + ":",
-                    modifier = Modifier
-                        .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
-                        .align(Alignment.CenterHorizontally),
-                    textAlign = TextAlign.Center,
-                    fontSize = 19.sp,
-                    style = MaterialTheme.typography.labelMedium
-                )
-                QrCodeView(
-                    data = model.info.inviteLink,
-                    modifier = Modifier
-                        .size(180.dp)
-                        .align(Alignment.CenterHorizontally)
-                        .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
-                )
-                SelectionContainer(modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)) {
-                    Text(model.info.inviteLink)
-                }
-                Row(modifier = Modifier
-                    .align(Alignment.CenterHorizontally)) {
-                    TextField(
-                        value = model.usernameToInvite,
-                        onValueChange = { model.usernameToInvite = it },
-                        label = { Text("Username") },
-                        modifier = Modifier.padding(10.dp),
-                        singleLine = true
-                    )
-                    TextButton(
-                        onClick = { if (checkifUserExists(context, model.usernameToInvite)) {model.usernameToInvite = ""} },
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .align(Alignment.CenterVertically),
-                        enabled = model.usernameToInvite.isNotBlank(),
-                        colors = ButtonDefaults.buttonColors()
-                    ) {
-                        Text("Invite")
-                    }
                 }
 
                 val scope = rememberCoroutineScope()
