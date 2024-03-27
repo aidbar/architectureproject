@@ -53,3 +53,5 @@
 | 2024/03/25 |       |          |         |        |      |  1.5  | Activity UI and D6
 | 2024/03/25 |       |    5     |         |        |      |       | Research on various ecofriendly task recommendations, Created task recommendation list based on user responses to lifestyle questions       |
 | 2024/03/26 | 4     |   4      |   4     |    4   |  4   |  4    | Team meeting for finalizing the app and starting on D6 |
+| 2024/03/26 |       |    3     |         |        |      |       | Made UI improvements to community invite page                                                       
+                                            |
