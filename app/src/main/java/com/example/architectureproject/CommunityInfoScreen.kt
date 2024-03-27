@@ -62,7 +62,7 @@ import com.lightspark.composeqr.QrCodeView
 import kotlinx.coroutines.launch
 
 class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObserver {
-    override val id = info.id
+    override val cid = info.id
     val userIsTheCreator = info.owner == GreenTraceProviders.userProvider.userInfo()
     var newCommunityName by mutableStateOf(info.name)
     var newCommunityLocation by mutableStateOf(info.location)
@@ -81,7 +81,7 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
     fun editCommunity(name: String, loc: String) {
         loading = true
         screenModelScope.launch {
-            GreenTraceProviders.communityManager.updateCommunity(id, name, loc)
+            GreenTraceProviders.communityManager.updateCommunity(cid, name, loc)
         }
     }
 

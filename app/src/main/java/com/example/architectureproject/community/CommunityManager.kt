@@ -3,8 +3,13 @@ package com.example.architectureproject.community
 import com.example.architectureproject.profile.User
 
 interface CommunityObserver {
-    val id: String
+    val cid: String
     fun notify(info: List<CommunityInfo>, local: Boolean)
+}
+
+interface CommunityChallengesObserver {
+    val cid: String
+    fun notify(info: List<CommunityChallenge>, local: Boolean)
 }
 
 interface CommunityManager {
@@ -17,4 +22,9 @@ interface CommunityManager {
     suspend fun getCommunityMembers(id: String): List<User>
     fun registerObserver(obs: CommunityObserver)
     fun unregisterObserver(obs: CommunityObserver)
+
+    suspend fun getChallenges(id: String): List<Pair<CommunityChallenge, CommunityChallengeState>>
+    suspend fun addChallengeProgress(id: String, challengeId: String, progress: Float)
+    suspend fun registerChallengesObserver(obs: CommunityChallengesObserver)
+    suspend fun unregisterChallengesObserver(obs: CommunityChallengesObserver)
 }

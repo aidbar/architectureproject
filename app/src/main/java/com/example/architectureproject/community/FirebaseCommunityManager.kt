@@ -114,10 +114,10 @@ class FirebaseCommunityManager : CommunityManager {
 
     override fun registerObserver(obs: CommunityObserver) {
         val uid = GreenTraceProviders.userProvider.uid()!!
-        observers.getOrPut(obs.id) {
+        observers.getOrPut(obs.cid) {
             val observers = hashSetOf<CommunityObserver>()
             val registration =
-                if (obs.id.isEmpty())
+                if (obs.cid.isEmpty())
                     db.collection("communities")
                         .whereArrayContains("members", uid)
                         .addSnapshotListener { snapshot, e ->
@@ -140,7 +140,7 @@ class FirebaseCommunityManager : CommunityManager {
                         }
                 else
                     db.collection("communities")
-                    .document(obs.id)
+                    .document(obs.cid)
                     .addSnapshotListener { doc, e ->
                         if (e != null) {
                             Log.e("FirebaseCommunityManager.registerObserver", "Listen failed.", e)
@@ -159,13 +159,29 @@ class FirebaseCommunityManager : CommunityManager {
     }
 
     override fun unregisterObserver(obs: CommunityObserver) {
-        val obDoc = observers[obs.id]
+        val obDoc = observers[obs.cid]
         val obsForId = obDoc?.observers
         obsForId?.let {
             it.remove(obs)
             if (it.isNotEmpty()) return@let
-            observers.remove(obs.id)
+            observers.remove(obs.cid)
             obDoc.reg.remove()
         }
+    }
+
+    override suspend fun getChallenges(id: String): List<Pair<CommunityChallenge, CommunityChallengeState>> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun addChallengeProgress(id: String, challengeId: String, progress: Float) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun registerChallengesObserver(obs: CommunityChallengesObserver) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun unregisterChallengesObserver(obs: CommunityChallengesObserver) {
+        TODO("Not yet implemented")
     }
 }
