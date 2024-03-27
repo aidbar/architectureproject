@@ -18,7 +18,7 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
         // TODO: handle community statistics aggregation (or maybe not?)
 
         val ref = db.collection("activities").document()
-        val uid = GreenTraceProviders.userProvider!!.uid()!!
+        val uid = GreenTraceProviders.userProvider.uid()!!
         val impact = GreenTraceProviders.impactProvider.computeImpact(activity)
 
         db.runTransaction {
@@ -95,7 +95,7 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
         //   this is because figuring out which communities a user
         //   is part of on any given day in the past is difficult
         val ref = db.collection("activities").document(id)
-        val uid = GreenTraceProviders.userProvider!!.uid()!!
+        val uid = GreenTraceProviders.userProvider.uid()!!
         if (new == null) {
             // delete
             db.runTransaction {
@@ -145,7 +145,7 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
     ): List<TrackingEntry> = db.collection("statistics")
         .whereEqualTo(
             if (cid.isEmpty()) "user" else "community",
-            cid.ifEmpty { GreenTraceProviders.userProvider!!.uid()!! }
+            cid.ifEmpty { GreenTraceProviders.userProvider.uid()!! }
         )
         .whereEqualTo("type", granularity.name.lowercase())
         .where(Filter.or(
@@ -177,7 +177,7 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
         .let { TrackingDataHelpers.fillGapsOrdered(period, granularity, it) }
         .let {
             val collection = db.collection("activities")
-            val uid = GreenTraceProviders.userProvider!!.uid()!!
+            val uid = GreenTraceProviders.userProvider.uid()!!
             val initialQuery =
                 if (cid.isEmpty()) collection.whereEqualTo("user", uid)
                 else collection.whereArrayContains("communities", cid)
@@ -218,7 +218,7 @@ class FirebaseTrackingDataProvider : TrackingDataProvider {
         cid: String
     ): List<TrackingActivity> {
         val collection = db.collection("activities")
-        val uid = GreenTraceProviders.userProvider!!.uid()
+        val uid = GreenTraceProviders.userProvider.uid()
         val initialQuery =
             if (cid.isEmpty()) collection.whereEqualTo("user", uid)
             else collection.whereArrayContains("communities", cid)

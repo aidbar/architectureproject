@@ -1,44 +1,53 @@
 package com.example.architectureproject
 
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.app.Application.ActivityLifecycleCallbacks
 import android.content.Context
+import android.os.Bundle
 import com.example.architectureproject.community.CommunityManager
 import com.example.architectureproject.community.FirebaseCommunityManager
 import com.example.architectureproject.profile.FirebaseUserProvider
 import com.example.architectureproject.profile.UserProvider
 import com.example.architectureproject.tracking.FirebaseTrackingDataProvider
-import com.example.architectureproject.tracking.RecurrenceSchedule
-import com.example.architectureproject.tracking.TrackingDataGranularity
 import com.example.architectureproject.tracking.TrackingDataProvider
 import com.example.architectureproject.tracking.TrackingImpactProvider
-import com.example.architectureproject.tracking.Transportation
 import com.example.architectureproject.tracking.demo.DummyMapProvider
 import com.example.architectureproject.tracking.demo.DummyTrackingImpactProvider
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZonedDateTime
 
 object GreenTraceProviders {
-    var userProvider: UserProvider? = null
-    var communityManager: CommunityManager? = null
+    lateinit var userProvider: UserProvider
+        private set
+    lateinit var communityManager: CommunityManager
+        private set
     val mapProvider: MapProvider = DummyMapProvider()
     val impactProvider: TrackingImpactProvider = DummyTrackingImpactProvider()
-    var applicationContext: Context? = null
+    lateinit var applicationContext: Context
         private set
 
-    var trackingProvider: TrackingDataProvider? = null
+    // we're using lifecycle callbacks, this will not leak
+    @SuppressLint("StaticFieldLeak")
+    lateinit var activityManager: ActivityManager
         private set
 
-    suspend fun init(applicationContext: Context) {
-        this.applicationContext = applicationContext
+    lateinit var trackingProvider: TrackingDataProvider
+        private set
+
+    fun getActivity(): Activity = activityManager.activities.last()
+
+    suspend fun init(activity: Activity) {
+        activityManager = ActivityManager(activity)
+        this.applicationContext = activity.applicationContext
         initUserProvider()
     }
 
     private suspend fun initUserProvider() {
-        userProvider = userProvider ?: FirebaseUserProvider.new()
+        if (this::userProvider.isInitialized) return
+        userProvider = FirebaseUserProvider.new()
     }
 
     suspend fun initTracking() {
-        if (trackingProvider != null) return
+        if (this::trackingProvider.isInitialized) return
         communityManager = FirebaseCommunityManager()
         trackingProvider = FirebaseTrackingDataProvider()
 
@@ -59,4 +68,23 @@ object GreenTraceProviders {
 //            )
 //        )
     }
+}
+
+
+class ActivityManager(activity: Activity) : ActivityLifecycleCallbacks {
+    val activities = mutableListOf(activity)
+
+    init {
+        activity.application.registerActivityLifecycleCallbacks(this)
+    }
+
+    override fun onActivityCreated(activity: Activity, bundle: Bundle?) {
+        activities.add(activity)
+    }
+    override fun onActivityStarted(activity: Activity) { }
+    override fun onActivityResumed(activity: Activity) { }
+    override fun onActivityPaused(activity: Activity) { }
+    override fun onActivityStopped(activity: Activity) { }
+    override fun onActivitySaveInstanceState(activity: Activity, bundle: Bundle) { }
+    override fun onActivityDestroyed(activity: Activity) { activities.remove(activity) }
 }

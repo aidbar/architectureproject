@@ -43,7 +43,7 @@ class FirebaseCommunityManager : CommunityManager {
             return null
 
         val owner = document.getString("owner")!!
-            .let { GreenTraceProviders.userProvider!!.getUserById(listOf(it)).first() }
+            .let { GreenTraceProviders.userProvider.getUserById(listOf(it)).first() }
 
         return CommunityInfo(
             document.getString("name")!!,
@@ -100,5 +100,5 @@ class FirebaseCommunityManager : CommunityManager {
             .get()
             .await()
             .get("members")
-            .let { GreenTraceProviders.userProvider!!.getUserById(it as List<String>) }
+            .let { GreenTraceProviders.userProvider.getUserById(it as List<String>) }
 }

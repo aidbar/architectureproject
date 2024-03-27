@@ -47,7 +47,7 @@ import coil.compose.rememberAsyncImagePainter
 import kotlinx.coroutines.launch
 
 class ProfileEditScreenModel : ScreenModel {
-    private val info = GreenTraceProviders.userProvider!!.userInfo()
+    private val info = GreenTraceProviders.userProvider.userInfo()
     var alias by mutableStateOf(info.name)
     var bio by mutableStateOf(info.bio)
     var age by mutableStateOf(info.age.toString())

@@ -1,7 +1,8 @@
 package com.example.architectureproject
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -21,15 +21,11 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.rounded.MailOutline
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,19 +34,23 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import cafe.adriel.voyager.core.model.ScreenModel
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
+
 
 class ProfileScreen : Screen {
+    private fun mailto(address: String, subject: String) {
+        val mailtoUri = Uri.fromParts("mailto", address, null)
+        val intent = Intent(Intent.ACTION_SENDTO, mailtoUri)
+        intent.putExtra(Intent.EXTRA_EMAIL, address)
+        intent.putExtra(Intent.EXTRA_SUBJECT, subject)
+        GreenTraceProviders.getActivity()
+            .startActivity(Intent.createChooser(intent, "Send Email"))
+    }
+
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
@@ -65,7 +65,7 @@ class ProfileScreen : Screen {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = GreenTraceProviders.userProvider!!.userInfo().name,
+                    text = GreenTraceProviders.userProvider.userInfo().name,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.align(Alignment.CenterVertically),
                     fontSize = 32.sp
@@ -101,7 +101,7 @@ class ProfileScreen : Screen {
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedButton(
-                onClick = { navigator?.push(ContactUsScreen()) },
+                onClick = { mailto("test@example.com", "GreenTrace Feedback") },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(
@@ -131,70 +131,6 @@ class ProfileScreen : Screen {
     }
 }
 
-class ContactUsScreen : Screen {
-    @Composable
-    override fun Content() {
-        val navigator = LocalNavigator.current
-        val email = remember { mutableStateOf(TextFieldValue()) }
-        val message = remember { mutableStateOf(TextFieldValue()) }
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { navigator?.pop() }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Return")
-                }
-            }
-
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
-                Text(text = "Contact Us", fontWeight = FontWeight.SemiBold, fontSize = 24.sp)
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(text = "Email", fontSize = 14.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = email.value,
-                onValueChange = { email.value = it },
-                shape = RoundedCornerShape(32.dp),
-                placeholder = { Text(text = "Email") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = "Message", fontSize = 14.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = message.value,
-                onValueChange = { message.value = it },
-                shape = RoundedCornerShape(32.dp),
-                placeholder = { Text(text = "Message") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(160.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = { navigator?.pop() },
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .fillMaxWidth()
-            ) {
-                Text("Submit")
-            }
-        }
-    }
-}
-
 class PrivacyPolicyScreen : Screen {
     @Composable
     override fun Content() {
@@ -213,10 +149,10 @@ class PrivacyPolicyScreen : Screen {
 
                 Text("PRIVACY POLICY", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
-                contentTxt(a = "Last updated March 04, 2024")
-                titleTxt(a = "1. WHAT INFORMATION DO WE COLLECT?")
-                secondaryTitleTxt("Personal information you disclose to us\n")
-                contentTxt(
+                ContentTxt(a = "Last updated March 04, 2024")
+                TitleTxt(a = "1. WHAT INFORMATION DO WE COLLECT?")
+                SecondaryTitleTxt("Personal information you disclose to us\n")
+                ContentTxt(
                     a = "In Short: We collect personal information that you provide to us.\n" +
                             "\n" +
                             "We collect personal information that you voluntarily provide to us when you register on the Services, express an interest in obtaining information about us or our products and Services, when you participate in activities on the Services, or otherwise when you contact us.\n" +
@@ -246,17 +182,17 @@ class PrivacyPolicyScreen : Screen {
                     "- Push Notifications.",
                     " We may request to send you push notifications regarding your account or certain features of the application(s). If you wish to opt out from receiving these types of communications, you may turn them off in your device's settings.\n"
                 )
-                contentTxt(
+                ContentTxt(
                     a = "\n" +
                             "This information is primarily needed to maintain the security and operation of our application, for troubleshooting, and for our internal analytics and reporting purposes.\n" +
                             "\n" +
                             "All personal information that you provide to us must be true, complete, and accurate, and you must notify us of any changes to such personal information.\n" +
                             "\n"
                 )
-                secondaryTitleTxt(a = "Information automatically collected\n")
-                contentTxt(
+                SecondaryTitleTxt(a = "Information automatically collected\n")
+                ContentTxt(
                     a =
-                    "In Short: Some information — such as your Intemet Protocol (IP) address and/or\n" +
+                    "In Short: Some information — such as your Internet Protocol (IP) address and/or\n" +
                             "browser and device characteristics — is collected automatically when you visit our\n" +
                             "Services." +
                             "\n" +
@@ -300,8 +236,8 @@ class PrivacyPolicyScreen : Screen {
                             "aspects of the Services."
                 )
 
-                titleTxt(a = "2. HOW DO WE PROCESS YOUR INFORMATION?")
-                contentTxt(
+                TitleTxt(a = "2. HOW DO WE PROCESS YOUR INFORMATION?")
+                ContentTxt(
                     a = "In Short: We process your information to provide, improve, and administer our\n" +
                             "\n" +
                             "Services, communicate with you, for security and fraud prevention, and to comply\n" +
@@ -316,8 +252,8 @@ class PrivacyPolicyScreen : Screen {
                     title = "- To facilitate account creation and authentication and otherwise manage user accounts.",
                     content = "We may process your information so you can create and log in to your account, as well as keep your account in working order."
                 )
-                titleTxt(a = "3. WHAT LEGAL BASES DO WE RELY ON TO PROCESS YOUR INFORMATION?")
-                contentTxt(
+                TitleTxt(a = "3. WHAT LEGAL BASES DO WE RELY ON TO PROCESS YOUR INFORMATION?")
+                ContentTxt(
                     a = "in Short: We only process your personal information when we believe it is necessary\n" +
                             "and we have a valid legal reason (i.e., legal basis) to do so under applicable law, like\n" +
                             "with your consent, to comply with laws, to provide you with services to enter into or\n" +
@@ -339,7 +275,7 @@ class PrivacyPolicyScreen : Screen {
                             "\n" +
                             "For business transactions provided certain conditions are met\n" +
                             "\n" +
-                            "If itis contained in a witness statement and the collection is necessary to\n" +
+                            "If it is contained in a witness statement and the collection is necessary to\n" +
                             "assess, process, or settle an insurance claim\n" +
                             "\n" +
                             "For identifying injured, ill, or deceased persons and communicating with next\n" +
@@ -364,8 +300,8 @@ class PrivacyPolicyScreen : Screen {
                             "\n" +
                             "If the information is publicly available and is specified by the regulations"
                 )
-                titleTxt(a = "4. WHEN AND WITH WHOM DO WE SHARE YOUR PERSONAL INFORMATION?")
-                contentTxt(
+                TitleTxt(a = "4. WHEN AND WITH WHOM DO WE SHARE YOUR PERSONAL INFORMATION?")
+                ContentTxt(
                     a = "In Short: We may share information in specific situations described in this section\n" +
                             "and/or with the following third parties.\n" +
                             "\n" +
@@ -381,8 +317,8 @@ class PrivacyPolicyScreen : Screen {
                             "your consent anytime by contacting us at the contact details provided at the\n" +
                             "end of this document."
                 )
-                titleTxt(a = "5. DO WE USE COOKIES AND OTHER TRACKING TECHNOLOGIES?")
-                contentTxt(
+                TitleTxt(a = "5. DO WE USE COOKIES AND OTHER TRACKING TECHNOLOGIES?")
+                ContentTxt(
                     a = "In Short: We may use cookies and other tracking technologies to collect and store\n" +
                             "your information.\n" +
                             "\n" +
@@ -390,8 +326,8 @@ class PrivacyPolicyScreen : Screen {
                             "to access or store information. Specific information about how we use such\n" +
                             "technologies and how you can refuse certain cookies is set out in our Cookie Notice."
                 )
-                titleTxt(a = "6. HOW LONG DO WE KEEP YOUR INFORMATION?")
-                contentTxt(
+                TitleTxt(a = "6. HOW LONG DO WE KEEP YOUR INFORMATION?")
+                ContentTxt(
                     a = "in Short: We keep your information for as long as necessary to fulfill the purposes\n" +
                             "outlined in this privacy notice unless otherwise required by law.\n" +
                             "\n" +
@@ -407,8 +343,8 @@ class PrivacyPolicyScreen : Screen {
                             "archives), then we will securely store your personal information and isolate it from\n" +
                             "any further processing until deletion is possible."
                 )
-                titleTxt(a = "7. HOW DO WE KEEP YOUR INFORMATION SAFE?")
-                contentTxt(
+                TitleTxt(a = "7. HOW DO WE KEEP YOUR INFORMATION SAFE?")
+                ContentTxt(
                     a = "In Short: We aim to protect your personal information through a system of\n" +
                             "organizational and technical security measures.\n" +
                             "\n" +
@@ -423,8 +359,8 @@ class PrivacyPolicyScreen : Screen {
                             "information to and from our Services is at your own risk. You should only access the\n" +
                             "Services within a secure environment."
                 )
-                titleTxt(a = "8. DO WE COLLECT INFORMATION FROM MINORS?")
-                contentTxt(
+                TitleTxt(a = "8. DO WE COLLECT INFORMATION FROM MINORS?")
+                ContentTxt(
                     a = "in Short: We do not knowingly collect data from or market fo children under 18 years\n" +
                             "of age.\n" +
                             "\n" +
@@ -436,8 +372,8 @@ class PrivacyPolicyScreen : Screen {
                             "promptly delete such data from our records. If you become aware of any data we\n" +
                             "may have collected from children under age 18, please contact us at"
                 )
-                titleTxt(a = "9. WHAT ARE YOUR PRIVACY RIGHTS?")
-                contentTxt(
+                TitleTxt(a = "9. WHAT ARE YOUR PRIVACY RIGHTS?")
+                ContentTxt(
                     a = "In Short: in some regions, such as Canada , you have rights that allow you greater\n" +
                             "access fo and control over your personal information. You may review, change, or\n" +
                             "terminate your account at any time.\n" +
@@ -483,8 +419,8 @@ class PrivacyPolicyScreen : Screen {
                             "z53gu@uwaterloo.ca."
                 )
 
-                titleTxt(a = "10. CONTROLS FOR DO-NOT-TRACK FEATURES")
-                contentTxt(
+                TitleTxt(a = "10. CONTROLS FOR DO-NOT-TRACK FEATURES")
+                ContentTxt(
                     a = "Most web browsers and some mobile operating systems and mobile applications\n" +
                             "include a Do-Not-Track (\"DNT\") feature or setting you can activate to signal your\n" +
                             "privacy preference not to have data about your online browsing activities monitored\n" +
@@ -496,8 +432,8 @@ class PrivacyPolicyScreen : Screen {
                             "version of this privacy notice."
                 )
 
-                titleTxt(a = "11. DO WE MAKE UPDATES TO THIS NOTICE?")
-                contentTxt(
+                TitleTxt(a = "11. DO WE MAKE UPDATES TO THIS NOTICE?")
+                ContentTxt(
                     a = "in Short: Yes, we will update this notice as necessary to stay compliant with relevant\n" +
                             "Jaws.\n" +
                             "\n" +
@@ -510,17 +446,17 @@ class PrivacyPolicyScreen : Screen {
                             "to be informed of how we are protecting your information."
                 )
 
-                titleTxt(a = "12. HOW CAN YOU CONTACT US ABOUT THIS NOTICE?")
-                contentTxt(
+                TitleTxt(a = "12. HOW CAN YOU CONTACT US ABOUT THIS NOTICE?")
+                ContentTxt(
                     a = "If you have questions or comments about this notice, you may contact us by post at:\n" +
                             "\n" +
                             "GreenTrace"
                 )
-                titleTxt(
+                TitleTxt(
                     a = "13. HOW CAN YOU REVIEW, UPDATE, OR DELETE THE\n" +
                             "DATA WE COLLECT FROM YOU?"
                 )
-                contentTxt(
+                ContentTxt(
                     a = "Based on the applicable laws of your country, you may have the right to request\n" +
                             "access to the personal information we collect from you, change that information, or\n" +
                             "delete it. To request to review, update, or delete your personal information, please fill\n" +
@@ -534,7 +470,7 @@ class PrivacyPolicyScreen : Screen {
 }
 
 @Composable
-fun titleTxt(a: String) {
+fun TitleTxt(a: String) {
     return Column {
         Spacer(modifier = Modifier.height(24.dp))
         Text(text = a.uppercase(), fontSize = 19.sp, fontWeight = FontWeight.Bold)
@@ -543,14 +479,14 @@ fun titleTxt(a: String) {
 }
 
 @Composable
-fun secondaryTitleTxt(a: String) {
+fun SecondaryTitleTxt(a: String) {
     return Column {
         Text(text = a.uppercase(), fontSize = 17.sp, fontWeight = FontWeight.Bold)
     }
 }
 
 @Composable
-fun contentTxt(a: String) {
+fun ContentTxt(a: String) {
     return Text(text = a, fontSize = 14.sp)
 }
 

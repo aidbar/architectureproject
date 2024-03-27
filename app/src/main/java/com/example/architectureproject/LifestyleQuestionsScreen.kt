@@ -218,7 +218,7 @@ class StartQuestionsScreen() : Screen {
                 color = Color(0xFF009688),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                text = "Welcome to GreenTrace, ${GreenTraceProviders.userProvider!!.userInfo().name}.\n",
+                text = "Welcome to GreenTrace, ${GreenTraceProviders.userProvider.userInfo().name}.\n",
                 modifier = Modifier.padding(bottom = 16.dp)
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -578,7 +578,7 @@ class ShoppingQScreen : Screen {
                         userResponses.sustainabilityInfluence = selectedSecondaryOption.second
 
                         scope.launch {
-                            GreenTraceProviders.userProvider!!.userLifestyle(userResponses.build())
+                            GreenTraceProviders.userProvider.userLifestyle(userResponses.build())
                                 ?.let { Log.e("updateLifestyle", it) }
                             navigator?.push(MainScreen(false))
                         }

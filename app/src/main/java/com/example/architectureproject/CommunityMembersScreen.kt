@@ -73,7 +73,7 @@ class CommunityMembersScreen (val isCreator: Boolean, val members: List<User>) :
                 }
             ) {padding ->
                     MembersList(
-                        membersList = members, //GreenTraceProviders.trackingProvider!!.getCommunities(),
+                        membersList = members, //GreenTraceProviders.trackingProvider.getCommunities(),
                         isCreator = isCreator,
                         modifier = Modifier
                             .fillMaxSize()

@@ -60,7 +60,7 @@ class PastActivitiesScreenModel : ScreenModel {
 
             var period = lastPeriod.shiftPeriods(TrackingDataGranularity.Month, 1)
             while (period.start <= ZonedDateTime.now()) {
-                activities = GreenTraceProviders.trackingProvider!!.getActivities(period)
+                activities = GreenTraceProviders.trackingProvider.getActivities(period)
                 if (activities.isNotEmpty()) break
                 period = period.shiftPeriods(TrackingDataGranularity.Month, 1)
             }

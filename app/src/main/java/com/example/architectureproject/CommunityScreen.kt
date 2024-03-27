@@ -64,7 +64,7 @@ class CommunityScreenModel : ScreenModel {
 
     var communities by mutableStateOf(listOf<CommunityInfo>())
     private suspend fun reloadCommunities() {
-        communities = GreenTraceProviders.userProvider!!.getCommunities()
+        communities = GreenTraceProviders.userProvider.getCommunities()
     }
 
     fun showCreateCommunityDialog() {
@@ -86,10 +86,10 @@ class CommunityScreenModel : ScreenModel {
     fun createCommunity(name: String, loc: String) {
         loading = true
         screenModelScope.launch {
-            val comm = GreenTraceProviders.communityManager?.createCommunity(
-                GreenTraceProviders.userProvider!!.userInfo(), name, loc
+            val comm = GreenTraceProviders.communityManager.createCommunity(
+                GreenTraceProviders.userProvider.userInfo(), name, loc
             )
-            comm?.let { GreenTraceProviders.userProvider?.attachCommunity(it) }
+            comm.let { GreenTraceProviders.userProvider.attachCommunity(it) }
             reloadCommunities()
             loading = false
         }

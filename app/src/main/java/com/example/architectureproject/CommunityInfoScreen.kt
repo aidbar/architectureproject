@@ -85,8 +85,8 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel {
     fun editCommunity(name: String, loc: String) {
         loading = true
         screenModelScope.launch {
-            GreenTraceProviders.communityManager?.updateCommunity(info.id, name, loc)
-            info = GreenTraceProviders.communityManager?.getCommunityById(info.id)!!
+            GreenTraceProviders.communityManager.updateCommunity(info.id, name, loc)
+            info = GreenTraceProviders.communityManager.getCommunityById(info.id)!!
             loading = false
         }
     }
@@ -284,7 +284,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                     onClick = { scope.launch {
                         navigator.push(CommunityMembersScreen(
                             model.userIsTheCreator,
-                            GreenTraceProviders.communityManager!!.getCommunityMembers(model.info.id)
+                            GreenTraceProviders.communityManager.getCommunityMembers(model.info.id)
                         ))
                     } },
                     modifier = Modifier

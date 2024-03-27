@@ -50,7 +50,6 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
-import com.example.architectureproject.profile.FirebaseUserProvider
 import com.example.architectureproject.profile.UserLifestyle
 import com.example.architectureproject.tracking.TrackingDataGranularity
 import com.example.architectureproject.tracking.TrackingEntry
@@ -81,13 +80,13 @@ class HomeScreenModel : ScreenModel {
         screenModelScope.launch {
             data = when (selectedTab) {
                 GraphOption.Weekly -> TrackingDataGranularity.Day.let {
-                    GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastWeeks().align(it), it)
+                    GreenTraceProviders.trackingProvider.getImpact(TrackingPeriod.pastWeeks().align(it), it)
                 }
                 GraphOption.Monthly -> TrackingDataGranularity.Month.let {
-                    GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastYears().align(it), it)
+                    GreenTraceProviders.trackingProvider.getImpact(TrackingPeriod.pastYears().align(it), it)
                 }
                 GraphOption.Yearly -> TrackingDataGranularity.Year.let {
-                    GreenTraceProviders.trackingProvider!!.getImpact(TrackingPeriod.pastYears(4).align(it), it)
+                    GreenTraceProviders.trackingProvider.getImpact(TrackingPeriod.pastYears(4).align(it), it)
                 }
             }
             loaded = true
@@ -136,8 +135,8 @@ class HomeScreen :Screen{
             Recommendation("Buy in bulk to reduce packaging waste", "purchase")
         )
 
-        if(GreenTraceProviders.userProvider!!.hasUserLifestyle()) {
-            val userLifestyle = GreenTraceProviders.userProvider!!.userLifestyle()
+        if(GreenTraceProviders.userProvider.hasUserLifestyle()) {
+            val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
 
             if(userLifestyle.disabilities.isEmpty()) {
                 recommendationList.add(Recommendation("Walk or bike to nearby places instead of driving", "commute"))
@@ -191,7 +190,7 @@ class HomeScreen :Screen{
     override fun Content() {
         val navigator = LocalNavigator.current
         val model = rememberScreenModel { HomeScreenModel() }
-        val user = remember { GreenTraceProviders.userProvider!!.userInfo() }
+        val user = remember { GreenTraceProviders.userProvider.userInfo() }
         LaunchedEffect(model.selectedTab) { model.fetchData() }
 
         val randomRecommendations = retrieveRecommendations()

@@ -41,11 +41,11 @@ class CommunityJoinScreen(private val communityURIStr: String) : Screen {
         val scope = rememberCoroutineScope()
         var members by remember { mutableStateOf(listOf<User>()) }
         LaunchedEffect(Unit) {
-            members = GreenTraceProviders.communityManager!!.getCommunityMembers(community.id)
+            members = GreenTraceProviders.communityManager.getCommunityMembers(community.id)
         }
 
         if (members.isEmpty()) return
-        if (members.contains(GreenTraceProviders.userProvider!!.userInfo())) {
+        if (members.contains(GreenTraceProviders.userProvider.userInfo())) {
             Column {
                 Text("You're already a member of this community")
                 Button(onClick = {
