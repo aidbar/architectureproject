@@ -58,7 +58,7 @@ class CommunityJoinScreen(private val communityURIStr: String) : Screen {
         Row {
             Button(onClick = {
                 scope.launch {
-                    GreenTraceProviders.userProvider?.attachCommunity(community.id)
+                    GreenTraceProviders.userProvider.attachCommunity(community.id)
                     navigator.push(MainScreen(true))
                 }
             }) {
@@ -87,7 +87,7 @@ class CommunityJoinScreen(private val communityURIStr: String) : Screen {
         LaunchedEffect(Unit) {
             GreenTraceProviders.initTracking()
             community = communityURI.getQueryParameter("id")?.let {
-                GreenTraceProviders.communityManager?.getCommunityById(it)
+                GreenTraceProviders.communityManager.getCommunityById(it)
             }
             isLoading = false
         }

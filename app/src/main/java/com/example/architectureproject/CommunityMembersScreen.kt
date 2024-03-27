@@ -35,22 +35,52 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import cafe.adriel.voyager.core.lifecycle.LifecycleEffect
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.example.architectureproject.CommunityScreen.Companion.iconStyle
+import com.example.architectureproject.community.CommunityInfo
+import com.example.architectureproject.community.CommunityObserver
 import com.example.architectureproject.profile.User
 import com.example.architectureproject.ui.theme.ArchitectureProjectTheme
+import kotlinx.coroutines.launch
 
-class CommunityMembersScreen (val isCreator: Boolean, val members: List<User>) :Screen {
+class CommunityMembersScreenModel(info: CommunityInfo) : ScreenModel, CommunityObserver {
+    override val id = info.id
+    val isCreator = info.owner == GreenTraceProviders.userProvider.userInfo()
+    var members by mutableStateOf(listOf<User>())
+    var loading by mutableStateOf(true)
+
+    override fun notify(info: List<CommunityInfo>, local: Boolean) {
+        screenModelScope.launch {
+            members = GreenTraceProviders.communityManager.getCommunityMembers(info.first().id)
+            loading = false
+        }
+    }
+
+    fun start() {
+        GreenTraceProviders.communityManager.registerObserver(this)
+    }
+    fun stop() {
+        GreenTraceProviders.communityManager.unregisterObserver(this)
+    }
+}
+
+class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
     //var auth = FirebaseAuth.getInstance()
     //companion object { internal val iconStyle = Icons.Rounded }
 
@@ -58,6 +88,11 @@ class CommunityMembersScreen (val isCreator: Boolean, val members: List<User>) :
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
+        val model = rememberScreenModel { CommunityMembersScreenModel(info) }
+        LifecycleEffect(
+            onStarted = { model.start() },
+            onDisposed = { model.stop() }
+        )
         
         ArchitectureProjectTheme {
             Scaffold(
@@ -72,9 +107,14 @@ class CommunityMembersScreen (val isCreator: Boolean, val members: List<User>) :
                     )
                 }
             ) {padding ->
+                    if (model.loading) {
+                        LoadingScreen()
+                        return@Scaffold
+                    }
+
                     MembersList(
-                        membersList = members, //GreenTraceProviders.trackingProvider.getCommunities(),
-                        isCreator = isCreator,
+                        membersList = model.members, //GreenTraceProviders.trackingProvider.getCommunities(),
+                        isCreator = model.isCreator,
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(padding)
@@ -109,7 +149,6 @@ class CommunityMembersScreen (val isCreator: Boolean, val members: List<User>) :
         isCreator: Boolean,
         modifier: Modifier = Modifier
     ) {
-        val navigator = LocalNavigator.currentOrThrow
         val context = LocalContext.current
         val openRemoveMemberDialog = remember {mutableStateOf(false)}
 

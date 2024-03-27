@@ -4,7 +4,6 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,13 +19,10 @@ import androidx.compose.material.Card
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Create
 import androidx.compose.material.icons.rounded.LocationOn
-import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,7 +42,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -54,7 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+import cafe.adriel.voyager.core.lifecycle.LifecycleEffect
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -62,11 +57,13 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.example.architectureproject.community.CommunityInfo
+import com.example.architectureproject.community.CommunityObserver
 import com.lightspark.composeqr.QrCodeView
 import kotlinx.coroutines.launch
 
-
-class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel {
+class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObserver {
+    override val id = info.id
+    val userIsTheCreator = info.owner == GreenTraceProviders.userProvider.userInfo()
     var newCommunityName by mutableStateOf(info.name)
     var newCommunityLocation by mutableStateOf(info.location)
     var openEditCommunityDialog by mutableStateOf(false)
@@ -74,25 +71,35 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel {
     var loading by mutableStateOf(false)
 
     var usernameToInvite by mutableStateOf("")
-    val userIsTheCreator =
-        GreenTraceProviders.userProvider?.userInfo()?.uid == info.owner.uid
 
     fun showEditCommunityDialog() {
         newCommunityName = info.name
         newCommunityLocation = info.location
         openEditCommunityDialog = true
     }
+
     fun editCommunity(name: String, loc: String) {
         loading = true
         screenModelScope.launch {
-            GreenTraceProviders.communityManager.updateCommunity(info.id, name, loc)
-            info = GreenTraceProviders.communityManager.getCommunityById(info.id)!!
-            loading = false
+            GreenTraceProviders.communityManager.updateCommunity(id, name, loc)
         }
     }
 
     fun dismissEditCommunityDialog() {
         openEditCommunityDialog = false
+    }
+
+    fun start() {
+        GreenTraceProviders.communityManager.registerObserver(this)
+    }
+
+    fun stop() {
+        GreenTraceProviders.communityManager.unregisterObserver(this)
+    }
+
+    override fun notify(info: List<CommunityInfo>, local: Boolean) {
+        this.info = info.first()
+        loading = false
     }
 }
 
@@ -105,6 +112,10 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
         val model = rememberScreenModel { CommunityInfoScreenModel(info) }
 
         val showDialog = remember { mutableStateOf(false) }
+        LifecycleEffect(
+            onStarted = { model.start() },
+            onDisposed = { model.stop() }
+        )
 
         if (model.loading) {
             LoadingScreen()
@@ -122,7 +133,8 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         Text(
                             text = "Add Member",
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.align(Alignment.CenterVertically)
+                            modifier = Modifier
+                                .align(Alignment.CenterVertically)
                                 .padding(start = 16.dp, end = 0.dp)
                         )
                         IconButton(
@@ -283,8 +295,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                 TextButton(
                     onClick = { scope.launch {
                         navigator.push(CommunityMembersScreen(
-                            model.userIsTheCreator,
-                            GreenTraceProviders.communityManager.getCommunityMembers(model.info.id)
+                            info
                         ))
                     } },
                     modifier = Modifier
