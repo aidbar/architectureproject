@@ -9,7 +9,8 @@ interface CommunityObserver {
 
 interface CommunityChallengesObserver {
     val cid: String
-    fun notify(info: List<CommunityChallenge>, local: Boolean)
+    //val challengeId: String
+    fun notify(info: List<Pair<CommunityChallenge, CommunityChallengeState>>, local: Boolean)
 }
 
 interface CommunityManager {

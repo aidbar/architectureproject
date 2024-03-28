@@ -15,8 +15,10 @@ import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.getField
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.time.ZonedDateTime
@@ -27,11 +29,16 @@ import kotlin.math.min
 
 class FirebaseCommunityManager : CommunityManager {
     private data class ObservedDocument(
-        val reg: ListenerRegistration,
+        val reg: List<ListenerRegistration>,
         val observers: MutableSet<CommunityObserver>)
+    private data class ObservedChallenges(
+        val reg: List<ListenerRegistration>,
+        var updateJob: Job?,
+        val observers: MutableSet<CommunityChallengesObserver>)
     private val db = FirebaseFirestore.getInstance()
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
     private val observers = hashMapOf<String, ObservedDocument>()
+    private val challengeObservers = hashMapOf<String, ObservedChallenges>()
     override suspend fun createCommunity(owner: User, name: String, location: String): String {
         val doc = db.collection("communities").document()
         val update = hashMapOf(
@@ -168,18 +175,17 @@ class FirebaseCommunityManager : CommunityManager {
                             observers.forEach { it.notify(listOf(info), local) }
                         }
                     }
-            ObservedDocument(registration, observers)
+            ObservedDocument(listOf(registration), observers)
         }.apply { observers.add(obs) }
     }
 
     override fun unregisterObserver(obs: CommunityObserver) {
         val obDoc = observers[obs.cid]
-        val obsForId = obDoc?.observers
-        obsForId?.let {
+        obDoc?.observers?.let {
             it.remove(obs)
             if (it.isNotEmpty()) return@let
             observers.remove(obs.cid)
-            obDoc.reg.remove()
+            obDoc.reg.forEach { reg -> reg.remove() }
         }
     }
 
@@ -367,12 +373,70 @@ class FirebaseCommunityManager : CommunityManager {
             .await()
             .getDouble(AggregateField.sum("impact"))!!
             .toFloat()
-
     override suspend fun registerChallengesObserver(obs: CommunityChallengesObserver) {
-        TODO("Not yet implemented")
+        challengeObservers.getOrPut(obs.cid) {
+            val observers = hashSetOf<CommunityChallengesObserver>()
+            val collection = db.collection("communities")
+                .document(obs.cid)
+                .collection("challenge_states")
+            var updateJob = null as Job?
+            val reg =
+                collection.whereEqualTo("active", true)
+                .addSnapshotListener { snapshot, e ->
+                    if (e != null) {
+                        Log.e("FirebaseCommunityManager.registerObserver", "Listen failed.", e)
+                        return@addSnapshotListener
+                    }
+
+                    if (snapshot == null || snapshot.isEmpty)
+                        return@addSnapshotListener
+
+                    val local = snapshot.metadata.hasPendingWrites()
+                    coroutineScope.launch {
+                        val result = snapshot.documents.map {
+                            db.collection("challenges")
+                                .document(it.id)
+                                .get() to it.toObject(CommunityChallengeState::class.java)!!
+                        }
+                        .map { (task, state) ->
+                            task.await()!!.toObject(CommunityChallenge::class.java)!! to state
+                        }
+
+                        obs.notify(result, local)
+                    }
+                }
+
+            val regMeta = collection.document("metadata").addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    Log.e("FirebaseCommunityManager.registerObserver", "Listen failed.", e)
+                    return@addSnapshotListener
+                }
+
+                if (snapshot == null)
+                    return@addSnapshotListener
+
+                val lastUpdate = snapshot.getField<Long>("last_update")!!
+                val secs = lastUpdate - ZonedDateTime.now().minusMonths(1).toEpochSecond() + 1
+                updateJob?.cancel()
+                // schedule next forced update
+                updateJob = coroutineScope.launch {
+                    delay((secs + 1) * 1000)
+                    newChallenges(ZonedDateTime.now(), obs.cid)
+                }
+            }
+
+            ObservedChallenges(listOf(reg, regMeta), updateJob, observers)
+        }.apply { observers.add(obs) }
     }
 
     override suspend fun unregisterChallengesObserver(obs: CommunityChallengesObserver) {
-        TODO("Not yet implemented")
+        val obChallenges = challengeObservers[obs.cid]
+        obChallenges?.observers?.let {
+            it.remove(obs)
+            if (it.isNotEmpty()) return@let
+            observers.remove(obs.cid)
+            obChallenges.updateJob?.cancel()
+            obChallenges.reg.forEach { reg -> reg.remove() }
+        }
     }
 }
