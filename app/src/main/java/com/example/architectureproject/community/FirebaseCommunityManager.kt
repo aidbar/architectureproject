@@ -195,6 +195,7 @@ class FirebaseCommunityManager : CommunityManager {
         val results = db.collection("challenges")
             .whereNotIn(FieldPath.documentId(), recentIds)
             .orderBy("randomID")
+            .orderBy("id")
             .limit(4)
             .get()
             .await()
@@ -215,7 +216,7 @@ class FirebaseCommunityManager : CommunityManager {
             .get()
             .await()
             .documents
-            .map { it.id }
+            .map { it.reference }
 
         val updateThreshold = now.minusMonths(1).toEpochSecond()
         val updated = db.runTransaction { txn ->
@@ -229,7 +230,7 @@ class FirebaseCommunityManager : CommunityManager {
             // activate new challenges
             toActivate.forEach { txn.set(collection.document(it.id), it) }
             // deactivate old challenges
-            toDeactivate.forEach { txn.update(collection.document(it), "active", false) }
+            toDeactivate.forEach { txn.update(it, "active", false) }
             return@runTransaction true
         }.await()
 
