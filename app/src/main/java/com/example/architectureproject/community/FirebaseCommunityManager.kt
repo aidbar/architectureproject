@@ -90,6 +90,12 @@ class FirebaseCommunityManager : CommunityManager {
         doc.update(update).await()
     }
 
+    override suspend fun deleteCommunity(id: String) {
+        // WARNING: this does not delete sub-collections of the community, like
+        //  challenge progress, and there is no good way to do so atomically.
+        db.collection("communities").document(id).delete().await()
+    }
+
     override suspend fun addUserToCommunity(uid: String, id: String) {
         val doc = db.collection("communities").document(id)
         doc.update("members", FieldValue.arrayUnion(uid)).await()
