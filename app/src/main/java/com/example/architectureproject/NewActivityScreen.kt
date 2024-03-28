@@ -6,6 +6,7 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
@@ -15,12 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import com.example.architectureproject.ui.theme.*
+
 
 class NewActivityScreen : Screen {
 
@@ -37,6 +40,13 @@ class NewActivityScreen : Screen {
         var destination by remember { mutableStateOf("") }
         val stops = remember { mutableStateListOf("") }
         var shoppingMethod by remember { mutableStateOf("") }
+        var isRecurring by remember { mutableStateOf(false) }
+        var recurrenceFrequency by remember { mutableStateOf("") }
+        var recurrenceIntervalText by remember { mutableStateOf("1") } // Use a String state to hold the text input
+        var isMealRecurring by remember { mutableStateOf(false) }
+        var isCommuteRecurring by remember { mutableStateOf(false) }
+        var isPurchaseRecurring by remember { mutableStateOf(false) }
+
 
         Column(
             modifier = Modifier
@@ -53,20 +63,27 @@ class NewActivityScreen : Screen {
                 ActivityButton("Purchase", activityType) { activityType = it }
             }
 
-            when (activityType) {
-                "Meal" -> MealSection(foodType) { newFoodType -> foodType = newFoodType }
-                "Commute" -> CommuteSection(
-                    transportationMode,
-                    departure,
-                    destination,
-                    stops
-                ) { stops.add("") }
-
-                "Purchase" -> PurchaseSection(shoppingMethod) { newShoppingMethod ->
-                    shoppingMethod = newShoppingMethod
-                }
-            }
             if (activityType.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp)) // Add some spacing for better UI layout
+
+                // Handling specific sections and recurrence options based on activity type
+                when (activityType) {
+                    "Meal" -> {
+                        MealSection(foodType) { foodType = it }
+                        RecurrenceOption("Meal", isMealRecurring, { isMealRecurring = it })
+                    }
+                    "Commute" -> {
+                        CommuteSection(transportationMode, departure, destination, stops) { stops.add("") }
+                        RecurrenceOption("Commute", isCommuteRecurring, { isCommuteRecurring = it })
+                    }
+                    "Purchase" -> {
+                        PurchaseSection(shoppingMethod) { shoppingMethod = it }
+                        RecurrenceOption("Purchase", isPurchaseRecurring, { isPurchaseRecurring = it })
+                    }
+                }
+
+
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(
@@ -86,6 +103,11 @@ class NewActivityScreen : Screen {
                             stops.clear()
                             shoppingMethod = ""
                             keyboardController?.hide()
+                            isMealRecurring = false
+                            isCommuteRecurring = false
+                            isPurchaseRecurring = false
+                            recurrenceFrequency = ""
+                            recurrenceIntervalText = "1"
                         },
                         colors = ButtonDefaults.buttonColors(Green40)
                     ) {
@@ -311,4 +333,89 @@ private fun showTimePicker(
     TimePickerDialog(context, { _, hourOfDay, minute ->
         onTimeSelected(LocalTime.of(hourOfDay, minute))
     }, currentTime.hour, currentTime.minute, true).show()
+}
+@Composable
+fun RecurrenceOption(activityType: String, isRecurring: Boolean, onRecurringChange: (Boolean) -> Unit) {
+    val context = LocalContext.current
+    var recurrenceFrequency by remember { mutableStateOf("") }
+    var recurrenceIntervalText by remember { mutableStateOf("1") }
+
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("$activityType is recurring:", modifier = Modifier.padding(end = 8.dp))
+            Switch(
+                checked = isRecurring,
+                onCheckedChange = { isChecked ->
+                    onRecurringChange(isChecked)
+                    if (!isChecked) {
+                        recurrenceIntervalText = "1"
+                    }
+                }
+            )
+        }
+        if (isRecurring) {
+            Row(Modifier.padding(vertical = 8.dp)) {
+                Text("Frequency: ", modifier = Modifier.align(alignment = Alignment.CenterVertically))
+                Spacer(modifier = Modifier.width(4.dp))
+                // Corrected call to DropdownMenu with appropriate parameters
+                DropdownMenu(
+                    selectedFrequency = recurrenceFrequency,
+                    onFrequencyChange = { newFrequency -> recurrenceFrequency = newFrequency }
+                )
+            }
+            Row {
+                Text("Every (n) days/weeks: ", modifier = Modifier.align(alignment = Alignment.CenterVertically))
+                Spacer(modifier = Modifier.width(4.dp))
+                OutlinedTextField(
+                    value = recurrenceIntervalText,
+                    onValueChange = { newValue ->
+                        recurrenceIntervalText = newValue.filter { it.isDigit() }
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun DropdownMenu(selectedFrequency: String, onFrequencyChange: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val frequencies = listOf("Daily", "Weekly")
+    var selected by remember { mutableStateOf(selectedFrequency) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        TextField(
+            value = selected,
+            onValueChange = { },
+            readOnly = true,
+            label = { Text("Recurrence Frequency") },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            frequencies.forEach { frequency ->
+                DropdownMenuItem(
+                    text = { Text(frequency) },
+                    onClick = {
+                        selected = frequency
+                        onFrequencyChange(frequency)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
 }
