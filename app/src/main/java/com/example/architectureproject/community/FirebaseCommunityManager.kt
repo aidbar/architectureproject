@@ -23,6 +23,7 @@ import java.time.ZonedDateTime
 import java.util.UUID
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlin.math.min
 
 class FirebaseCommunityManager : CommunityManager {
     private data class ObservedDocument(
@@ -181,7 +182,7 @@ class FirebaseCommunityManager : CommunityManager {
             .document(id)
             .collection("challenge_states")
 
-        // fetch the community's recently seen challenges (within a year)
+        // fetch the community's recently seen challenges
         val recentIds = collection
             .whereGreaterThan("lastSeen", ZonedDateTime.now().minusMonths(2).toEpochSecond())
             .get()
@@ -189,6 +190,8 @@ class FirebaseCommunityManager : CommunityManager {
             .documents
             .map { it.id }
 
+        // randomly fetch challenges
+        // FIXME: if recentIds.size > 10, this won't work
         val results = db.collection("challenges")
             .whereNotIn(FieldPath.documentId(), recentIds)
             .orderBy("randomID")
@@ -200,17 +203,13 @@ class FirebaseCommunityManager : CommunityManager {
         // re-seed the randomness
         db.runBatch { batch ->
             results.forEach {
-                db.collection("challenges")
-                    .document(it.id)
-                    .let { ref ->
-                        batch.update(ref, "randomID", UUID.randomUUID().toString())
-                    }
+                batch.update(it.reference, "randomID", UUID.randomUUID().toString())
             }
         }.await()
 
         val challenges = results.map { it.toObject(CommunityChallenge::class.java)!! }
         val toActivate = challenges.map {
-            CommunityChallengeState(it.id, true, now.toEpochSecond())
+            CommunityChallengeState(it.id, id, true, now.toEpochSecond())
         }
         val toDeactivate = collection.whereEqualTo("active", true)
             .get()
@@ -241,6 +240,9 @@ class FirebaseCommunityManager : CommunityManager {
     }
 
     override suspend fun getChallenges(id: String): List<Pair<CommunityChallenge, CommunityChallengeState>> {
+        // NOTE: this function is also responsible for updating challenge sets
+        // it's perfectly safe as long as one cannot participate in a challenge prior to viewing it
+        // and because we check if challenges are expired using lastSeen before we update them
         val collection = db.collection("communities")
             .document(id)
             .collection("challenge_states")
@@ -256,7 +258,7 @@ class FirebaseCommunityManager : CommunityManager {
             val new = newChallenges(now, id)
             if (new != null)
                 return new.map {
-                    it to CommunityChallengeState(it.id, true, now.toEpochSecond())
+                    it to CommunityChallengeState(it.id, id, true, now.toEpochSecond())
                 }
 
             // someone beat us to the update, re-fetch
@@ -279,27 +281,57 @@ class FirebaseCommunityManager : CommunityManager {
             }
     }
 
-    override suspend fun addChallengeProgress(id: String, challenge: CommunityChallenge, progressDelta: Float) {
-        val challengeStateRef = db.collection("communities")
-            .document(id)
-            .collection("challenge_states")
-            .document(challenge.id)
-        val eventLogEntryRef = db.collection("communities")
-            .document(id)
-            .collection("challenge_event_log")
-            .document()
+    override suspend fun addChallengeProgress(challenge: CommunityChallenge, progressDelta: Float): Boolean {
+        // query all challenge states across all communities, where this challenge is active
+        val challengeStates = db.collectionGroup("challenge_states")
+            .whereEqualTo("id", challenge.id)
+            .whereEqualTo("active", true)
+            .get()
+            .await()
+            .documents
+
         val impactDelta = challenge.impact / challenge.goal * progressDelta
         val now = ZonedDateTime.now()
-        db.runBatch { batch ->
-            batch.update(challengeStateRef, "progress", FieldValue.increment(progressDelta.toDouble()))
-            batch.set(eventLogEntryRef, ChallengeProgressEvent(
-                GreenTraceProviders.userProvider.uid()!!,
-                now.toEpochSecond(),
-                challenge.id,
-                challenge.name,
-                progressDelta,
-                impactDelta
-            ))
+
+        // update all relevant progress entries
+        // re-fetch data in a txn to reduce race conditions
+        // return true if anything got updated, else false
+        return db.runTransaction { txn ->
+            // prepare list of items to update using txn reads
+            val states = challengeStates.map {
+                it.reference to
+                        txn.get(it.reference).toObject(CommunityChallengeState::class.java)!!
+            }
+                .filter { (_, state) ->
+                    // ensure challenge is not expired and not completed
+                    state.active && state.progress < challenge.goal &&
+                            state.lastSeen > now.minusMonths(1).toEpochSecond()
+                }
+
+            // perform all txn writes
+            states.forEach { (ref, state) ->
+                // clamp total to goal
+                txn.update(
+                    ref, "progress",
+                    min(state.progress + progressDelta, challenge.goal)
+                )
+
+                db.collection("communities")
+                    .document(state.communityId)
+                    .collection("challenge_event_log")
+                    .document()
+                    .let {
+                        txn.set(it, ChallengeProgressEvent(
+                            GreenTraceProviders.userProvider.uid()!!,
+                            now.toEpochSecond(),
+                            challenge.id,
+                            challenge.name,
+                            progressDelta,
+                            impactDelta
+                        ))
+                    }
+            }
+            states.isNotEmpty()
         }.await()
     }
 

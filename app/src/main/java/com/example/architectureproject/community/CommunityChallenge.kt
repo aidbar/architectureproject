@@ -17,11 +17,12 @@ data class CommunityChallenge(
 
 data class CommunityChallengeState(
     val id: String,
+    val communityId: String,
     val active: Boolean = false,
     val lastSeen: Long = 0,
     val progress: Float = 0f
 ): Serializable {
-    private constructor() : this("")
+    private constructor() : this("", "")
 }
 
 data class ChallengeProgressEvent(

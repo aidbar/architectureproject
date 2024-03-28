@@ -24,7 +24,7 @@ interface CommunityManager {
     fun unregisterObserver(obs: CommunityObserver)
 
     suspend fun getChallenges(id: String): List<Pair<CommunityChallenge, CommunityChallengeState>>
-    suspend fun addChallengeProgress(id: String, challenge: CommunityChallenge, progressDelta: Float)
+    suspend fun addChallengeProgress(challenge: CommunityChallenge, progressDelta: Float): Boolean
     suspend fun challengeImpact(cid: String, uid: String = "", total: Boolean = false): Float
     suspend fun registerChallengesObserver(obs: CommunityChallengesObserver)
     suspend fun unregisterChallengesObserver(obs: CommunityChallengesObserver)
