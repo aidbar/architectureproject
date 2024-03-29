@@ -147,15 +147,17 @@ class FirebaseCommunityManager : CommunityManager {
                                 return@addSnapshotListener
                             }
 
-                            if (snapshot == null || snapshot.isEmpty)
+                            val local = snapshot?.metadata?.hasPendingWrites() ?: false
+                            if (snapshot == null) {
+                                observers.forEach { it.notify(listOf(), local) }
                                 return@addSnapshotListener
+                            }
 
                             coroutineScope.launch {
                                 val list = snapshot
                                             .documents
                                             .map { async { convertCommunityDocument(it)!! } }
                                             .map { it.await() }
-                                val local = snapshot.metadata.hasPendingWrites()
                                 observers.forEach { it.notify(list, local) }
                             }
                         }
@@ -168,9 +170,13 @@ class FirebaseCommunityManager : CommunityManager {
                             return@addSnapshotListener
                         }
 
-                        if (doc == null || !doc.exists()) return@addSnapshotListener
+                        val local = doc?.metadata?.hasPendingWrites() ?: false
+                        if (doc == null || !doc.exists()) {
+                            observers.forEach { it.notify(listOf(), local) }
+                            return@addSnapshotListener
+                        }
+
                         coroutineScope.launch {
-                            val local = doc.metadata.hasPendingWrites()
                             val info = convertCommunityDocument(doc)!!
                             observers.forEach { it.notify(listOf(info), local) }
                         }

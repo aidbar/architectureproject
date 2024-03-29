@@ -69,6 +69,7 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
     var openEditCommunityDialog by mutableStateOf(false)
     var info by mutableStateOf(info)
     var loading by mutableStateOf(false)
+    var deleted by mutableStateOf(false)
 
     var usernameToInvite by mutableStateOf("")
 
@@ -98,6 +99,11 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
     }
 
     override fun notify(info: List<CommunityInfo>, local: Boolean) {
+        if (info.isEmpty()) {
+            deleted = true
+            return
+        }
+
         this.info = info.first()
         loading = false
     }
@@ -116,6 +122,11 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
             onStarted = { model.start() },
             onDisposed = { model.stop() }
         )
+
+        if (model.deleted) {
+            navigator.pop()
+            return
+        }
 
         if (model.loading) {
             LoadingScreen()
