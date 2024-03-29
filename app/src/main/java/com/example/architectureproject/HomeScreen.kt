@@ -313,15 +313,15 @@ class HomeScreen :Screen{
                                             bottomStart = 8.dp
                                         )
                                     )
+                                    .clickable {
+                                        model.selectedTab = GraphOption.Weekly
+                                    }
                                     .weight(1f)
                                     .padding(vertical = 5.dp)
                             ) {
                                 Text(
                                     text = "Weekly",
                                     modifier = Modifier
-                                        .clickable {
-                                            model.selectedTab = GraphOption.Weekly
-                                        }
                                         .padding(start = 28.dp, end = 10.dp),
                                     color = Color.Black
                                 )
@@ -340,15 +340,15 @@ class HomeScreen :Screen{
                                             0xFF009688
                                         ) else Color.White
                                     )
+                                    .clickable {
+                                        model.selectedTab = GraphOption.Monthly
+                                    }
                                     .weight(1f)
                                     .padding(vertical = 5.dp)
                             ) {
                                 Text(
                                     text = "Monthly",
                                     modifier = Modifier
-                                        .clickable {
-                                            model.selectedTab = GraphOption.Monthly
-                                        }
                                         .padding(start = 25.dp, end = 25.dp),
                                     color = Color.Black
                                 )
@@ -368,15 +368,15 @@ class HomeScreen :Screen{
                                         ) else Color.White,
                                         shape = RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp)
                                     )
+                                    .clickable {
+                                        model.selectedTab = GraphOption.Yearly
+                                    }
                                     .weight(1f)
                                     .padding(vertical = 5.dp)
                             ) {
                                 Text(
                                     text = "Yearly",
                                     modifier = Modifier
-                                        .clickable {
-                                            model.selectedTab = GraphOption.Yearly
-                                        }
                                         .padding(start = 30.dp, end = 25.dp),
                                     color = Color.Black
                                 )

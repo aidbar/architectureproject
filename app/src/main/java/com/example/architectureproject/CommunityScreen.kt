@@ -26,12 +26,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -110,6 +112,7 @@ class CommunityScreen : Screen {
     @Composable
     @Preview
     override fun Content() {
+        val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val model = rememberScreenModel { CommunityScreenModel() }
         LifecycleEffect(
             onStarted = { model.start() },
@@ -117,27 +120,34 @@ class CommunityScreen : Screen {
         )
 
         ArchitectureProjectTheme {
-            Scaffold(
-                floatingActionButton = {
-                    FloatingActionButton(
-                        onClick = { model.showCreateCommunityDialog() }
-                    ) {
-                        Icon(iconStyle.Add, "Create new community")
+            /*ModalNavigationDrawer(
+                drawerState = drawerState,
+                drawerContent = {
+                    ModalDrawerSheet { /* Drawer content */ }
+                },
+            ) {*/
+                Scaffold(
+                    floatingActionButton = {
+                        FloatingActionButton(
+                            onClick = { model.showCreateCommunityDialog() }
+                        ) {
+                            Icon(iconStyle.Add, "Create new community")
+                        }
                     }
-                }
-            ) {padding ->
-                if (model.loading) {
-                    LoadingScreen()
-                    return@Scaffold
-                }
+                ) { padding ->
+                    if (model.loading) {
+                        LoadingScreen()
+                        return@Scaffold
+                    }
 
-                CommunityList(
-                    communityList = model.communities,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                )
-            }
+                    CommunityList(
+                        communityList = model.communities,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                    )
+                }
+            //}
         }
 
         when {
