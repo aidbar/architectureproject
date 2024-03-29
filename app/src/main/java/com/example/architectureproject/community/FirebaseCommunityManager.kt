@@ -25,6 +25,7 @@ import java.time.ZonedDateTime
 import java.util.UUID
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlin.math.max
 import kotlin.math.min
 
 class FirebaseCommunityManager : CommunityManager {
@@ -386,8 +387,29 @@ class FirebaseCommunityManager : CommunityManager {
                 .document(obs.cid)
                 .collection("challenge_states")
             var updateJob = null as Job?
+            val regMeta = collection.document("metadata").addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    Log.e("FirebaseCommunityManager.registerChallengesObserver", "Listen failed.", e)
+                    return@addSnapshotListener
+                }
+
+                val lastUpdate = snapshot?.getField<Long>("last_update") ?: 0
+                val secs = max(
+                    lastUpdate - ZonedDateTime.now().minusMonths(1).toEpochSecond() + 1,
+                    0
+                )
+                updateJob?.cancel()
+                // schedule next forced update
+                updateJob = coroutineScope.launch {
+                    delay((secs + 1) * 1000)
+                    newChallenges(ZonedDateTime.now(), obs.cid)
+                }
+            }
+
             val reg =
-                collection.whereEqualTo("active", true)
+                collection
+                    .whereEqualTo("active", true)
+                    .whereGreaterThan("lastSeen", ZonedDateTime.now().minusMonths(1).toEpochSecond())
                 .addSnapshotListener { snapshot, e ->
                     if (e != null) {
                         Log.e("FirebaseCommunityManager.registerObserver", "Listen failed.", e)
@@ -411,26 +433,6 @@ class FirebaseCommunityManager : CommunityManager {
                         obs.notify(result, local)
                     }
                 }
-
-            val regMeta = collection.document("metadata").addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    Log.e("FirebaseCommunityManager.registerObserver", "Listen failed.", e)
-                    return@addSnapshotListener
-                }
-
-                if (snapshot == null)
-                    return@addSnapshotListener
-
-                val lastUpdate = snapshot.getField<Long>("last_update")!!
-                val secs = lastUpdate - ZonedDateTime.now().minusMonths(1).toEpochSecond() + 1
-                updateJob?.cancel()
-                // schedule next forced update
-                updateJob = coroutineScope.launch {
-                    delay((secs + 1) * 1000)
-                    newChallenges(ZonedDateTime.now(), obs.cid)
-                }
-            }
-
             ObservedChallenges(listOf(reg, regMeta), updateJob, observers)
         }.apply { observers.add(obs) }
     }
