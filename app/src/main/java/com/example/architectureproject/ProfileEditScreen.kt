@@ -29,10 +29,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -40,18 +38,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import coil.compose.rememberAsyncImagePainter
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 class ProfileEditScreenModel : ScreenModel {
-    private val info = GreenTraceProviders.userProvider!!.userInfo()
+    private val info = GreenTraceProviders.userProvider.userInfo()
     var alias by mutableStateOf(info.name)
     var bio by mutableStateOf(info.bio)
     var age by mutableStateOf(info.age.toString())
@@ -159,7 +155,7 @@ class ProfileEditScreen:Screen {
             Button(
                 onClick = {
                     val ageStr = model.age.trim()
-                    if (ageStr.contains(Regex.fromLiteral("[^0-9]"))) {
+                    if (ageStr.isEmpty() || ageStr.contains(Regex.fromLiteral("[^0-9]"))) {
                         Log.e("ProfileSetupScreen", "bad age value: $ageStr")
                         return@Button
                     }

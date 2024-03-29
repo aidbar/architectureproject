@@ -15,40 +15,53 @@ data class TrackingPeriod(val start: ZonedDateTime, val end: ZonedDateTime) {
         return TrackingPeriod(shiftFunc(start, count), shiftFunc(end, count))
     }
 
+    fun align(startAlign: TrackingDataGranularity, endAlign: TrackingDataGranularity = TrackingDataGranularity.Day) =
+        TrackingPeriod(alignDate(start, startAlign), alignDate(end, endAlign))
+
+    fun seconds() = end.toEpochSecond() - start.toEpochSecond()
+
     companion object {
+        private fun alignDate(date: ZonedDateTime, granularity: TrackingDataGranularity) =
+            when (granularity) {
+                TrackingDataGranularity.Day ->  ZonedDateTime.of(
+                    date.year, date.monthValue, date.dayOfMonth,
+                    0, 0, 0, 0, date.zone
+                )
+                TrackingDataGranularity.Week -> ZonedDateTime.of(
+                    date.year, date.monthValue, date.dayOfMonth,
+                    0, 0, 0, 0, date.zone
+                ).minusDays((date.dayOfWeek.value % 7).toLong())
+                TrackingDataGranularity.Month -> ZonedDateTime.of(
+                    date.year, date.monthValue, 1,
+                    0, 0, 0, 0, date.zone
+                )
+                TrackingDataGranularity.Year ->  ZonedDateTime.of(
+                    date.year, 1, 1,
+                    0, 0, 0, 0, date.zone
+                )
+            }
+
         fun dayOf(day: ZonedDateTime): TrackingPeriod {
-            val dayStart = ZonedDateTime.of(
-                day.year, day.monthValue, day.dayOfMonth,
-                0, 0, 0, 0, day.zone
-            )
+            val dayStart = alignDate(day, TrackingDataGranularity.Day)
             val dayEnd = dayStart.plusDays(1);
             return TrackingPeriod(dayStart, dayEnd)
         }
 
         fun monthOf(day: ZonedDateTime): TrackingPeriod {
-            val dayStart = ZonedDateTime.of(
-                day.year, day.monthValue, 1,
-                0, 0, 0, 0, day.zone
-            )
+            val dayStart = alignDate(day, TrackingDataGranularity.Month)
 
             val dayEnd = dayStart.plusMonths(1)
             return TrackingPeriod(dayStart, dayEnd)
         }
 
         fun yearOf(day: ZonedDateTime): TrackingPeriod {
-            val dayStart = ZonedDateTime.of(
-                day.year, 1, 1,
-                0, 0, 0, 0, day.zone
-            )
+            val dayStart = alignDate(day, TrackingDataGranularity.Year)
             val dayEnd = dayStart.plusYears(1)
             return TrackingPeriod(dayStart, dayEnd)
         }
 
         fun weekOf(day: ZonedDateTime): TrackingPeriod {
-            val dayStart = ZonedDateTime.of(
-                day.year, day.monthValue, day.dayOfMonth,
-                0, 0, 0, 0, day.zone
-            ).minusDays((day.dayOfWeek.value % 7).toLong())
+            val dayStart = alignDate(day, TrackingDataGranularity.Week)
             val dayEnd = dayStart.plusWeeks(1)
             return TrackingPeriod(dayStart, dayEnd)
         }
@@ -82,7 +95,12 @@ data class TrackingPeriod(val start: ZonedDateTime, val end: ZonedDateTime) {
 // For example, Day means fetch one value for every day
 //              Month means aggregate daily values, return 1 value for each month
 enum class TrackingDataGranularity {
-    Day, Week, Month, Year
+    Day, Week, Month, Year;
+    fun seconds(): Long = when (this) {
+        Day -> 24 * 3600
+        Week -> 7 * Day.seconds()
+        else -> -1
+    }
 }
 
 enum class TrackingDataType {

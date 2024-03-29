@@ -33,7 +33,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -45,6 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import cafe.adriel.voyager.core.lifecycle.LifecycleEffect
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -52,10 +52,13 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.example.architectureproject.community.CommunityInfo
+import com.example.architectureproject.community.CommunityObserver
 import com.example.architectureproject.ui.theme.ArchitectureProjectTheme
 import kotlinx.coroutines.launch
 
-class CommunityScreenModel : ScreenModel {
+class CommunityScreenModel : ScreenModel, CommunityObserver {
+    override val id = "" // blank means all communities are affected by this model
+
     var openCreateCommunityDialog by mutableStateOf(false)
     var newCommunityName by mutableStateOf("")
     var newCommunityLocation by mutableStateOf("")
@@ -63,8 +66,11 @@ class CommunityScreenModel : ScreenModel {
     var loading by mutableStateOf(true)
 
     var communities by mutableStateOf(listOf<CommunityInfo>())
-    private suspend fun reloadCommunities() {
-        communities = GreenTraceProviders.userProvider!!.getCommunities()
+
+    override fun notify(info: List<CommunityInfo>, local: Boolean) {
+        //communities = listOf() // for some reason this is needed
+        communities = info
+        loading = false
     }
 
     fun showCreateCommunityDialog() {
@@ -79,20 +85,22 @@ class CommunityScreenModel : ScreenModel {
         openCreateCommunityDialog = false
     }
 
-    fun loadCommunities() {
-        screenModelScope.launch { reloadCommunities(); loading = false }
-    }
-
     fun createCommunity(name: String, loc: String) {
         loading = true
         screenModelScope.launch {
-            val comm = GreenTraceProviders.communityManager?.createCommunity(
-                GreenTraceProviders.userProvider!!.userInfo(), name, loc
+            val comm = GreenTraceProviders.communityManager.createCommunity(
+                GreenTraceProviders.userProvider.userInfo(), name, loc
             )
-            comm?.let { GreenTraceProviders.userProvider?.attachCommunity(it) }
-            reloadCommunities()
-            loading = false
+            comm.let { GreenTraceProviders.userProvider.attachCommunity(it) }
         }
+    }
+
+    fun start() {
+        GreenTraceProviders.communityManager.registerObserver(this)
+    }
+
+    fun stop() {
+        GreenTraceProviders.communityManager.unregisterObserver(this)
     }
 }
 
@@ -103,7 +111,10 @@ class CommunityScreen : Screen {
     @Preview
     override fun Content() {
         val model = rememberScreenModel { CommunityScreenModel() }
-        LaunchedEffect(Unit) { model.loadCommunities() }
+        LifecycleEffect(
+            onStarted = { model.start() },
+            onDisposed = { model.stop() }
+        )
 
         ArchitectureProjectTheme {
             Scaffold(

@@ -1,6 +1,5 @@
 package com.example.architectureproject
 
-import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -15,22 +14,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.navigator.Navigator
-import com.example.architectureproject.community.CommunityManager
-import com.example.architectureproject.community.FirebaseCommunityManager
-import com.example.architectureproject.profile.FirebaseUserProvider
-import com.example.architectureproject.profile.UserProvider
-import com.example.architectureproject.tracking.FirebaseTrackingDataProvider
-import com.example.architectureproject.tracking.TrackingDataProvider
-import com.example.architectureproject.tracking.TrackingImpactProvider
-import com.example.architectureproject.tracking.demo.DummyMapProvider
-import com.example.architectureproject.tracking.demo.DummyTrackingData
-import com.example.architectureproject.tracking.demo.DummyTrackingImpactProvider
 import com.example.architectureproject.ui.theme.ArchitectureProjectTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val communityJoinURI = intent.data
+        val self = this
         setContent {
             ArchitectureProjectTheme {
                 // A surface container using the 'background' color from the theme
@@ -40,7 +30,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     var isLoading by remember { mutableStateOf(true) }
                     LaunchedEffect(Unit) {
-                        GreenTraceProviders.init(applicationContext)
+                        GreenTraceProviders.init(self)
                         isLoading = false
                     }
 
@@ -53,7 +43,7 @@ class MainActivity : ComponentActivity() {
                     val hasLoggedIn = sharedPref.getString("id", null)
                     Log.d("hasLoggedIn", hasLoggedIn.toString())
                     if (hasLoggedIn != null) {
-                        if (!GreenTraceProviders.userProvider!!.hasUserProfile()) {
+                        if (!GreenTraceProviders.userProvider.hasUserProfile()) {
                             Navigator(NewAccountSetupScreen())
                             return@Surface
                         }

@@ -41,11 +41,11 @@ class CommunityJoinScreen(private val communityURIStr: String) : Screen {
         val scope = rememberCoroutineScope()
         var members by remember { mutableStateOf(listOf<User>()) }
         LaunchedEffect(Unit) {
-            members = GreenTraceProviders.communityManager!!.getCommunityMembers(community.id)
+            members = GreenTraceProviders.communityManager.getCommunityMembers(community.id)
         }
 
         if (members.isEmpty()) return
-        if (members.contains(GreenTraceProviders.userProvider!!.userInfo())) {
+        if (members.contains(GreenTraceProviders.userProvider.userInfo())) {
             Column {
                 Text("You're already a member of this community")
                 Button(onClick = {
@@ -58,7 +58,7 @@ class CommunityJoinScreen(private val communityURIStr: String) : Screen {
         Row {
             Button(onClick = {
                 scope.launch {
-                    GreenTraceProviders.userProvider?.attachCommunity(community.id)
+                    GreenTraceProviders.userProvider.attachCommunity(community.id)
                     navigator.push(MainScreen(true))
                 }
             }) {
@@ -87,7 +87,7 @@ class CommunityJoinScreen(private val communityURIStr: String) : Screen {
         LaunchedEffect(Unit) {
             GreenTraceProviders.initTracking()
             community = communityURI.getQueryParameter("id")?.let {
-                GreenTraceProviders.communityManager?.getCommunityById(it)
+                GreenTraceProviders.communityManager.getCommunityById(it)
             }
             isLoading = false
         }
