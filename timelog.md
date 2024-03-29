@@ -46,11 +46,12 @@
 | 2024/03/08 |       |    3     |         |        |      |       | Research on finding freely available News API and query params to retrieve news related to environment and eco-friendly practices           |
 | 2024/03/14 |       |   2.5    |         |        |      |       | Research and reading on coroutines and asynchronous coding pattern in Kotlin                                                                |
 | 2024/03/14 |       |    5     |         |        |      |       | Integrated News API in Kotlin by using coroutines and OkHttp client library                                                                 |
-| 2024/03/15 |       |    4.5   |         |        |      |       | Implemented Quiz screen and 4 static quizzes along with calculating quiz score functionality   
-| 2024/03/19 |   2.5 |    2.5   |   2.5   |    2.5 |  2.5 |  2.5  | Team meeting for D4
+| 2024/03/15 |       |   4.5    |         |        |      |       | Implemented Quiz screen and 4 static quizzes along with calculating quiz score functionality   
+| 2024/03/19 |   2.5 |   2.5    |   2.5   |    2.5 |  2.5 |  2.5  | Team meeting for D4
 | 2024/03/20 |   1   |    1     |    1    |    1   |  1   |   1   |  D5
 | 2024/03/24 |       |          |         |    2.5 |      |       | Carbon footprint calculation algorithm         
 | 2024/03/25 |       |          |         |        |      |  1.5  | Activity UI and D6
 | 2024/03/25 |       |    5     |         |        |      |       | Research on various ecofriendly task recommendations, Created task recommendation list based on user responses to lifestyle questions       |
-| 2024/03/26 | 4     |   4      |   4     |    4   |  4   |  4    | Team meeting for finalizing the app and starting on D6 |
-| 2024/03/26 |       |    3     |         |        |      |       | Made UI improvements to community invite page                       |
+| 2024/03/26 | 4     |    4     |   4     |    4   |  4   |  4    | Team meeting for finalizing the app and starting on D6 |
+| 2024/03/26 |       |    3     |         |        |      |       | Made UI improvements to community invite page                                                                                               |
+| 2024/03/26 |       |   1.5    |         |        |      |       | Research on finding appropriate query phrase to retrieve only eco-friendly related articles on Learn tab                                    |
