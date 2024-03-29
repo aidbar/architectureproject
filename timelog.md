@@ -53,6 +53,7 @@
 | 2024/03/25 |       |          |         |        |      |  1.5  | Activity UI and D6
 | 2024/03/25 |       |    5     |         |        |      |       | Research on various ecofriendly task recommendations, Created task recommendation list based on user responses to lifestyle questions       |
 | 2024/03/26 | 4     |    4     |   4     |    4   |  4   |  4    | Team meeting for finalizing the app and starting on D6 |
+| 2024/03/26 |       |          |         |        |      |   1   | Activity page UI improvement/changing color scheme
 | 2024/03/26 |       |    3     |         |        |      |       | Made UI improvements to community invite page                                                                                               |
 | 2024/03/29 |       |   1.5    |         |        |      |       | Research on finding appropriate query phrase to retrieve only eco-friendly related articles on Learn tab                                    |
 | 2024/03/29 |       |   4.5    |         |        |      |       | UI improvements for profile page, added functionality to update user lifestyle responses on profile page                                    |
