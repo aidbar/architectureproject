@@ -155,13 +155,13 @@ class FirebaseUserProvider private constructor(
     }
 
     override suspend fun attachCommunity(id: String) =
-        GreenTraceProviders.communityManager!!.addUserToCommunity(uid()!!, id)
+        GreenTraceProviders.communityManager.addUserToCommunity(uid()!!, id)
 
     override suspend fun detachCommunity(id: String) =
-        GreenTraceProviders.communityManager!!.removeUserFromCommunity(uid()!!, id)
+        GreenTraceProviders.communityManager.removeUserFromCommunity(uid()!!, id)
 
     override suspend fun getCommunities() =
-        GreenTraceProviders.communityManager!!.getCommunitiesByUID(uid()!!)
+        GreenTraceProviders.communityManager.getCommunitiesByUID(uid()!!)
 
     companion object {
         private fun userInfoInternal(

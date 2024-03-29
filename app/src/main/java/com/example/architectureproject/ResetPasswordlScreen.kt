@@ -1,6 +1,5 @@
 package com.example.architectureproject
 
-import android.app.AlertDialog
 import android.content.ContentValues.TAG
 import android.util.Log
 import android.widget.Toast
@@ -30,7 +29,7 @@ class ResetPasswordScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        val context = GreenTraceProviders.applicationContext!!
+        val context = GreenTraceProviders.applicationContext
 
         var email by remember { mutableStateOf("") }
 

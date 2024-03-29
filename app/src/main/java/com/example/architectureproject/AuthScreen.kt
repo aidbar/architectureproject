@@ -1,8 +1,6 @@
 package com.example.architectureproject
 
-import android.app.Activity
 import android.content.Context
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,7 +16,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,20 +29,18 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 
 class AuthScreen : Screen {
     @Composable
     override fun Content() {
         val scope = rememberCoroutineScope()
-        val provider = GreenTraceProviders.userProvider!!
+        val provider = GreenTraceProviders.userProvider
         val navigator = LocalNavigator.current
 
         var email by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
-        val context = GreenTraceProviders.applicationContext!!
+        val context = GreenTraceProviders.applicationContext
 
         val sharedPref = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
 
