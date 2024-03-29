@@ -195,8 +195,8 @@ class LearnScreen : Screen {
         withContext(Dispatchers.IO) {
             val client = OkHttpClient()
 
-            val query = "green%20living"
-            val url = "https://newsdata.io/api/1/news?apikey=pub_9776cec1c68b5a1afc4c88f91a0207adacc5&q=$query&language=en&category=education,environment"
+            val query = "Eco-friendly"
+            val url = "https://newsdata.io/api/1/news?apikey=pub_9776cec1c68b5a1afc4c88f91a0207adacc5&q=$query&language=en&category=education,environment,lifestyle"
             val request = Request.Builder()
                 .url(url)
                 .build()
