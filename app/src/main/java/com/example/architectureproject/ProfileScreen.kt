@@ -193,7 +193,7 @@ class ProfileScreen : Screen {
 
             Button(
                 onClick = {
-//                    navigator?.push(StartQuestionsScreen())
+                    navigator?.push(TransportationQScreen(hasLifestyleResponses = true))
                 },
                 modifier = Modifier
                     .align(Alignment.End)

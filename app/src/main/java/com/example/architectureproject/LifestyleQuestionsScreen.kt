@@ -245,7 +245,7 @@ class StartQuestionsScreen() : Screen {
             }
 
             Button(
-                onClick = { navigator?.push(TransportationQScreen()) },
+                onClick = { navigator?.push(TransportationQScreen(hasLifestyleResponses = false)) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Continue")
@@ -254,11 +254,10 @@ class StartQuestionsScreen() : Screen {
     }
 }
 
-class TransportationQScreen : Screen {
+class TransportationQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        var expanded by remember { mutableStateOf(false) }
         val primary_options = listOf(
             "Walking" to UserLifestyle.TransportationMethod.Walk,
             "Cycling" to UserLifestyle.TransportationMethod.Cycle,
@@ -270,8 +269,30 @@ class TransportationQScreen : Screen {
         val secondary_options = listOf(
             "Yes" to true, "No" to false
         )
-        var selectedPrimaryOption by remember { mutableStateOf("" to userResponses.transportationPreference) }
-        var selectedSecondaryOption by remember { mutableStateOf("" to false) }
+
+        val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
+
+        var selectedPrimaryOption by remember {
+            if(hasLifestyleResponses) {
+                val preferenceString = primary_options.find { it.second == userLifestyle.transportationPreference }?.first ?: ""
+                mutableStateOf(preferenceString to userLifestyle.transportationPreference)
+            } else {
+                mutableStateOf("" to userResponses.transportationPreference)
+            }
+        }
+
+        var selectedSecondaryOption by remember {
+            if(hasLifestyleResponses) {
+                if(userLifestyle.disabilities.isNotEmpty()) {
+                    mutableStateOf("Yes" to true)
+                } else {
+                    mutableStateOf("No" to false)
+                }
+            } else {
+                mutableStateOf("" to false)
+            }
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -351,7 +372,7 @@ class TransportationQScreen : Screen {
                         if (selectedSecondaryOption.second) {
                             userResponses.disabilities = setOf(UserLifestyle.Disability.DifficultyWalking)
                         }
-                        navigator?.push(FoodQScreen())
+                        navigator?.push(FoodQScreen(hasLifestyleResponses = hasLifestyleResponses))
                     },
                     modifier = Modifier.width(150.dp),
                     enabled = selectedPrimaryOption.first.isNotEmpty() && selectedSecondaryOption.first.isNotEmpty()
@@ -365,11 +386,10 @@ class TransportationQScreen : Screen {
     }
 }
 
-class FoodQScreen : Screen {
+class FoodQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        var expanded by remember { mutableStateOf(false) }
         val restriction_options = listOf(
             "No Restrictions" to UserLifestyle.Diet.None,
             "Vegetarian (No Meat)" to UserLifestyle.Diet.Vegetarian,
@@ -382,8 +402,27 @@ class FoodQScreen : Screen {
             "Rarely" to UserLifestyle.Frequency.Rarely,
             "Never" to UserLifestyle.Frequency.Never
         )
-        var selectedRestrictionOption by remember { mutableStateOf("" to userResponses.diet) }
-        var selectedFrequencyOption by remember { mutableStateOf("" to userResponses.locallySourcedFoodPreference) }
+
+        val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
+
+        var selectedRestrictionOption by remember {
+            if(hasLifestyleResponses) {
+                val preferenceString = restriction_options.find { it.second == userLifestyle.diet }?.first ?: ""
+                mutableStateOf(preferenceString to userLifestyle.diet)
+            } else {
+                mutableStateOf("" to userResponses.diet)
+            }
+        }
+
+        var selectedFrequencyOption by remember {
+            if(hasLifestyleResponses) {
+                val preferenceString = frequency_options.find { it.second == userLifestyle.locallySourcedFoodPreference }?.first ?: ""
+                mutableStateOf(preferenceString to userLifestyle.locallySourcedFoodPreference)
+            } else {
+                mutableStateOf("" to userResponses.locallySourcedFoodPreference)
+            }
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -460,7 +499,7 @@ class FoodQScreen : Screen {
                     onClick = {
                         userResponses.diet = selectedRestrictionOption.second
                         userResponses.locallySourcedFoodPreference = selectedFrequencyOption.second
-                        navigator?.push(ShoppingQScreen())
+                        navigator?.push(ShoppingQScreen(hasLifestyleResponses = hasLifestyleResponses))
                     },
                     modifier = Modifier.width(150.dp),
                     enabled = selectedFrequencyOption.first.isNotEmpty() && selectedRestrictionOption.first.isNotEmpty()
@@ -472,11 +511,10 @@ class FoodQScreen : Screen {
     }
 }
 
-class ShoppingQScreen : Screen {
+class ShoppingQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        var expanded by remember { mutableStateOf(false) }
         val primary_options = listOf(
             "In-Store" to UserLifestyle.ShoppingMethod.InStore,
             "Online" to UserLifestyle.ShoppingMethod.Online,
@@ -488,8 +526,27 @@ class ShoppingQScreen : Screen {
             "Slightly" to UserLifestyle.Frequency.Rarely,
             "Not at All" to UserLifestyle.Frequency.Never,
         )
-        var selectedPrimaryOption by remember { mutableStateOf("" to userResponses.shoppingPreference) }
-        var selectedSecondaryOption by remember { mutableStateOf("" to userResponses.sustainabilityInfluence) }
+
+        val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
+
+        var selectedPrimaryOption by remember {
+            if(hasLifestyleResponses) {
+                val preferenceString = primary_options.find { it.second == userLifestyle.shoppingPreference }?.first ?: ""
+                mutableStateOf(preferenceString to userLifestyle.shoppingPreference)
+            } else {
+                mutableStateOf("" to userResponses.shoppingPreference)
+            }
+        }
+
+        var selectedSecondaryOption by remember {
+            if(hasLifestyleResponses) {
+                val preferenceString = secondary_options.find { it.second == userLifestyle.sustainabilityInfluence }?.first ?: ""
+                mutableStateOf(preferenceString to userLifestyle.sustainabilityInfluence)
+            } else {
+                mutableStateOf("" to userResponses.sustainabilityInfluence)
+            }
+        }
+
         val scope = rememberCoroutineScope()
         Column(
             modifier = Modifier
@@ -580,7 +637,15 @@ class ShoppingQScreen : Screen {
                         scope.launch {
                             GreenTraceProviders.userProvider.userLifestyle(userResponses.build())
                                 ?.let { Log.e("updateLifestyle", it) }
-                            navigator?.push(MainScreen(false))
+                            if(hasLifestyleResponses) {
+                                navigator?.apply {
+                                    repeat(3) {
+                                        pop()
+                                    }
+                                }
+                            } else {
+                                navigator?.push(MainScreen(false))
+                            }
                         }
                     },
                     modifier = Modifier.width(150.dp),
