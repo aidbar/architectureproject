@@ -57,3 +57,4 @@
 | 2024/03/26 |       |    3     |         |        |      |       | Made UI improvements to community invite page                                                                                               |
 | 2024/03/29 |       |   1.5    |         |        |      |       | Research on finding appropriate query phrase to retrieve only eco-friendly related articles on Learn tab                                    |
 | 2024/03/29 |       |   4.5    |         |        |      |       | UI improvements for profile page, added functionality to update user lifestyle responses on profile page                                    |
+| 2024/03/29 | 3     |          |         |        |      |       | UI improvements for HomeScreen and NewActivityScreen |
