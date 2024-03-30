@@ -55,4 +55,3 @@
 | 2024/03/26 | 4     |    4     |   4     |    4   |  4   |  4    | Team meeting for finalizing the app and starting on D6 |
 | 2024/03/26 |       |    3     |         |        |      |       | Made UI improvements to community invite page                                                                                               |
 | 2024/03/26 |       |   1.5    |         |        |      |       | Research on finding appropriate query phrase to retrieve only eco-friendly related articles on Learn tab                                    |
-| 2024/03/29 | 3     |          |         |        |      |       | UI improvements for HomeScreen and NewActivityScreen                                                                                        |
