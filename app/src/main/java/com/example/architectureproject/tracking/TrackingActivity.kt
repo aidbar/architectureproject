@@ -58,23 +58,6 @@ data class Meal(@Exclude @get:Exclude override var date: ZonedDateTime,
         }
 
     override fun copy() = copy(id = id)
-    fun computeCarbonFootprint(): Float {
-//        units in kg
-// source: https://www.researchgate.net/figure/Carbon-footprint-kg-CO2eq-of-different-food-groups-per-kg-food-in-the-supermarket-and_fig1_343864236
-        val carbonFootprintPerType = mapOf(
-            Entry.Type.Meat to 12f,
-            Entry.Type.Dairy to 10f,
-            Entry.Type.Poultry to 5f,
-            Entry.Type.Egg to 3f,
-            Entry.Type.Fish to 4.8f,
-            Entry.Type.Vegetable to 0.6f,
-            Entry.Type.Fruit to 0.6f,
-            Entry.Type.Grain to 1.4f
-        )
-        return contents.sumOf { entry ->
-            (carbonFootprintPerType[entry.type] ?: 0f) * entry.quantity
-        }
-    }
 }
 
 data class Transportation(
@@ -95,9 +78,7 @@ data class Transportation(
 
     override fun copy() = copy(id = id)
 
-    enum class Source { New, SecondHand, Refurbished }
-
-    fun calculateTotalDistance(stops: List<Stop>): Double {
+    /*fun calculateTotalDistance(stops: List<Stop>): Double {
         if (stops.size < 2) return 0.0
 
         val earthRadius = 6371 // Radius of the earth in kilometers
@@ -121,22 +102,7 @@ data class Transportation(
         }
 
         return totalDistance
-    }
-//    trip unit in km
-//    source: https://www.visualcapitalist.com/comparing-the-carbon-footprint-of-transportation-options/
-    fun computeCarbonFootprint(): Float {
-        val carbonFootprintPerType = mapOf(
-            Mode.Car to 0.192f,
-            Mode.Bus to 0.105f,
-            Mode.Walk to 0f,
-            Mode.Bicycle to 0f,
-            Mode.Train to 0.041f,
-            Mode.Plane to 0.255f,
-            Mode.Boat to 0.019f,
-            Mode.LRT to 0.041f,
-        )
-    return calculateTotalDistance(stops).toFloat() * (carbonFootprintPerType[mode]?:0f)
-}
+    }*/
 }
 
 data class Purchase(
@@ -150,14 +116,6 @@ data class Purchase(
     private constructor() : this(ZonedDateTime.now(), "", false)
 
     enum class Source { InStore, Online, SecondHand }
-    fun computeCarbonFootprint(): Float {
-        val carbonFootprintPerType = mapOf(
-            Source.InStore to 1.6f,
-            Source.Online to 1.4f,
-            Source.SecondHand to 0.4f
-        )
-        return carbonFootprintPerType[source]?:0f
-    }
 
     override fun copy() = copy(id = id)
 }

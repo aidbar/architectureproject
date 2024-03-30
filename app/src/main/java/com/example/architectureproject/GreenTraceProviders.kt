@@ -9,6 +9,7 @@ import com.example.architectureproject.community.CommunityManager
 import com.example.architectureproject.community.FirebaseCommunityManager
 import com.example.architectureproject.profile.FirebaseUserProvider
 import com.example.architectureproject.profile.UserProvider
+import com.example.architectureproject.tracking.BasicTrackingImpactProvider
 import com.example.architectureproject.tracking.FirebaseTrackingDataProvider
 import com.example.architectureproject.tracking.TrackingDataProvider
 import com.example.architectureproject.tracking.TrackingImpactProvider
@@ -21,7 +22,7 @@ object GreenTraceProviders {
     lateinit var communityManager: CommunityManager
         private set
     val mapProvider: MapProvider = DummyMapProvider()
-    val impactProvider: TrackingImpactProvider = DummyTrackingImpactProvider()
+    val impactProvider: TrackingImpactProvider = BasicTrackingImpactProvider()
     lateinit var applicationContext: Context
         private set
 
