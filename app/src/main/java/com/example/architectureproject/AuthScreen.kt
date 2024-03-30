@@ -1,6 +1,5 @@
 package com.example.architectureproject
 
-import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -42,7 +41,7 @@ class AuthScreen : Screen {
         var password by remember { mutableStateOf("") }
         val context = GreenTraceProviders.applicationContext
 
-        val sharedPref = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        //val sharedPref = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
 
         Column(
             modifier = Modifier
@@ -94,9 +93,7 @@ class AuthScreen : Screen {
                                 ).show()
                                 return@launch
                             }
-
-                            sharedPref.edit().putString("id", provider.uid())
-                                .apply()
+                            
                             navigator?.push(MainScreen(false))
                         }
                     }
@@ -123,13 +120,12 @@ class AuthScreen : Screen {
                             if (error != null) {
                                 Toast.makeText(
                                     context,
-                                    "Error: " + error,
+                                    "Error: $error",
                                     Toast.LENGTH_SHORT
                                 ).show()
                                 return@launch
                             }
 
-                            sharedPref.edit().putString("id", provider.uid()).apply()
                             navigator?.push(NewAccountSetupScreen())
                         }
                     }
