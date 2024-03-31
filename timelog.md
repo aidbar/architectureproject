@@ -44,17 +44,27 @@
 | 2024/03/06 |   1.5 |          |         |        |      |       | Working on D3 deliverable document                                                                                                          |      
 | 2024/03/07 |       |    6     |         |        |      |       | Implemented Reset password functionality                                                                                                    |
 | 2024/03/08 |       |    3     |         |        |      |       | Research on finding freely available News API and query params to retrieve news related to environment and eco-friendly practices           |
+| 2024/03/10 |       |          |         |        |  2.5 |       | Fully implement user profile management logic using Firebase auth and Firestore           |
+| 2024/03/12 |       |          |         |        |  2.5 |       | Implement community management logic using Firestore           |
 | 2024/03/14 |       |   2.5    |         |        |      |       | Research and reading on coroutines and asynchronous coding pattern in Kotlin                                                                |
 | 2024/03/14 |       |    5     |         |        |      |       | Integrated News API in Kotlin by using coroutines and OkHttp client library                                                                 |
 | 2024/03/15 |       |   4.5    |         |        |      |       | Implemented Quiz screen and 4 static quizzes along with calculating quiz score functionality   
+| 2024/03/15 |       |          |         |        |  1   |       | Start working on activity tracking logic targeting Firestore           |
+| 2024/03/17 |       |          |         |        |  2   |       | Research on how to overcome various Firestore limitations, and continue work on activity tracking           |
+| 2024/03/18 |       |          |         |        |  2.5 |       | Finish up work on activity tracking in Firestore & test it          |
 | 2024/03/19 |   2.5 |   2.5    |   2.5   |    2.5 |  2.5 |  2.5  | Team meeting for D4
 | 2024/03/20 |   1   |    1     |    1    |    1   |  1   |   1   |  D5
+| 2024/03/23 |       |          |         |        |  2   |       | Begin work on activity recurrence logic          |
 | 2024/03/24 |       |          |         |    2.5 |      |       | Carbon footprint calculation algorithm         
 | 2024/03/25 |       |          |         |        |      |  1.5  | Activity UI and D6
 | 2024/03/25 |       |    5     |         |        |      |       | Research on various ecofriendly task recommendations, Created task recommendation list based on user responses to lifestyle questions       |
+| 2024/03/25 |       |          |         |        |  1.5 |       | Fix and test recurring activities          |
 | 2024/03/26 | 4     |    4     |   4     |    4   |  4   |  4    | Team meeting for finalizing the app and starting on D6 |
 | 2024/03/26 |       |          |         |        |      |   1   | Activity page UI improvement/changing color scheme
 | 2024/03/26 |       |    3     |         |        |      |       | Made UI improvements to community invite page                                                                                               |
+| 2024/03/27 |       |          |         |        |  2   |       | Code cleanup, implement contact us and firestore community info observers           |
+| 2024/03/28 |       |          |         |        |  4.5 |       | Initial implementation of Firestore community challenges logic & related observables          |
 | 2024/03/29 |       |   1.5    |         |        |      |       | Research on finding appropriate query phrase to retrieve only eco-friendly related articles on Learn tab                                    |
 | 2024/03/29 |       |   4.5    |         |        |      |       | UI improvements for profile page, added functionality to update user lifestyle responses on profile page                                    |
 | 2024/03/29 | 3     |          |         |        |      |       | UI improvements for HomeScreen and NewActivityScreen |
+| 2024/03/30 |       |          |         |        |  1   |       | Various edge case fixes involving firestore          |
