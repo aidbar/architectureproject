@@ -58,6 +58,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import org.json.JSONObject
+import com.example.architectureproject.ui.theme.*
 
 data class Article(
     val title: String,
@@ -240,7 +241,7 @@ fun QuizCard(quiz: Quiz, onClick: () -> Unit) {
             .fillMaxWidth()
             .height(160.dp)
             .clip(shape = RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = quiz.title, style = MaterialTheme.typography.titleMedium)

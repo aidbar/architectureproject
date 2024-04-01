@@ -20,7 +20,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val communityJoinURI = intent.data
-        val self = this
         setContent {
             ArchitectureProjectTheme {
                 // A surface container using the 'background' color from the theme
@@ -30,7 +29,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     var isLoading by remember { mutableStateOf(true) }
                     LaunchedEffect(Unit) {
-                        GreenTraceProviders.init(self)
+                        GreenTraceProviders.init()
                         isLoading = false
                     }
 

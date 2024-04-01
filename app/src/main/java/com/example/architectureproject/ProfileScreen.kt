@@ -62,6 +62,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import coil.compose.rememberAsyncImagePainter
 import kotlinx.coroutines.launch
+import com.example.architectureproject.ui.theme.*
 
 class ProfileEditScreenModel : ScreenModel {
     private val info = GreenTraceProviders.userProvider.userInfo()
@@ -122,7 +123,7 @@ class ProfileScreen : Screen {
             ) {
                 IconButton(onClick = { /* Upload image */ }, modifier = Modifier
                     .offset(40.dp, (-30).dp)
-                    .background(MaterialTheme.colorScheme.primary, CircleShape)) {
+                    .background(Green40, CircleShape)) {
                     Icon(Icons.Filled.Edit, contentDescription = "Edit Profile Picture",
                         modifier = Modifier.size(
                             ButtonDefaults.IconSize), tint = Color.White)

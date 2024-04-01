@@ -66,7 +66,7 @@ class CommunityMembersScreenModel(info: CommunityInfo) : ScreenModel, CommunityO
     var loading by mutableStateOf(true)
     var deleted by mutableStateOf(false)
 
-    override fun notify(info: List<CommunityInfo>, local: Boolean) {
+    override fun notify(info: List<CommunityInfo>, invites: List<CommunityInfo>, local: Boolean) {
         if (info.isEmpty()) {
             deleted = true
             return

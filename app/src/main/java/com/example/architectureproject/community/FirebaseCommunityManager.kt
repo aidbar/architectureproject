@@ -9,6 +9,7 @@ import com.google.firebase.firestore.AggregateSource
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
@@ -46,7 +47,8 @@ class FirebaseCommunityManager : CommunityManager {
             "owner" to owner.uid,
             "name" to name,
             "location" to location,
-            "members" to listOf(owner.uid)
+            "members" to listOf(owner.uid),
+            "invited" to listOf<String>()
         )
 
         return suspendCoroutine { cont ->
@@ -106,7 +108,10 @@ class FirebaseCommunityManager : CommunityManager {
 
     override suspend fun addUserToCommunity(uid: String, id: String) {
         val doc = db.collection("communities").document(id)
-        doc.update("members", FieldValue.arrayUnion(uid)).await()
+        db.runBatch { batch ->
+            batch.update(doc, "members", FieldValue.arrayUnion(uid))
+            batch.update(doc, "invited", FieldValue.arrayRemove(uid))
+        }.await()
     }
 
     override suspend fun removeUserFromCommunity(uid: String, id: String) {
@@ -134,6 +139,35 @@ class FirebaseCommunityManager : CommunityManager {
             .get("members")
             .let { GreenTraceProviders.userProvider.getUserById(it as List<String>) }
 
+    override suspend fun getPendingInvites(uid: String): List<CommunityInfo> =
+        coroutineScope {
+            db.collection("communities")
+                .whereArrayContains("invited", uid)
+                .get()
+                .await()
+                .documents
+                .map { async { convertCommunityDocument(it) } }
+                .map { it.await()!! }
+        }
+
+    override suspend fun declineInvite(uid: String, id: String) {
+        db.collection("communities")
+            .document(id)
+            .update("invited", FieldValue.arrayRemove(uid))
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override suspend fun inviteUser(uid: String, cid: String) {
+        db.runTransaction { txn ->
+            val ref = db.collection("communities")
+                .document(cid)
+            val members = txn.get(ref).get("members") as List<String>
+            if (members.contains(uid)) return@runTransaction
+            txn.update(ref, "invited", FieldValue.arrayUnion(uid))
+        }.await()
+    }
+
+    @Suppress("UNCHECKED_CAST")
     override fun registerObserver(obs: CommunityObserver) {
         val uid = GreenTraceProviders.userProvider.uid()!!
         observers.getOrPut(obs.cid) {
@@ -141,7 +175,10 @@ class FirebaseCommunityManager : CommunityManager {
             val registration =
                 if (obs.cid.isEmpty())
                     db.collection("communities")
-                        .whereArrayContains("members", uid)
+                        .where(Filter.or(
+                            Filter.arrayContains("invited", uid),
+                            Filter.arrayContains("members", uid)
+                        ))
                         .addSnapshotListener { snapshot, e ->
                             if (e != null) {
                                 Log.e("FirebaseCommunityManager.registerObserver", "Listen failed.", e)
@@ -150,16 +187,23 @@ class FirebaseCommunityManager : CommunityManager {
 
                             val local = snapshot?.metadata?.hasPendingWrites() ?: false
                             if (snapshot == null) {
-                                observers.forEach { it.notify(listOf(), local) }
+                                observers.forEach { it.notify(listOf(), listOf(), local) }
                                 return@addSnapshotListener
                             }
 
                             coroutineScope.launch {
-                                val list = snapshot
-                                            .documents
+                                val (invitedDoc, listDoc) = snapshot.documents
+                                    .partition {
+                                        val invited = it.get("invited") as List<String>? ?: listOf()
+                                        invited.contains(uid)
+                                    }
+                                val list = listDoc
                                             .map { async { convertCommunityDocument(it)!! } }
                                             .map { it.await() }
-                                observers.forEach { it.notify(list, local) }
+                                val invited = invitedDoc
+                                    .map { async { convertCommunityDocument(it)!! } }
+                                    .map { it.await() }
+                                observers.forEach { it.notify(list, invited, local) }
                             }
                         }
                 else
@@ -173,13 +217,19 @@ class FirebaseCommunityManager : CommunityManager {
 
                         val local = doc?.metadata?.hasPendingWrites() ?: false
                         if (doc == null || !doc.exists()) {
-                            observers.forEach { it.notify(listOf(), local) }
+                            observers.forEach { it.notify(listOf(), listOf(), local) }
                             return@addSnapshotListener
                         }
 
                         coroutineScope.launch {
                             val info = convertCommunityDocument(doc)!!
-                            observers.forEach { it.notify(listOf(info), local) }
+                            val invited = doc.get("invited") as List<String>? ?: listOf()
+                            observers.forEach {
+                                it.notify(
+                                    listOf(info),
+                                    if (invited.contains(uid)) listOf(info) else listOf(),
+                                    local)
+                            }
                         }
                     }
             ObservedDocument(listOf(registration), observers)

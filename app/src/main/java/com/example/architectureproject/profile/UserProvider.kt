@@ -32,6 +32,7 @@ interface UserProvider {
     suspend fun attachCommunity(id: String)
     suspend fun detachCommunity(id: String)
     suspend fun getCommunities(): List<CommunityInfo>
+    suspend fun getUserByEmail(email: String): User?
 }
 
 class FirebaseUserProvider private constructor(
@@ -89,7 +90,8 @@ class FirebaseUserProvider private constructor(
         val update = hashMapOf<String, Any>(
             "name" to name,
             "bio" to bio,
-            "age" to age
+            "age" to age,
+            "email" to (firebaseUser?.email?.lowercase() ?: "")
         )
 
         return suspendCoroutine { cont ->
@@ -148,10 +150,25 @@ class FirebaseUserProvider private constructor(
                     .get()
                     .await()
                     .documents
-                    .map { userInfoFromProfile(convertUserDocument(it), it.id, "") }
+                    .map { userInfoFromProfile(convertUserDocument(it), it.id, it.getField<String>("email") ?: "") }
             } }
             .flatMap { it.await() }
         }
+    }
+
+    override suspend fun getUserByEmail(email: String): User? {
+        if (email.isBlank())
+            return null
+
+        return db.collection("users")
+            .whereEqualTo("email", email.lowercase())
+            .get()
+            .await()
+            .documents
+            .getOrNull(0)
+            ?.let {
+                userInfoFromProfile(convertUserDocument(it), it.id, email)
+            }
     }
 
     override suspend fun attachCommunity(id: String) =
@@ -171,7 +188,7 @@ class FirebaseUserProvider private constructor(
 
         private fun userInfoFromProfile(profile: Profile, id: String, email: String) =
             User(
-                email,
+                email.lowercase(),
                 profile.name,
                 profile.bio,
                 profile.age,

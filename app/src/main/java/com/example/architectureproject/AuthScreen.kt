@@ -22,6 +22,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
@@ -39,7 +40,6 @@ class AuthScreen : Screen {
 
         var email by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
-        val context = GreenTraceProviders.applicationContext
 
         //val sharedPref = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
 
@@ -73,6 +73,7 @@ class AuthScreen : Screen {
 
             Spacer(modifier = Modifier.height(24.dp)) // Add space between the text field and buttons
 
+            val context = LocalContext.current
             // Sign In button
             Button(
                 onClick = {
@@ -93,7 +94,12 @@ class AuthScreen : Screen {
                                 ).show()
                                 return@launch
                             }
-                            
+
+                            if (!GreenTraceProviders.userProvider.hasUserProfile()) {
+                                navigator?.push(NewAccountSetupScreen())
+                                return@launch
+                            }
+
                             navigator?.push(MainScreen(false))
                         }
                     }

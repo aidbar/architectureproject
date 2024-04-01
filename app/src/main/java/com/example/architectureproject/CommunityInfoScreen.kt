@@ -98,7 +98,7 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
         GreenTraceProviders.communityManager.unregisterObserver(this)
     }
 
-    override fun notify(info: List<CommunityInfo>, local: Boolean) {
+    override fun notify(info: List<CommunityInfo>, invites: List<CommunityInfo>, local: Boolean) {
         if (info.isEmpty()) {
             deleted = true
             return
@@ -106,6 +106,27 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
 
         this.info = info.first()
         loading = false
+    }
+
+    fun sendInvite(context: Context) {
+        screenModelScope.launch {
+            val user = GreenTraceProviders.userProvider.getUserByEmail(usernameToInvite)
+            if (user != null) { //this is where the calls to check the validity of the username are to be performed
+                GreenTraceProviders.communityManager.inviteUser(user.uid, info.id)
+                println("Invite sent!")
+                usernameToInvite = ""
+                Toast.makeText(context, "Invite sent!", Toast.LENGTH_LONG).show()
+                return@launch
+            }
+
+            //display an error message if the user does not exist
+            println("This user does not exist. Check the username and try again.")
+            Toast.makeText(
+                context,
+                "This user does not exist. Check the username and try again.",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 }
 
@@ -163,7 +184,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
 
                 },
                 text = {
-                    Column {
+                    Column(Modifier.verticalScroll(rememberScrollState())) {
                         Text(
                             text = "Use the QR code or link below to invite others to join " + model.info.name + ":",
                             modifier = Modifier
@@ -203,7 +224,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                             singleLine = true
                         )
                         TextButton(
-                            onClick = { if (checkifUserExists(context, model.usernameToInvite)) {model.usernameToInvite = ""} },
+                            onClick = { model.sendInvite(context) },
                             modifier = Modifier
                                 .padding(8.dp)
                                 .fillMaxWidth(),
@@ -330,18 +351,6 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                     )
                 }
             }
-        }
-    }
-
-    private fun checkifUserExists(context: Context, usernameToInvite: String): Boolean {
-        if (true) { //this is where the calls to check the validity of the username are to be performed
-            println("Invite sent!")
-            Toast.makeText(context, "Invite sent!", Toast.LENGTH_LONG).show()
-            return true
-        } else { //display an error message if the user does not exist
-            println("This user does not exist. Check the username and try again.")
-            Toast.makeText(context, "This user does not exist. Check the username and try again.", Toast.LENGTH_SHORT).show()
-            return false
         }
     }
 
