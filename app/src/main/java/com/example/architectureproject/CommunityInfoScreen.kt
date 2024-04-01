@@ -62,6 +62,7 @@ import kotlinx.coroutines.launch
 
 class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObserver {
     override val id = info.id
+    val currentUserId = GreenTraceProviders.userProvider.userInfo().uid
     val userIsTheCreator = info.owner == GreenTraceProviders.userProvider.userInfo()
     var newCommunityName by mutableStateOf(info.name)
     var newCommunityLocation by mutableStateOf(info.location)
@@ -88,9 +89,9 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
         }
     }
 
-    fun leaveCommunity() {
+    fun leaveCommunity(userId : String) {
         screenModelScope.launch {
-            GreenTraceProviders.communityManager.removeUserFromCommunity(info.owner.uid, info.id)
+            GreenTraceProviders.communityManager.removeUserFromCommunity(userId, info.id)
         }
 
     }
@@ -385,7 +386,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         text = {Text("Are you sure want to leave this community?")},
                         onDismissRequest = { model.dismissLeaveCommunityDialog() },
                         confirmButton = { TextButton(onClick = {
-                            model.leaveCommunity()
+                            model.leaveCommunity(model.currentUserId)
                             println("the user has successfully left the community")
                             Toast.makeText(context,"You have left " + model.info.name, Toast.LENGTH_SHORT).show()
                             model.dismissLeaveCommunityDialog()
