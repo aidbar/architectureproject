@@ -5,6 +5,8 @@ package com.example.architectureproject
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -23,10 +25,25 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import com.example.architectureproject.ui.theme.*
-
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.rememberScrollState
+import com.example.architectureproject.tracking.FirebaseTrackingDataProvider
+import com.example.architectureproject.tracking.Meal
+import com.example.architectureproject.tracking.Purchase
+import com.example.architectureproject.tracking.TrackingActivity
+import com.example.architectureproject.tracking.TrackingDataProvider
+import com.example.architectureproject.tracking.Transportation
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 class NewActivityScreen : Screen {
-
+    object TrackingService {
+        val provider: TrackingDataProvider = FirebaseTrackingDataProvider()
+    }
     @Composable
     override fun Content() {
         val context = LocalContext.current
@@ -46,12 +63,14 @@ class NewActivityScreen : Screen {
         var isMealRecurring by remember { mutableStateOf(false) }
         var isCommuteRecurring by remember { mutableStateOf(false) }
         var isPurchaseRecurring by remember { mutableStateOf(false) }
-
+        val scrollState = rememberScrollState()
+        var saveAttempted by remember { mutableStateOf(false) }
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -73,7 +92,10 @@ class NewActivityScreen : Screen {
                         RecurrenceOption("Meal", isMealRecurring, { isMealRecurring = it })
                     }
                     "Commute" -> {
-                        CommuteSection(transportationMode, departure, destination, stops) { stops.add("") }
+                        CommuteSection(    initialTransportationMode = transportationMode,
+                            onTransportationModeChange = { newMode ->
+                                transportationMode = newMode // Here we update the state in the parent
+                            }, departure, destination, stops) { stops.add("") }
                         RecurrenceOption("Commute", isCommuteRecurring, { isCommuteRecurring = it })
                     }
                     "Purchase" -> {
@@ -91,27 +113,73 @@ class NewActivityScreen : Screen {
                         Alignment.CenterHorizontally
                     )// This will space the buttons evenly
                 ) {
-                    Button(
-                        onClick = {
-                            activityType = ""
-                            date = LocalDate.now()
-                            time = LocalTime.now()
-                            foodType = ""
-                            transportationMode = ""
-                            departure = ""
-                            destination = ""
-                            stops.clear()
-                            shoppingMethod = ""
-                            keyboardController?.hide()
-                            isMealRecurring = false
-                            isCommuteRecurring = false
-                            isPurchaseRecurring = false
-                            recurrenceFrequency = ""
-                            recurrenceIntervalText = "1"
-                        },
-                        colors = ButtonDefaults.buttonColors(Green40)
-                    ) {
+                    val coroutineScope = rememberCoroutineScope()
+                    val context = LocalContext.current
+
+                    Button(onClick = {
+                        if (isActivityValid(activityType, foodType, transportationMode, departure, shoppingMethod)) {//transportation mode is gone
+                            coroutineScope.launch {
+                                try {
+                                    val selectedDateTime = ZonedDateTime.of(date, time, ZoneId.systemDefault())
+
+                                    val activity: TrackingActivity = when (activityType) {
+                                        "Meal" -> Meal(
+                                            date = selectedDateTime,
+                                            name = "Meal on ${date.format(DateTimeFormatter.ISO_LOCAL_DATE)}",
+                                            type = Meal.Type.valueOf(foodType), // Convert foodType string to enum
+                                            contents = listOf(
+                                                Meal.Entry(
+                                                    Meal.Entry.Type.valueOf(foodType), 1f
+                                                )
+                                            ),
+                                        )
+                                        "Commute" -> Transportation(
+                                            date = selectedDateTime,
+                                            name = "Commute on ${date.format(DateTimeFormatter.ISO_LOCAL_DATE)}",
+                                            stops = stops.map {
+                                                Transportation.Stop(it, 0.0, 0.0)
+                                            },
+                                            mode = Transportation.Mode.valueOf(transportationMode)
+                                        )
+                                        "Purchase" -> Purchase(
+                                            date = selectedDateTime,
+                                            name = "Purchase on ${date.format(DateTimeFormatter.ISO_LOCAL_DATE)}",
+                                            plasticBag = false,
+                                            source = Purchase.Source.valueOf(shoppingMethod)
+                                        )
+                                        else -> throw IllegalArgumentException("Invalid activity type")
+                                    }
+                                    Log.d("MyAppTag", "The value of myImmutableValue is: $activity")
+                                    val result =
+                                        GreenTraceProviders.trackingProvider.addActivity(activity)
+                                    // Handle result (e.g., show a confirmation message)
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(
+                                            context,
+                                            "Activity saved: $result",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                }
+                                catch (e: Exception) {
+                                    Log.e("MyAppTag", "Error in coroutine", e)
+                                }
+
+                            }
+                            saveAttempted = false
+                        } else {
+                            saveAttempted = true
+                        }
+                    }, colors = ButtonDefaults.buttonColors(Green40)) {
                         Text("Save Activity")
+                    }
+
+                    if (saveAttempted && !isActivityValid(activityType, foodType, transportationMode, departure, shoppingMethod)) {
+                        Text(
+                            text = "Please fill in all required fields for the selected activity type.",
+                            color = Color.Red,
+                            modifier = Modifier.padding(8.dp)
+                        )
                     }
                     DatePickerButton(context, date) { selectedDate -> date = selectedDate }
                     TimePickerButton(context, time) { selectedTime -> time = selectedTime }
@@ -177,6 +245,7 @@ fun MealSection(foodType: String, onFoodTypeChange: (String) -> Unit) {
 @Composable
 fun CommuteSection(
     initialTransportationMode: String,
+    onTransportationModeChange: (String) -> Unit,
     initialDeparture: String,
     initialDestination: String,
     stops: MutableList<String>,
@@ -214,6 +283,7 @@ fun CommuteSection(
                     text = { Text(type) },
                     onClick = {
                         selectedMode = type
+                        onTransportationModeChange(type)
                         expanded = false
                     }
                 )
@@ -339,6 +409,7 @@ fun RecurrenceOption(activityType: String, isRecurring: Boolean, onRecurringChan
     val context = LocalContext.current
     var recurrenceFrequency by remember { mutableStateOf("") }
     var recurrenceIntervalText by remember { mutableStateOf("1") }
+    var endDate by remember { mutableStateOf<LocalDate?>(null) }
 
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -348,36 +419,60 @@ fun RecurrenceOption(activityType: String, isRecurring: Boolean, onRecurringChan
                 onCheckedChange = { isChecked ->
                     onRecurringChange(isChecked)
                     if (!isChecked) {
-                        recurrenceIntervalText = "1"
+                        recurrenceIntervalText = "1" // Reset to default if not recurring
+                        endDate = null // Clear the end date if recurrence is turned off
                     }
                 }
             )
         }
         if (isRecurring) {
-            Row(Modifier.padding(vertical = 8.dp)) {
-                Text("Frequency: ", modifier = Modifier.align(alignment = Alignment.CenterVertically))
-                Spacer(modifier = Modifier.width(4.dp))
-                // Corrected call to DropdownMenu with appropriate parameters
+            // Frequency
+            Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                Text("Frequency:", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 4.dp)) // Tiny padding below the text
                 DropdownMenu(
                     selectedFrequency = recurrenceFrequency,
                     onFrequencyChange = { newFrequency -> recurrenceFrequency = newFrequency }
                 )
             }
-            Row {
-                Text("Every (n) days/weeks: ", modifier = Modifier.align(alignment = Alignment.CenterVertically))
-                Spacer(modifier = Modifier.width(4.dp))
+
+            // Every (n) days/weeks
+            Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                Text("Every (n) days/weeks:", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 4.dp)) // Tiny padding below the text
                 OutlinedTextField(
                     value = recurrenceIntervalText,
                     onValueChange = { newValue ->
                         recurrenceIntervalText = newValue.filter { it.isDigit() }
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
+            }
+
+            // End Date (Optional)
+            Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                Text("End Date (Optional):", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 1.dp)) // Consistent padding for visual harmony
+                val endDateText = endDate?.format(DateTimeFormatter.ISO_LOCAL_DATE) ?: "Select Date"
+                Button(
+                    onClick = {
+                        showDatePicker(context, endDate ?: LocalDate.now()) { selectedDate ->
+                            endDate = selectedDate
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(endDateText)
+                }
             }
         }
     }
 }
+
+
+
+
+
+
 
 
 @Composable
@@ -417,5 +512,20 @@ fun DropdownMenu(selectedFrequency: String, onFrequencyChange: (String) -> Unit)
                 )
             }
         }
+    }
+}
+
+fun isActivityValid(
+    activityType: String,
+    foodType: String,
+    transportationMode: String,
+    departure: String,
+    shoppingMethod: String
+): Boolean {
+    return when (activityType) {
+        "Meal" -> foodType.isNotEmpty()
+        "Commute" -> transportationMode.isNotEmpty() //&& departure.isNotEmpty()
+        "Purchase" -> shoppingMethod.isNotEmpty()
+        else -> false
     }
 }
