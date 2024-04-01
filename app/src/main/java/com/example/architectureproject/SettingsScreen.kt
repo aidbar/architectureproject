@@ -1,8 +1,8 @@
 package com.example.architectureproject
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,12 +27,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
@@ -40,26 +38,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import cafe.adriel.voyager.core.model.ScreenModel
-import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
-import coil.compose.rememberAsyncImagePainter
-import com.example.architectureproject.ui.theme.*
+import com.example.architectureproject.ui.theme.Green40
+import com.example.architectureproject.ui.theme.darkGreen2
 
 class SettingsScreen : Screen {
-    private fun mailto(address: String, subject: String) {
+    private fun mailto(context: Context, address: String, subject: String) {
         val mailtoUri = Uri.fromParts("mailto", address, null)
         val intent = Intent(Intent.ACTION_SENDTO, mailtoUri)
         intent.putExtra(Intent.EXTRA_EMAIL, address)
         intent.putExtra(Intent.EXTRA_SUBJECT, subject)
-        GreenTraceProviders.getActivity()
-            .startActivity(Intent.createChooser(intent, "Send Email"))
+        context.startActivity(Intent.createChooser(intent, "Send Email"))
     }
 
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
+        val context = LocalContext.current
 
         Column(modifier = Modifier
             .fillMaxSize()
@@ -92,7 +88,7 @@ class SettingsScreen : Screen {
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedButton(
-                onClick = { mailto("test@example.com", "GreenTrace Feedback") },
+                onClick = { mailto(context, "test@example.com", "GreenTrace Feedback") },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(

@@ -4,7 +4,7 @@ import com.example.architectureproject.profile.User
 
 interface CommunityObserver {
     val id: String
-    fun notify(info: List<CommunityInfo>, local: Boolean)
+    fun notify(info: List<CommunityInfo>, invites: List<CommunityInfo>, local: Boolean)
 }
 
 interface CommunityManager {
@@ -15,6 +15,9 @@ interface CommunityManager {
     suspend fun removeUserFromCommunity(uid: String, id: String)
     suspend fun getCommunitiesByUID(uid: String): List<CommunityInfo>
     suspend fun getCommunityMembers(id: String): List<User>
+    suspend fun getPendingInvites(uid: String): List<CommunityInfo>
+    suspend fun declineInvite(uid: String, id: String)
     fun registerObserver(obs: CommunityObserver)
     fun unregisterObserver(obs: CommunityObserver)
+    suspend fun inviteUser(uid: String, cid: String)
 }

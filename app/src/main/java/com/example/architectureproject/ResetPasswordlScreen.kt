@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -29,7 +30,7 @@ class ResetPasswordScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        val context = GreenTraceProviders.applicationContext
+        val context = LocalContext.current
 
         var email by remember { mutableStateOf("") }
 
