@@ -17,7 +17,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -27,19 +26,53 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import kotlinx.coroutines.launch
 
+class AuthScreenModel : ScreenModel {
+    private val provider = GreenTraceProviders.userProvider
+    var email by mutableStateOf("")
+    var password by mutableStateOf("")
+    var hasProfileInfo by mutableStateOf(false)
+    var error by mutableStateOf("")
+
+    fun login() {
+        screenModelScope.launch {
+            val err = provider.loginUser(email, password)
+            if (err != null) {
+                error = err
+            }
+        }
+    }
+
+    fun registerAndLogin() {
+        screenModelScope.launch {
+            provider.createAndLoginUser(email, password)
+        }
+    }
+
+    fun hasProfile() {
+        screenModelScope.launch {
+            hasProfileInfo = provider.hasUserProfile()
+        }
+    }
+
+}
 class AuthScreen : Screen {
     @Composable
     override fun Content() {
         val scope = rememberCoroutineScope()
-        val provider = GreenTraceProviders.userProvider
+        //val provider = GreenTraceProviders.userProvider
         val navigator = LocalNavigator.current
 
-        var email by remember { mutableStateOf("") }
-        var password by remember { mutableStateOf("") }
+        var model = rememberScreenModel{AuthScreenModel()}
+
+        //var email by remember { mutableStateOf("") }
+        //var password by remember { mutableStateOf("") }
 
         //val sharedPref = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
 
@@ -55,8 +88,8 @@ class AuthScreen : Screen {
             Spacer(modifier = Modifier.height(32.dp)) // Add space between the buttons
             // Email input field
             TextField(
-                value = email,
-                onValueChange = { email = it.replace(" ", "") },
+                value = model.email,
+                onValueChange = { model.email = it.replace(" ", "") },
                 label = { Text(text = "Email") }
             )
 
@@ -64,8 +97,8 @@ class AuthScreen : Screen {
 
             // Password input field
             TextField(
-                value = password,
-                onValueChange = { password = it.replace(" ", "") },
+                value = model.password,
+                onValueChange = { model.password = it.replace(" ", "") },
                 label = { Text("Password") },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
@@ -77,7 +110,7 @@ class AuthScreen : Screen {
             // Sign In button
             Button(
                 onClick = {
-                    if (email.isEmpty() || password.isEmpty()){
+                    if (model.email.isEmpty() || model.password.isEmpty()){
                         Toast.makeText(
                             context,
                             "Fields must not be empty",
@@ -85,17 +118,20 @@ class AuthScreen : Screen {
                         ).show()
                     }else{
                         scope.launch {
-                            val err = provider.loginUser(email, password)
-                            if (err != null) {
+                            model.login()
+                            if (model.error.isNotEmpty()) {
+                                val err = model.error
                                 Toast.makeText(
                                     context,
                                     "Error: $err",
                                     Toast.LENGTH_SHORT
                                 ).show()
+                                model.error = ""
                                 return@launch
                             }
 
-                            if (!GreenTraceProviders.userProvider.hasUserProfile()) {
+                            model.hasProfile()
+                            if (!model.hasProfileInfo) {
                                 navigator?.push(NewAccountSetupScreen())
                                 return@launch
                             }
@@ -114,7 +150,7 @@ class AuthScreen : Screen {
             // Register button
             Button(
                 onClick = {
-                    if (email.isEmpty() || password.isEmpty()){
+                    if (model.email.isEmpty() || model.password.isEmpty()){
                         Toast.makeText(
                             context,
                             "Fields must not be empty",
@@ -122,13 +158,15 @@ class AuthScreen : Screen {
                         ).show()
                     }else{
                         scope.launch {
-                            val error = provider.createAndLoginUser(email, password)
-                            if (error != null) {
+                            model.registerAndLogin()
+                            if (model.error.isNotEmpty()) {
+                                val err = model.error
                                 Toast.makeText(
                                     context,
-                                    "Error: $error",
+                                    "Error: $err",
                                     Toast.LENGTH_SHORT
                                 ).show()
+                                model.error = ""
                                 return@launch
                             }
 
