@@ -66,8 +66,14 @@ class CommunityMembersScreenModel(info: CommunityInfo) : ScreenModel, CommunityO
     var members by mutableStateOf(listOf<User>())
     var loading by mutableStateOf(true)
     var openRemoveMemberDialog by mutableStateOf(false)
+    var deleted by mutableStateOf(false)
 
-    override fun notify(info: List<CommunityInfo>, local: Boolean) {
+    override fun notify(info: List<CommunityInfo>, invites: List<CommunityInfo>, local: Boolean) {
+        if (info.isEmpty()) {
+            deleted = true
+            return
+        }
+
         screenModelScope.launch {
             members = GreenTraceProviders.communityManager.getCommunityMembers(info.first().id)
             loading = false
@@ -101,7 +107,12 @@ class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
             onStarted = { model.start() },
             onDisposed = { model.stop() }
         )
-        
+
+        if (model.deleted) {
+            navigator.pop()
+            return
+        }
+
         ArchitectureProjectTheme {
             Scaffold(
                 topBar = {

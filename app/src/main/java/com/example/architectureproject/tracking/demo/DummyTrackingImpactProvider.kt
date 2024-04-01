@@ -31,7 +31,6 @@ class DummyMapProvider : MapProvider {
     override fun computeDistance(src: Transportation.Stop, dst: Transportation.Stop): Float {
         return distance(src.lat, src.long, dst.lat, dst.long).toFloat()
     }
-
 }
 
 class DummyTrackingImpactProvider : TrackingImpactProvider() {

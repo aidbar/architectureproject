@@ -25,6 +25,7 @@ import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
@@ -68,10 +69,11 @@ class CommunityScreenModel : ScreenModel, CommunityObserver {
     var loading by mutableStateOf(true)
 
     var communities by mutableStateOf(listOf<CommunityInfo>())
+    var invites by mutableStateOf(listOf<CommunityInfo>())
 
-    override fun notify(info: List<CommunityInfo>, local: Boolean) {
-        //communities = listOf() // for some reason this is needed
+    override fun notify(info: List<CommunityInfo>, invites: List<CommunityInfo>, local: Boolean) {
         communities = info
+        this.invites = invites
         loading = false
     }
 
@@ -103,6 +105,22 @@ class CommunityScreenModel : ScreenModel, CommunityObserver {
 
     fun stop() {
         GreenTraceProviders.communityManager.unregisterObserver(this)
+    }
+
+    fun acceptInvite(community: CommunityInfo) {
+        screenModelScope.launch {
+            GreenTraceProviders.communityManager.addUserToCommunity(
+                GreenTraceProviders.userProvider.uid()!!,
+                community.id)
+        }
+    }
+
+    fun declineInvite(community: CommunityInfo) {
+        screenModelScope.launch {
+            GreenTraceProviders.communityManager.declineInvite(
+                GreenTraceProviders.userProvider.uid()!!,
+                community.id)
+        }
     }
 }
 
@@ -140,14 +158,14 @@ class CommunityScreen : Screen {
                         return@Scaffold
                     }
 
-                    CommunityList(
-                        communityList = model.communities,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding)
-                    )
-                }
-            //}
+                CommunityList(
+                    communityList = model.communities,
+                    invites = model.invites,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                )
+            }
         }
 
         when {
@@ -170,9 +188,19 @@ class CommunityScreen : Screen {
     @Composable
     fun CommunityList(
         communityList: List<CommunityInfo>,
+        invites: List<CommunityInfo>,
         modifier: Modifier = Modifier
     ) {
         LazyColumn(modifier = modifier) {
+            items(invites) { invite ->
+                CommunityCard(
+                    community = invite,
+                    isInvite = true,
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .clickable { println("click event received") }
+                )
+            }
             items(communityList) { community ->
                 CommunityCard(
                     community = community,
@@ -187,11 +215,13 @@ class CommunityScreen : Screen {
     @Composable
     fun CommunityCard(
         community: CommunityInfo,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
+        isInvite: Boolean = false
     ) {
         val navigator = LocalNavigator.currentOrThrow
-
+        val model = rememberScreenModel { CommunityScreenModel() }
         Card(modifier = modifier.clickable {
+            if (isInvite) return@clickable
             navigator.push(CommunityInfoScreen(community))
         }) {
             Column {
@@ -218,6 +248,20 @@ class CommunityScreen : Screen {
                         modifier = Modifier.align(Alignment.CenterVertically),
                         style = MaterialTheme.typography.labelMedium,
                     )
+                }
+
+                if (isInvite) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
+                        modifier = Modifier.padding(10.dp).fillMaxWidth()
+                    ) {
+                        Button(onClick = {
+                            model.acceptInvite(community)
+                        }) { Text("Join") }
+                        Button(onClick = {
+                            model.declineInvite(community)
+                        }) { Text("Cancel") }
+                    }
                 }
             }
         }

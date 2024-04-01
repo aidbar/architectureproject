@@ -1,6 +1,5 @@
 package com.example.architectureproject
 
-import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +22,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
@@ -40,9 +40,8 @@ class AuthScreen : Screen {
 
         var email by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
-        val context = GreenTraceProviders.applicationContext
 
-        val sharedPref = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        //val sharedPref = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
 
         Column(
             modifier = Modifier
@@ -74,6 +73,7 @@ class AuthScreen : Screen {
 
             Spacer(modifier = Modifier.height(24.dp)) // Add space between the text field and buttons
 
+            val context = LocalContext.current
             // Sign In button
             Button(
                 onClick = {
@@ -95,8 +95,11 @@ class AuthScreen : Screen {
                                 return@launch
                             }
 
-                            sharedPref.edit().putString("id", provider.uid())
-                                .apply()
+                            if (!GreenTraceProviders.userProvider.hasUserProfile()) {
+                                navigator?.push(NewAccountSetupScreen())
+                                return@launch
+                            }
+
                             navigator?.push(MainScreen(false))
                         }
                     }
@@ -123,13 +126,12 @@ class AuthScreen : Screen {
                             if (error != null) {
                                 Toast.makeText(
                                     context,
-                                    "Error: " + error,
+                                    "Error: $error",
                                     Toast.LENGTH_SHORT
                                 ).show()
                                 return@launch
                             }
 
-                            sharedPref.edit().putString("id", provider.uid()).apply()
                             navigator?.push(NewAccountSetupScreen())
                         }
                     }
