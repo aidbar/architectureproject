@@ -32,4 +32,5 @@ interface CommunityManager {
     suspend fun registerChallengesObserver(obs: CommunityChallengesObserver)
     suspend fun unregisterChallengesObserver(obs: CommunityChallengesObserver)
     suspend fun inviteUser(uid: String, cid: String)
+    suspend fun addCommunityChallenge(challenge: CommunityChallenge): String
 }

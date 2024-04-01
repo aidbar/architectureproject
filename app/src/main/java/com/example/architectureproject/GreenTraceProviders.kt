@@ -1,5 +1,6 @@
 package com.example.architectureproject
 
+import com.example.architectureproject.community.CommunityChallenge
 import com.example.architectureproject.community.CommunityManager
 import com.example.architectureproject.community.FirebaseCommunityManager
 import com.example.architectureproject.profile.FirebaseUserProvider
@@ -50,5 +51,14 @@ object GreenTraceProviders {
 //            )
 //            )
 //        )
+
+        listOf(
+            CommunityChallenge(
+                "",
+                "",
+                0f,
+                0f
+            )
+        ).forEach { communityManager.addCommunityChallenge(it) }
     }
 }

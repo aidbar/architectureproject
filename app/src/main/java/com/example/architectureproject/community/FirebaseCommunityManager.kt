@@ -167,6 +167,17 @@ class FirebaseCommunityManager : CommunityManager {
         }.await()
     }
 
+    override suspend fun addCommunityChallenge(challenge: CommunityChallenge): String {
+        val collection = db.collection("challenges")
+        val ref = if (challenge.id.isEmpty()) collection.document()
+        else collection.document(challenge.id)
+
+        ref.set(
+            challenge.copy(id = ref.id, randomID = UUID.randomUUID().toString())
+        ).await()
+        return ref.id
+    }
+
     @Suppress("UNCHECKED_CAST")
     override fun registerObserver(obs: CommunityObserver) {
         val uid = GreenTraceProviders.userProvider.uid()!!

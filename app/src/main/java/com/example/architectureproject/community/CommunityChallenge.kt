@@ -4,15 +4,15 @@ import androidx.annotation.DrawableRes
 import java.io.Serializable
 
 data class CommunityChallenge(
-    val id: String,
     val name: String,
     val desc: String,
     val goal: Float,
     val impact: Float,
+    val id: String = "",
     @DrawableRes val icon: Int? = null,
     val randomID: String = ""
 ): Serializable {
-    private constructor() : this("", "", "", .0f, .0f)
+    private constructor() : this("", "", .0f, .0f)
 }
 
 data class CommunityChallengeState(
