@@ -68,6 +68,7 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
     var openEditCommunityDialog by mutableStateOf(false)
     var openAddMemberDialog by mutableStateOf(false)
     var openLeaveCommunityDialog by mutableStateOf(false)
+    var openDeleteCommunityDialog by mutableStateOf(false)
     var info by mutableStateOf(info)
     var loading by mutableStateOf(false)
     var deleted by mutableStateOf(false)
@@ -93,6 +94,11 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
         }
 
     }
+    fun deleteCommunity() {
+        screenModelScope.launch {
+            //GreenTraceProviders.communityManager.deleteCommunity(info.id) //this line is to be uncommented when pull request #33 is merged
+        }
+    }
 
     fun dismissEditCommunityDialog() {
         openEditCommunityDialog = false
@@ -104,6 +110,9 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
 
     fun dismissLeaveCommunityDialog() {
         openLeaveCommunityDialog = false
+    }
+    fun dismissDeleteCommunityDialog() {
+        openDeleteCommunityDialog = false
     }
 
     fun start() {
@@ -339,7 +348,19 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         .align(Alignment.CenterHorizontally),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Leave " + info.name)
+                    Text("Leave " + model.info.name)
+                }
+                if (model.userIsTheCreator) {
+                    TextButton(onClick = {
+                        model.openDeleteCommunityDialog = true
+                    },
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .align(Alignment.CenterHorizontally),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        ) {
+                        Text("Delete " + model.info.name)
+                    }
                 }
             }
 
@@ -360,15 +381,32 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
             when {
                 model.openLeaveCommunityDialog -> {
                     AlertDialog(
-                        title = {Text("Leave " + info.name + "?")},
+                        title = {Text("Leave " + model.info.name + "?")},
                         text = {Text("Are you sure want to leave this community?")},
                         onDismissRequest = { model.dismissLeaveCommunityDialog() },
                         confirmButton = { TextButton(onClick = {
                             model.leaveCommunity()
                             println("the user has successfully left the community")
+                            Toast.makeText(context,"You have left " + model.info.name, Toast.LENGTH_SHORT).show()
                             model.dismissLeaveCommunityDialog()
                                                                }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) {Text("Leave")}},
                         dismissButton = { TextButton(onClick = { model.dismissLeaveCommunityDialog() }) {Text("Cancel")} }
+                    )
+                }
+            }
+            when {
+                model.openDeleteCommunityDialog -> {
+                    AlertDialog(
+                        title = {Text("Delete " + model.info.name + "?")},
+                        text = {Text("Are you sure want to delete this community? WARNING: This action cannot be undone.")},
+                        onDismissRequest = { model.dismissDeleteCommunityDialog() },
+                        confirmButton = { TextButton(onClick = {
+                            model.deleteCommunity()
+                            println("the community has successfully been deleted")
+                            Toast.makeText(context,"You have deleted " + model.info.name, Toast.LENGTH_SHORT).show()
+                            model.dismissDeleteCommunityDialog()
+                        }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) {Text("Delete")}},
+                        dismissButton = { TextButton(onClick = { model.dismissDeleteCommunityDialog() }) {Text("Cancel")} }
                     )
                 }
             }
