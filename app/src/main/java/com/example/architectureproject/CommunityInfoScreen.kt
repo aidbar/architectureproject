@@ -37,7 +37,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -67,6 +66,7 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
     var newCommunityName by mutableStateOf(info.name)
     var newCommunityLocation by mutableStateOf(info.location)
     var openEditCommunityDialog by mutableStateOf(false)
+    var openAddMemberDialog by mutableStateOf(false)
     var info by mutableStateOf(info)
     var loading by mutableStateOf(false)
     var deleted by mutableStateOf(false)
@@ -88,6 +88,10 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
 
     fun dismissEditCommunityDialog() {
         openEditCommunityDialog = false
+    }
+    
+    fun dismissAddMemberDialog() {
+        openAddMemberDialog = false
     }
 
     fun start() {
@@ -117,7 +121,6 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
         val context = LocalContext.current
         val model = rememberScreenModel { CommunityInfoScreenModel(info) }
 
-        val showDialog = remember { mutableStateOf(false) }
         LifecycleEffect(
             onStarted = { model.start() },
             onDisposed = { model.stop() }
@@ -133,9 +136,9 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
             return
         }
 
-        if(showDialog.value) {
+        if(model.openAddMemberDialog) {
             AlertDialog(
-                onDismissRequest = { showDialog.value = false },
+                onDismissRequest = { model.openAddMemberDialog = false },
                 title = {
                     Row(
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -149,7 +152,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                                 .padding(start = 16.dp, end = 0.dp)
                         )
                         IconButton(
-                            onClick = { showDialog.value = false },
+                            onClick = { model.openAddMemberDialog = false },
                             modifier = Modifier.align(Alignment.CenterVertically)
                         ) {
                             Icon(
@@ -187,7 +190,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         }
 
                         Text(
-                            text = "(OR) Send them an email invite below:",
+                            text = "(OR) Send enter their username below:",
                             modifier = Modifier
                                 .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
                                 .align(Alignment.CenterHorizontally),
@@ -237,7 +240,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                             Text(model.info.name)
                             IconButton(
                                 onClick = {
-                                    showDialog.value = true
+                                    model.openAddMemberDialog = true
                                 }
                             ) {
                                 Icon(
@@ -314,6 +317,14 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         .align(Alignment.CenterHorizontally),
                     colors = ButtonDefaults.buttonColors()
                 ) {Text("View members")}
+
+                /*TextButton(
+                    onClick = {
+                        showLeaveCommunityDialog.value = true
+                    }
+                ) {
+                    Text("Leave " + info.name)
+                }*/
             }
 
             when {
