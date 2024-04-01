@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import com.example.architectureproject.ui.theme.*
 
 class QuizScreen(private val selectedQuiz: Quiz) : Screen {
     @Composable

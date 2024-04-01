@@ -1,5 +1,6 @@
 package com.example.architectureproject.ui.theme
 
+import androidx.compose.material.ButtonColors
 import androidx.compose.ui.graphics.Color
 
 val Purple80 = Color(0xFFD0BCFF)
@@ -23,6 +24,9 @@ val Cyan40 = Color(0xFF4D8B8B)
 val Green40 = Color(0xFF5FA573)
 val GreenGrey40 = Color(0xFF717A6F)
 val Lime40 = Color(0xFF7F9953)
+val darkGreen2 = Color(0xFF1E352F)
+val darkGreen1 = Color(0xFF006400)
+
 
 // Shades of Red
 val Red80 = Color(0xFFE57373)

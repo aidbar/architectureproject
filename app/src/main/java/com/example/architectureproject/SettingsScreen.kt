@@ -45,6 +45,7 @@ import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import coil.compose.rememberAsyncImagePainter
+import com.example.architectureproject.ui.theme.*
 
 class SettingsScreen : Screen {
     private fun mailto(address: String, subject: String) {
@@ -82,9 +83,10 @@ class SettingsScreen : Screen {
                     painter = rememberVectorPainter(Icons.Filled.Star),
                     contentDescription = "Dark Mode",
                     modifier = Modifier.size(32.dp),
+                    tint = Green40,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Dark Mode")
+                Text(text = "Dark Mode", color = darkGreen2)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -97,9 +99,10 @@ class SettingsScreen : Screen {
                     painter = rememberVectorPainter(Icons.Rounded.MailOutline),
                     contentDescription = "Contact Us",
                     modifier = Modifier.size(32.dp),
+                    tint = Green40,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Contact Us")
+                Text(text = "Contact Us", color = darkGreen2)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -112,9 +115,10 @@ class SettingsScreen : Screen {
                     painter = rememberVectorPainter(Icons.Filled.Info),
                     contentDescription = "Privacy Policy",
                     modifier = Modifier.size(32.dp),
+                    tint = Green40,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Privacy Policy")
+                Text(text = "Privacy Policy", color = darkGreen2)
             }
         }
     }
