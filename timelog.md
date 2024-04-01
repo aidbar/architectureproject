@@ -68,4 +68,5 @@
 | 2024/03/29 |       |   4.5    |         |        |      |       | UI improvements for profile page, added functionality to update user lifestyle responses on profile page                                    |
 | 2024/03/29 | 3     |          |         |        |      |       | UI improvements for HomeScreen and NewActivityScreen |
 | 2024/03/30 |       |          |         |        |  1   |       | Various edge case fixes involving firestore          |
-| 2024/03/31 |       |          |         |        |      |    2  | D6: Design pattern and some other report implementations
+| 2024/03/31 |       |          |         |        |      |    2  | D6: Design pattern and some other report implementations |
+| 2024/04/01 | 7     |          |         |        |      |       | Implementing community page features, bug fixing and code refactoring |

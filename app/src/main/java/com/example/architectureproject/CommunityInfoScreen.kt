@@ -37,7 +37,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -63,10 +62,14 @@ import kotlinx.coroutines.launch
 
 class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObserver {
     override val cid = info.id
+    val currentUserId = GreenTraceProviders.userProvider.userInfo().uid
     val userIsTheCreator = info.owner == GreenTraceProviders.userProvider.userInfo()
     var newCommunityName by mutableStateOf(info.name)
     var newCommunityLocation by mutableStateOf(info.location)
     var openEditCommunityDialog by mutableStateOf(false)
+    var openAddMemberDialog by mutableStateOf(false)
+    var openLeaveCommunityDialog by mutableStateOf(false)
+    var openDeleteCommunityDialog by mutableStateOf(false)
     var info by mutableStateOf(info)
     var loading by mutableStateOf(false)
     var deleted by mutableStateOf(false)
@@ -86,8 +89,31 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
         }
     }
 
+    fun leaveCommunity(userId : String) {
+        screenModelScope.launch {
+            GreenTraceProviders.communityManager.removeUserFromCommunity(userId, info.id)
+        }
+
+    }
+    fun deleteCommunity() {
+        screenModelScope.launch {
+            //GreenTraceProviders.communityManager.deleteCommunity(info.id) //this line is to be uncommented when pull request #33 is merged
+        }
+    }
+
     fun dismissEditCommunityDialog() {
         openEditCommunityDialog = false
+    }
+    
+    fun dismissAddMemberDialog() {
+        openAddMemberDialog = false
+    }
+
+    fun dismissLeaveCommunityDialog() {
+        openLeaveCommunityDialog = false
+    }
+    fun dismissDeleteCommunityDialog() {
+        openDeleteCommunityDialog = false
     }
 
     fun start() {
@@ -138,7 +164,6 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
         val context = LocalContext.current
         val model = rememberScreenModel { CommunityInfoScreenModel(info) }
 
-        val showDialog = remember { mutableStateOf(false) }
         LifecycleEffect(
             onStarted = { model.start() },
             onDisposed = { model.stop() }
@@ -154,9 +179,9 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
             return
         }
 
-        if(showDialog.value) {
+        if(model.openAddMemberDialog) {
             AlertDialog(
-                onDismissRequest = { showDialog.value = false },
+                onDismissRequest = { model.dismissAddMemberDialog() },
                 title = {
                     Row(
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -170,7 +195,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                                 .padding(start = 16.dp, end = 0.dp)
                         )
                         IconButton(
-                            onClick = { showDialog.value = false },
+                            onClick = { model.openAddMemberDialog = false },
                             modifier = Modifier.align(Alignment.CenterVertically)
                         ) {
                             Icon(
@@ -208,7 +233,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         }
 
                         Text(
-                            text = "(OR) Send them an email invite below:",
+                            text = "(OR) Send enter their username below:",
                             modifier = Modifier
                                 .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
                                 .align(Alignment.CenterHorizontally),
@@ -258,7 +283,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                             Text(model.info.name)
                             IconButton(
                                 onClick = {
-                                    showDialog.value = true
+                                    model.openAddMemberDialog = true
                                 }
                             ) {
                                 Icon(
@@ -335,6 +360,30 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         .align(Alignment.CenterHorizontally),
                     colors = ButtonDefaults.buttonColors()
                 ) {Text("View members")}
+
+                TextButton(
+                    onClick = {
+                        model.openLeaveCommunityDialog = true
+                    },
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .align(Alignment.CenterHorizontally),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Leave " + model.info.name)
+                }
+                if (model.userIsTheCreator) {
+                    TextButton(onClick = {
+                        model.openDeleteCommunityDialog = true
+                    },
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .align(Alignment.CenterHorizontally),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        ) {
+                        Text("Delete " + model.info.name)
+                    }
+                }
             }
 
             when {
@@ -348,6 +397,38 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                          },
                         dialogTitle = "Edit this community",
                         dialogText = "You may change the name, location and profile picture of this community."
+                    )
+                }
+            }
+            when {
+                model.openLeaveCommunityDialog -> {
+                    AlertDialog(
+                        title = {Text("Leave " + model.info.name + "?")},
+                        text = {Text("Are you sure want to leave this community?")},
+                        onDismissRequest = { model.dismissLeaveCommunityDialog() },
+                        confirmButton = { TextButton(onClick = {
+                            model.leaveCommunity(model.currentUserId)
+                            println("the user has successfully left the community")
+                            Toast.makeText(context,"You have left " + model.info.name, Toast.LENGTH_SHORT).show()
+                            model.dismissLeaveCommunityDialog()
+                                                               }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) {Text("Leave")}},
+                        dismissButton = { TextButton(onClick = { model.dismissLeaveCommunityDialog() }) {Text("Cancel")} }
+                    )
+                }
+            }
+            when {
+                model.openDeleteCommunityDialog -> {
+                    AlertDialog(
+                        title = {Text("Delete " + model.info.name + "?")},
+                        text = {Text("Are you sure want to delete this community? WARNING: This action cannot be undone.")},
+                        onDismissRequest = { model.dismissDeleteCommunityDialog() },
+                        confirmButton = { TextButton(onClick = {
+                            model.deleteCommunity()
+                            println("the community has successfully been deleted")
+                            Toast.makeText(context,"You have deleted " + model.info.name, Toast.LENGTH_SHORT).show()
+                            model.dismissDeleteCommunityDialog()
+                        }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) {Text("Delete")}},
+                        dismissButton = { TextButton(onClick = { model.dismissDeleteCommunityDialog() }) {Text("Cancel")} }
                     )
                 }
             }
