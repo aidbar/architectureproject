@@ -67,6 +67,7 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
     var newCommunityLocation by mutableStateOf(info.location)
     var openEditCommunityDialog by mutableStateOf(false)
     var openAddMemberDialog by mutableStateOf(false)
+    var openLeaveCommunityDialog by mutableStateOf(false)
     var info by mutableStateOf(info)
     var loading by mutableStateOf(false)
     var deleted by mutableStateOf(false)
@@ -138,7 +139,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
 
         if(model.openAddMemberDialog) {
             AlertDialog(
-                onDismissRequest = { model.openAddMemberDialog = false },
+                onDismissRequest = { model.dismissAddMemberDialog() },
                 title = {
                     Row(
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -318,13 +319,13 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                     colors = ButtonDefaults.buttonColors()
                 ) {Text("View members")}
 
-                /*TextButton(
+                TextButton(
                     onClick = {
-                        showLeaveCommunityDialog.value = true
+                        model.openLeaveCommunityDialog = true
                     }
                 ) {
                     Text("Leave " + info.name)
-                }*/
+                }
             }
 
             when {
