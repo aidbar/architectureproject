@@ -62,13 +62,21 @@ import kotlinx.coroutines.launch
 class CommunityMembersScreenModel(info: CommunityInfo) : ScreenModel, CommunityObserver {
     override val id = info.id
     val isCreator = info.owner == GreenTraceProviders.userProvider.userInfo()
+    var community by mutableStateOf(info)
     var members by mutableStateOf(listOf<User>())
     var loading by mutableStateOf(true)
+    var openRemoveMemberDialog by mutableStateOf(false)
 
     override fun notify(info: List<CommunityInfo>, local: Boolean) {
         screenModelScope.launch {
             members = GreenTraceProviders.communityManager.getCommunityMembers(info.first().id)
             loading = false
+        }
+    }
+
+    fun removeMember(memberID : String, communityID : String) {
+        screenModelScope.launch {
+            GreenTraceProviders.communityManager.removeUserFromCommunity(memberID, communityID)
         }
     }
 
@@ -113,6 +121,7 @@ class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
                     }
 
                     MembersList(
+                        info = model.community,
                         membersList = model.members, //GreenTraceProviders.trackingProvider.getCommunities(),
                         isCreator = model.isCreator,
                         modifier = Modifier
@@ -126,6 +135,7 @@ class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
 
     @Composable
     fun MembersList(
+        info: CommunityInfo,
         membersList: List<User>,
         isCreator: Boolean,
         modifier: Modifier = Modifier
@@ -133,6 +143,7 @@ class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
         LazyColumn(modifier = modifier) {
             items(membersList) { member ->
                 MemberCard(
+                    info = info,
                     member = member,
                     isCreator = isCreator,
                     modifier = Modifier
@@ -145,10 +156,12 @@ class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
 
     @Composable
     fun MemberCard(
+        info : CommunityInfo,
         member: User,
         isCreator: Boolean,
         modifier: Modifier = Modifier
     ) {
+        val model = rememberScreenModel {CommunityMembersScreenModel(info)}
         val context = LocalContext.current
         val openRemoveMemberDialog = remember {mutableStateOf(false)}
 
@@ -194,7 +207,7 @@ class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
                     //Icon(iconStyle.Delete, contentDescription = "remove member " + member.name + " from this community", modifier = Modifier.align(Alignment.CenterVertically))
                     if (isCreator) {
                         TextButton(
-                            onClick = { openRemoveMemberDialog.value = true },
+                            onClick = { model.openRemoveMemberDialog = true },
                             modifier = Modifier.padding(8.dp),
                             colors = ButtonDefaults.buttonColors()
                         ) {
@@ -210,15 +223,12 @@ class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
         }
 
         when {
-            openRemoveMemberDialog.value -> {
+            model.openRemoveMemberDialog -> {
                 RemoveMemberDialog(
-                    onDismissRequest = { openRemoveMemberDialog.value = false },
+                    onDismissRequest = { model.openRemoveMemberDialog = false },
                     onConfirmation = { /*name, loc ->*/
-                        openRemoveMemberDialog.value = false
-                        /*val comm = GreenTraceProviders.memberManager?.createCommunity(
-                            GreenTraceProviders.userProvider.userInfo(), name, loc
-                        )
-                        comm?.let { GreenTraceProviders.trackingProvider?.attachCommunity(it) }*/
+                        model.openRemoveMemberDialog = false
+                        model.removeMember(member.uid, info.id)
                         Toast.makeText(context,"Member successfully removed.", Toast.LENGTH_SHORT).show()
                         println("Member successfully removed") // Add logic here to handle confirmation.
                     },
