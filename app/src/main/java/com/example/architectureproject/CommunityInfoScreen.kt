@@ -87,12 +87,23 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
         }
     }
 
+    fun leaveCommunity() {
+        screenModelScope.launch {
+            GreenTraceProviders.communityManager.removeUserFromCommunity(info.owner.uid, info.id)
+        }
+
+    }
+
     fun dismissEditCommunityDialog() {
         openEditCommunityDialog = false
     }
     
     fun dismissAddMemberDialog() {
         openAddMemberDialog = false
+    }
+
+    fun dismissLeaveCommunityDialog() {
+        openLeaveCommunityDialog = false
     }
 
     fun start() {
@@ -322,7 +333,11 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                 TextButton(
                     onClick = {
                         model.openLeaveCommunityDialog = true
-                    }
+                    },
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .align(Alignment.CenterHorizontally),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Leave " + info.name)
                 }
@@ -339,6 +354,21 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                          },
                         dialogTitle = "Edit this community",
                         dialogText = "You may change the name, location and profile picture of this community."
+                    )
+                }
+            }
+            when {
+                model.openLeaveCommunityDialog -> {
+                    AlertDialog(
+                        title = {Text("Leave " + info.name + "?")},
+                        text = {Text("Are you sure want to leave this community?")},
+                        onDismissRequest = { model.dismissLeaveCommunityDialog() },
+                        confirmButton = { TextButton(onClick = {
+                            model.leaveCommunity()
+                            println("the user has successfully left the community")
+                            model.dismissLeaveCommunityDialog()
+                                                               }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) {Text("Leave")}},
+                        dismissButton = { TextButton(onClick = { model.dismissLeaveCommunityDialog() }) {Text("Cancel")} }
                     )
                 }
             }
