@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.rounded.Create
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -37,6 +39,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -55,13 +58,17 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.example.architectureproject.community.CommunityChallenge
+import com.example.architectureproject.community.CommunityChallengeState
+import com.example.architectureproject.community.CommunityChallengesObserver
 import com.example.architectureproject.community.CommunityInfo
 import com.example.architectureproject.community.CommunityObserver
 import com.lightspark.composeqr.QrCodeView
 import kotlinx.coroutines.launch
 
-class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObserver {
+class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObserver, CommunityChallengesObserver {
     override val cid = info.id
+
     val currentUserId = GreenTraceProviders.userProvider.userInfo().uid
     val userIsTheCreator = info.owner == GreenTraceProviders.userProvider.userInfo()
     var newCommunityName by mutableStateOf(info.name)
@@ -75,6 +82,10 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
     var deleted by mutableStateOf(false)
 
     var usernameToInvite by mutableStateOf("")
+    var challenges by mutableStateOf(listOf<Pair<CommunityChallenge, CommunityChallengeState>>())
+    var selectedChallenge by mutableStateOf(-1)
+    var currentImpact by mutableStateOf(0f)
+    var currentUserImpact by mutableStateOf(0f)
 
     fun showEditCommunityDialog() {
         newCommunityName = info.name
@@ -118,10 +129,12 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
 
     fun start() {
         GreenTraceProviders.communityManager.registerObserver(this)
+        GreenTraceProviders.communityManager.registerChallengesObserver(this)
     }
 
     fun stop() {
         GreenTraceProviders.communityManager.unregisterObserver(this)
+        GreenTraceProviders.communityManager.unregisterChallengesObserver(this)
     }
 
     override fun notify(info: List<CommunityInfo>, invites: List<CommunityInfo>, local: Boolean) {
@@ -132,6 +145,17 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
 
         this.info = info.first()
         loading = false
+    }
+
+    override fun notify(
+        info: List<Pair<CommunityChallenge, CommunityChallengeState>>,
+        currentImpact: Float,
+        currentUserImpact: Float,
+        local: Boolean
+    ) {
+        challenges = info
+        this.currentImpact = currentImpact
+        this.currentUserImpact = currentUserImpact
     }
 
     fun sendInvite(context: Context) {
@@ -152,6 +176,16 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
                 "This user does not exist. Check the username and try again.",
                 Toast.LENGTH_SHORT
             ).show()
+        }
+    }
+
+    fun addProgress(delta: Float) {
+        val (challenge, _) = challenges[selectedChallenge]
+        screenModelScope.launch {
+            GreenTraceProviders.communityManager.addChallengeProgress(
+                challenge,
+                delta
+            )
         }
     }
 }
@@ -271,6 +305,10 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
             )
         }
 
+        if (model.selectedChallenge != -1) {
+            ChallengeDialog()
+        }
+
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -346,6 +384,20 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         modifier = Modifier.align(Alignment.CenterVertically),
                         style = MaterialTheme.typography.labelMedium,
                     )
+                }
+
+                Text("Challenges", fontSize = 24.sp)
+                LazyColumn(Modifier.height(160.dp)) {
+                    items(model.challenges.size) { index ->
+                        val (challenge, _) = model.challenges[index]
+                        Button(onClick = {
+                            model.selectedChallenge = index
+                        }) { Text(challenge.name) }
+                    }
+                    item {
+                        Text("Current impact: ${model.currentImpact}")
+                        Text("My current impact: ${model.currentUserImpact}")
+                    }
                 }
 
                 val scope = rememberCoroutineScope()
@@ -430,6 +482,37 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) {Text("Delete")}},
                         dismissButton = { TextButton(onClick = { model.dismissDeleteCommunityDialog() }) {Text("Cancel")} }
                     )
+                }
+            }
+        }
+    }
+
+    private @Composable
+    fun ChallengeDialog() {
+        val model = rememberScreenModel { CommunityInfoScreenModel(info) }
+        var text by remember { mutableStateOf("") }
+        val (challenge, state) = model.challenges[model.selectedChallenge]
+        Dialog(onDismissRequest = { model.selectedChallenge = -1 }) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(500.dp)
+                    .padding(16.dp),
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text("Progress: ${state.progress} / ${challenge.goal}")
+                    Text("Description:\n${challenge.desc}")
+                    TextField(value = text, onValueChange = { text = it })
+                    Button(onClick = {
+                        model.addProgress(text.toFloatOrNull() ?: 0f)
+                    }) { Text("Submit") }
                 }
             }
         }

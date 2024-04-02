@@ -273,7 +273,10 @@ class FirebaseCommunityManager : CommunityManager {
         // randomly fetch challenges
         // FIXME: if recentIds.size > 10, this won't work
         val results = db.collection("challenges")
-            .whereNotIn(FieldPath.documentId(), recentIds)
+            .let {
+                if (recentIds.isEmpty()) it
+                else it.whereNotIn(FieldPath.documentId(), recentIds)
+            }
             .orderBy("randomID")
             .orderBy("id")
             .limit(4)
@@ -441,8 +444,9 @@ class FirebaseCommunityManager : CommunityManager {
             .await()
             .getDouble(AggregateField.sum("impact"))!!
             .toFloat()
-    override suspend fun registerChallengesObserver(obs: CommunityChallengesObserver) {
+    override fun registerChallengesObserver(obs: CommunityChallengesObserver) {
         challengeObservers.getOrPut(obs.cid) {
+            val uid = GreenTraceProviders.userProvider.uid()!!
             val observers = hashSetOf<CommunityChallengesObserver>()
             val collection = db.collection("communities")
                 .document(obs.cid)
@@ -482,6 +486,9 @@ class FirebaseCommunityManager : CommunityManager {
 
                     val local = snapshot.metadata.hasPendingWrites()
                     coroutineScope.launch {
+
+                        val currentImpact = async { GreenTraceProviders.communityManager.challengeImpact(obs.cid) }
+                        val currentUserImpact = async { GreenTraceProviders.communityManager.challengeImpact(obs.cid, uid) }
                         val result = snapshot.documents.map {
                             db.collection("challenges")
                                 .document(it.id)
@@ -490,20 +497,19 @@ class FirebaseCommunityManager : CommunityManager {
                         .map { (task, state) ->
                             task.await()!!.toObject(CommunityChallenge::class.java)!! to state
                         }
-
-                        obs.notify(result, local)
+                        obs.notify(result, currentImpact.await(), currentUserImpact.await(), local)
                     }
                 }
             ObservedChallenges(listOf(reg, regMeta), updateJob, observers)
         }.apply { observers.add(obs) }
     }
 
-    override suspend fun unregisterChallengesObserver(obs: CommunityChallengesObserver) {
+    override fun unregisterChallengesObserver(obs: CommunityChallengesObserver) {
         val obChallenges = challengeObservers[obs.cid]
         obChallenges?.observers?.let {
             it.remove(obs)
             if (it.isNotEmpty()) return@let
-            observers.remove(obs.cid)
+            challengeObservers.remove(obs.cid)
             obChallenges.updateJob?.cancel()
             obChallenges.reg.forEach { reg -> reg.remove() }
         }

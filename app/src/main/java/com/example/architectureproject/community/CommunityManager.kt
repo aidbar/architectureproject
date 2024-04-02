@@ -10,7 +10,10 @@ interface CommunityObserver {
 interface CommunityChallengesObserver {
     val cid: String
     //val challengeId: String
-    fun notify(info: List<Pair<CommunityChallenge, CommunityChallengeState>>, local: Boolean)
+    fun notify(info: List<Pair<CommunityChallenge, CommunityChallengeState>>,
+               currentImpact: Float,
+               currentUserImpact: Float,
+               local: Boolean)
 }
 
 interface CommunityManager {
@@ -29,8 +32,8 @@ interface CommunityManager {
     suspend fun getChallenges(id: String): List<Pair<CommunityChallenge, CommunityChallengeState>>
     suspend fun addChallengeProgress(challenge: CommunityChallenge, progressDelta: Float): Boolean
     suspend fun challengeImpact(cid: String, uid: String = "", total: Boolean = false): Float
-    suspend fun registerChallengesObserver(obs: CommunityChallengesObserver)
-    suspend fun unregisterChallengesObserver(obs: CommunityChallengesObserver)
+    fun registerChallengesObserver(obs: CommunityChallengesObserver)
+    fun unregisterChallengesObserver(obs: CommunityChallengesObserver)
     suspend fun inviteUser(uid: String, cid: String)
     suspend fun addCommunityChallenge(challenge: CommunityChallenge): String
 }
