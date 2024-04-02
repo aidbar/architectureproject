@@ -60,7 +60,7 @@ import com.example.architectureproject.ui.theme.ArchitectureProjectTheme
 import kotlinx.coroutines.launch
 
 class CommunityMembersScreenModel(info: CommunityInfo) : ScreenModel, CommunityObserver {
-    override val id = info.id
+    override val cid = info.id
     val isCreator = info.owner == GreenTraceProviders.userProvider.userInfo()
     var community by mutableStateOf(info)
     var members by mutableStateOf(listOf<User>())

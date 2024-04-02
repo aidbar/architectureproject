@@ -60,7 +60,7 @@ import com.example.architectureproject.ui.theme.ArchitectureProjectTheme
 import kotlinx.coroutines.launch
 
 class CommunityScreenModel : ScreenModel, CommunityObserver {
-    override val id = "" // blank means all communities are affected by this model
+    override val cid = "" // blank means all communities are affected by this model
 
     var openCreateCommunityDialog by mutableStateOf(false)
     var newCommunityName by mutableStateOf("")
