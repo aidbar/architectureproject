@@ -1,6 +1,7 @@
 package com.example.architectureproject
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -63,6 +64,7 @@ import com.example.architectureproject.community.CommunityChallengeState
 import com.example.architectureproject.community.CommunityChallengesObserver
 import com.example.architectureproject.community.CommunityInfo
 import com.example.architectureproject.community.CommunityObserver
+import com.example.architectureproject.profile.User
 import com.lightspark.composeqr.QrCodeView
 import kotlinx.coroutines.launch
 
@@ -83,6 +85,7 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
 
     var usernameToInvite by mutableStateOf("")
     var challenges by mutableStateOf(listOf<Pair<CommunityChallenge, CommunityChallengeState>>())
+    var leaderboard by mutableStateOf(listOf<Pair<User, Float>>())
     var selectedChallenge by mutableStateOf(-1)
     var currentImpact by mutableStateOf(0f)
     var currentUserImpact by mutableStateOf(0f)
@@ -149,11 +152,14 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
 
     override fun notify(
         info: List<Pair<CommunityChallenge, CommunityChallengeState>>,
+        leaderboard: List<Pair<User, Float>>,
         currentImpact: Float,
         currentUserImpact: Float,
         local: Boolean
     ) {
         challenges = info
+        leaderboard.forEachIndexed { i, (k, v) -> Log.i("leaderboard", "leaderboard[$i] = ($k, $v)") }
+        this.leaderboard = leaderboard
         this.currentImpact = currentImpact
         this.currentUserImpact = currentUserImpact
     }
