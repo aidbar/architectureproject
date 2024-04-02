@@ -396,7 +396,17 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         style = MaterialTheme.typography.labelMedium,
                     )
                 }
-
+                Text("Community leaderboard", fontSize = 24.sp, modifier = Modifier.align(Alignment.CenterHorizontally), style = MaterialTheme.typography.labelLarge)
+                LazyColumn(
+                    Modifier
+                        .height(135.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .padding(10.dp)) {
+                    items(model.leaderboard.size) { index ->
+                        val (user, points) = model.leaderboard[index]
+                        Text("" + user.name +" ($points)", fontSize = 18.sp, style = MaterialTheme.typography.labelLarge)
+                    }
+                }
                 Text("Challenges", fontSize = 24.sp, modifier = Modifier.align(Alignment.CenterHorizontally), style = MaterialTheme.typography.labelLarge)
                 LazyColumn(
                     Modifier
