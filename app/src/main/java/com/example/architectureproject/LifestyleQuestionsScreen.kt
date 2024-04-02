@@ -1,6 +1,7 @@
 package com.example.architectureproject
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
@@ -46,7 +48,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import com.example.architectureproject.profile.UserLifestyle
@@ -100,17 +101,14 @@ class ProfileSetupScreenModel : ScreenModel {
     var bioState by mutableStateOf(TextFieldValue())
     var ageState by mutableStateOf(TextFieldValue())
 
-    fun updateUserProfile() {
-        println(nameState.text)
-        println(bioState.text)
-        println(ageState.text)
-        screenModelScope.launch {
+    suspend fun updateUserProfile() {
+        //screenModelScope.launch {
             GreenTraceProviders.userProvider?.userProfile(
                 nameState.text,
                 bioState.text,
                 ageState.text.toInt()
-            )?.let { Log.e("updateUserProfile", it) }
-        }
+            )
+        //}
     }
 }
 class ProfileSetupScreen : Screen {
@@ -119,6 +117,8 @@ class ProfileSetupScreen : Screen {
         val navigator = LocalNavigator.current
         val scope = rememberCoroutineScope()
         val model = rememberScreenModel{ProfileSetupScreenModel()}
+        var displayLifestyleScreen by remember{ mutableStateOf(false) }
+        val context = LocalContext.current
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -171,7 +171,7 @@ class ProfileSetupScreen : Screen {
                     .padding(vertical = 8.dp),
                 shape = RoundedCornerShape(32.dp),
                 singleLine = true,
-                placeholder = { Text(text = "Alias") }
+                placeholder = { Text(text = "Alias (required)") }
             )
 
             //val bioState = remember { mutableStateOf(TextFieldValue()) }
@@ -196,7 +196,7 @@ class ProfileSetupScreen : Screen {
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
                 shape = RoundedCornerShape(32.dp),
-                placeholder = { Text(text = "Age") }
+                placeholder = { Text(text = "Age (required)") }
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -204,15 +204,19 @@ class ProfileSetupScreen : Screen {
             Button(
                 onClick = {
                     val ageStr = model.ageState.text.trim()
+                    if(model.nameState.text.isBlank()) {
+                        Toast.makeText(context, "Please enter an alias!", Toast.LENGTH_SHORT).show()
+                    }
                     if (ageStr.isEmpty() || model.ageState.text.contains(Regex.fromLiteral("[^0-9]"))) {
                         Log.e("ProfileSetupScreen", "bad age value: $ageStr")
+                        Toast.makeText(context, "Please enter your age as a number!", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
 
-                    //scope.launch {
-                        model.updateUserProfile()
+                    scope.launch {
+                        model.updateUserProfile()?.let { println("user profile updated") }
                         navigator?.push(StartQuestionsScreen())
-                    //}
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = model.nameState.text.isNotEmpty()
