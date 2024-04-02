@@ -50,6 +50,7 @@ import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import com.example.architectureproject.profile.UserLifestyle
 import kotlinx.coroutines.launch
 
@@ -103,7 +104,7 @@ class ProfileSetupScreenModel : ScreenModel {
 
     suspend fun updateUserProfile() {
         //screenModelScope.launch {
-            GreenTraceProviders.userProvider?.userProfile(
+            GreenTraceProviders.userProvider.userProfile(
                 nameState.text,
                 bioState.text,
                 ageState.text.toInt()
@@ -214,7 +215,7 @@ class ProfileSetupScreen : Screen {
                     }
 
                     scope.launch {
-                        model.updateUserProfile()?.let { println("user profile updated") }
+                        model.updateUserProfile()
                         navigator?.push(StartQuestionsScreen())
                     }
                 },
@@ -295,10 +296,9 @@ class TransportationQScreen(private val hasLifestyleResponses: Boolean = false) 
             "Yes" to true, "No" to false
         )
 
-        val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
-
         var selectedPrimaryOption by remember {
             if(hasLifestyleResponses) {
+                val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
                 val preferenceString = primary_options.find { it.second == userLifestyle.transportationPreference }?.first ?: ""
                 mutableStateOf(preferenceString to userLifestyle.transportationPreference)
             } else {
@@ -308,6 +308,7 @@ class TransportationQScreen(private val hasLifestyleResponses: Boolean = false) 
 
         var selectedSecondaryOption by remember {
             if(hasLifestyleResponses) {
+                val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
                 if(userLifestyle.disabilities.isNotEmpty()) {
                     mutableStateOf("Yes" to true)
                 } else {
@@ -428,10 +429,9 @@ class FoodQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
             "Never" to UserLifestyle.Frequency.Never
         )
 
-        val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
-
         var selectedRestrictionOption by remember {
             if(hasLifestyleResponses) {
+                val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
                 val preferenceString = restriction_options.find { it.second == userLifestyle.diet }?.first ?: ""
                 mutableStateOf(preferenceString to userLifestyle.diet)
             } else {
@@ -441,6 +441,7 @@ class FoodQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
 
         var selectedFrequencyOption by remember {
             if(hasLifestyleResponses) {
+                val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
                 val preferenceString = frequency_options.find { it.second == userLifestyle.locallySourcedFoodPreference }?.first ?: ""
                 mutableStateOf(preferenceString to userLifestyle.locallySourcedFoodPreference)
             } else {
@@ -539,7 +540,7 @@ class FoodQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
 class ShoppingQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
     @Composable
     override fun Content() {
-        val navigator = LocalNavigator.current
+        val navigator = LocalNavigator.currentOrThrow
         val primary_options = listOf(
             "In-Store" to UserLifestyle.ShoppingMethod.InStore,
             "Online" to UserLifestyle.ShoppingMethod.Online,
@@ -552,10 +553,9 @@ class ShoppingQScreen(private val hasLifestyleResponses: Boolean = false) : Scre
             "Not at All" to UserLifestyle.Frequency.Never,
         )
 
-        val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
-
         var selectedPrimaryOption by remember {
             if(hasLifestyleResponses) {
+                val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
                 val preferenceString = primary_options.find { it.second == userLifestyle.shoppingPreference }?.first ?: ""
                 mutableStateOf(preferenceString to userLifestyle.shoppingPreference)
             } else {
@@ -565,6 +565,7 @@ class ShoppingQScreen(private val hasLifestyleResponses: Boolean = false) : Scre
 
         var selectedSecondaryOption by remember {
             if(hasLifestyleResponses) {
+                val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
                 val preferenceString = secondary_options.find { it.second == userLifestyle.sustainabilityInfluence }?.first ?: ""
                 mutableStateOf(preferenceString to userLifestyle.sustainabilityInfluence)
             } else {
@@ -662,15 +663,10 @@ class ShoppingQScreen(private val hasLifestyleResponses: Boolean = false) : Scre
                         scope.launch {
                             GreenTraceProviders.userProvider.userLifestyle(userResponses.build())
                                 ?.let { Log.e("updateLifestyle", it) }
-                            if(hasLifestyleResponses) {
-                                navigator?.apply {
-                                    repeat(3) {
-                                        pop()
-                                    }
+                                navigator.popUntilRoot()
+                                if (navigator.lastItemOrNull !is ProfileScreen) {
+                                    navigator.push(MainScreen(false))
                                 }
-                            } else {
-                                navigator?.push(MainScreen(false))
-                            }
                         }
                     },
                     modifier = Modifier.width(150.dp),
