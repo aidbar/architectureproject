@@ -54,6 +54,7 @@
 | 2024/03/18 |       |          |         |        |  2.5 |       | Finish up work on activity tracking in Firestore & test it          |
 | 2024/03/19 |   2.5 |   2.5    |   2.5   |    2.5 |  2.5 |  2.5  | Team meeting for D4
 | 2024/03/20 |   1   |    1     |    1    |    1   |  1   |   1   |  D5
+| 2024/03/20 |       |          |         |        |      |   0.5 |  D5 class diagram and observer class
 | 2024/03/23 |       |          |         |        |  2   |       | Begin work on activity recurrence logic          |
 | 2024/03/24 |       |          |         |    2.5 |      |       | Carbon footprint calculation algorithm         
 | 2024/03/25 |       |          |         |        |      |  1.5  | Activity UI and D6
@@ -70,3 +71,4 @@
 | 2024/03/30 |       |          |         |        |  1   |       | Various edge case fixes involving firestore          |
 | 2024/03/31 |       |          |         |        |      |    2  | D6: Design pattern and some other report implementations |
 | 2024/04/01 | 7     |          |         |        |      |       | Implementing community page features, bug fixing and code refactoring |
+| 2024/04/01 |       |          |         |        |      |    6  | Minor UI change. D6 Design pattern, class diagram, seq diagram  |
