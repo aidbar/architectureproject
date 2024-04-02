@@ -376,6 +376,7 @@ class FirebaseCommunityManager : CommunityManager {
 
         val impactDelta = challenge.impact / challenge.goal * progressDelta
         val now = ZonedDateTime.now()
+        val uid = GreenTraceProviders.userProvider.uid()!!
 
         // update all relevant progress entries
         // re-fetch data in a txn to reduce race conditions
@@ -400,13 +401,14 @@ class FirebaseCommunityManager : CommunityManager {
                     min(state.progress + progressDelta, challenge.goal)
                 )
 
-                db.collection("communities")
+                val communityDoc = db.collection("communities")
                     .document(state.communityId)
+                communityDoc
                     .collection("challenge_event_log")
                     .document()
                     .let {
                         txn.set(it, ChallengeProgressEvent(
-                            GreenTraceProviders.userProvider.uid()!!,
+                            uid,
                             now.toEpochSecond(),
                             challenge.id,
                             challenge.name,
@@ -487,8 +489,8 @@ class FirebaseCommunityManager : CommunityManager {
                     val local = snapshot.metadata.hasPendingWrites()
                     coroutineScope.launch {
 
-                        val currentImpact = async { GreenTraceProviders.communityManager.challengeImpact(obs.cid) }
-                        val currentUserImpact = async { GreenTraceProviders.communityManager.challengeImpact(obs.cid, uid) }
+                        val currentImpact = async { challengeImpact(obs.cid) }
+                        val currentUserImpact = async { challengeImpact(obs.cid, uid) }
                         val result = snapshot.documents.map {
                             db.collection("challenges")
                                 .document(it.id)
