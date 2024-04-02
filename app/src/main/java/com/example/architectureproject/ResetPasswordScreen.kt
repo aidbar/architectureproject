@@ -36,7 +36,7 @@ class ResetPasswordScreenModel : ScreenModel {
                 result = "A password reset link has been sent to your email address."
             } else {
                 if (it.exception?.message != null) {
-                    result = it.exception?.message!!
+                    result = it.exception?.message!!.toString()
                 } else {
                     result = "En error occurred. Please try again later."
                 }
@@ -53,7 +53,7 @@ class ResetPasswordScreen : Screen {
         //var email by remember { mutableStateOf("") }
         var model = rememberScreenModel{ResetPasswordScreenModel()}
 
-        val auth = FirebaseAuth.getInstance()
+        //val auth = FirebaseAuth.getInstance()
 
         Column(
             modifier = Modifier
