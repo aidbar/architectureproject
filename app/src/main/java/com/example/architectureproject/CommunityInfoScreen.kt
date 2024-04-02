@@ -108,7 +108,7 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
     }
     fun deleteCommunity() {
         screenModelScope.launch {
-            //GreenTraceProviders.communityManager.deleteCommunity(info.id) //this line is to be uncommented when pull request #33 is merged
+            GreenTraceProviders.communityManager.deleteCommunity(info.id)
         }
     }
 
