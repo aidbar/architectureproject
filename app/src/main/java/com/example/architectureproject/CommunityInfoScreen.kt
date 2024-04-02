@@ -272,7 +272,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         }
 
                         Text(
-                            text = "(OR) Send enter their username below:",
+                            text = "(OR) Enter their username below:",
                             modifier = Modifier
                                 .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
                                 .align(Alignment.CenterHorizontally),

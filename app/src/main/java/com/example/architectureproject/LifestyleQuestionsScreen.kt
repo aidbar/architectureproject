@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -39,9 +40,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import com.example.architectureproject.profile.UserLifestyle
@@ -90,11 +95,30 @@ class NewAccountSetupScreen : Screen {
     }
 }
 
+class ProfileSetupScreenModel : ScreenModel {
+    var nameState by mutableStateOf(TextFieldValue())
+    var bioState by mutableStateOf(TextFieldValue())
+    var ageState by mutableStateOf(TextFieldValue())
+
+    fun updateUserProfile() {
+        println(nameState.text)
+        println(bioState.text)
+        println(ageState.text)
+        screenModelScope.launch {
+            GreenTraceProviders.userProvider?.userProfile(
+                nameState.text,
+                bioState.text,
+                ageState.text.toInt()
+            )?.let { Log.e("updateUserProfile", it) }
+        }
+    }
+}
 class ProfileSetupScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
         val scope = rememberCoroutineScope()
+        val model = rememberScreenModel{ProfileSetupScreenModel()}
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -138,10 +162,10 @@ class ProfileSetupScreen : Screen {
             Spacer(modifier = Modifier.height(16.dp))
 
             // Text input fields
-            val nameState = remember { mutableStateOf(TextFieldValue()) }
+            //val nameState = remember { mutableStateOf(TextFieldValue()) }
             OutlinedTextField(
-                value = nameState.value,
-                onValueChange = { nameState.value = it },
+                value = model.nameState,
+                onValueChange = { model.nameState = it },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
@@ -150,10 +174,10 @@ class ProfileSetupScreen : Screen {
                 placeholder = { Text(text = "Alias") }
             )
 
-            val bioState = remember { mutableStateOf(TextFieldValue()) }
+            //val bioState = remember { mutableStateOf(TextFieldValue()) }
             OutlinedTextField(
-                value = bioState.value,
-                onValueChange = { bioState.value = it },
+                value = model.bioState,
+                onValueChange = { model.bioState = it },
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -162,11 +186,12 @@ class ProfileSetupScreen : Screen {
                 placeholder = { Text(text = "Bio") }
             )
 
-            val ageState = remember { mutableStateOf(TextFieldValue()) }
+            //val ageState = remember { mutableStateOf(TextFieldValue()) }
             OutlinedTextField(
-                value = ageState.value,
-                onValueChange = { ageState.value = it },
+                value = model.ageState,
+                onValueChange = { model.ageState = it },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
@@ -178,23 +203,19 @@ class ProfileSetupScreen : Screen {
 
             Button(
                 onClick = {
-                    val ageStr = ageState.value.text.trim()
-                    if (ageStr.isEmpty() || ageState.value.text.contains(Regex.fromLiteral("[^0-9]"))) {
+                    val ageStr = model.ageState.text.trim()
+                    if (ageStr.isEmpty() || model.ageState.text.contains(Regex.fromLiteral("[^0-9]"))) {
                         Log.e("ProfileSetupScreen", "bad age value: $ageStr")
                         return@Button
                     }
 
-                    scope.launch {
-                        GreenTraceProviders.userProvider?.userProfile(
-                            nameState.value.text,
-                            bioState.value.text,
-                            ageStr.toInt()
-                        )?.let { Log.e("updateUserProfile", it) }
+                    //scope.launch {
+                        model.updateUserProfile()
                         navigator?.push(StartQuestionsScreen())
-                    }
+                    //}
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = nameState.value.text.isNotEmpty()
+                enabled = model.nameState.text.isNotEmpty()
             ) {
                 Text("Accept")
             }
