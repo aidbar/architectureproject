@@ -12,8 +12,10 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.getField
+import com.patrykandpatrick.vico.core.extension.sumOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -176,6 +178,31 @@ class FirebaseCommunityManager : CommunityManager {
             challenge.copy(id = ref.id, randomID = UUID.randomUUID().toString())
         ).await()
         return ref.id
+    }
+
+    override suspend fun challengeLeaderboard(cid: String, count: Int): List<Pair<User, Float>> {
+        // this is not as efficient as it could be
+        // we really should be using write-time aggregations for this
+        // but since the period is only a month, and with 4 challenges
+        // we should not expect more than a few hundred events at worst
+        val data = db.collection("communities")
+            .document(cid)
+            .collection("challenge_event_log")
+            .let { filterToCurrentChallenge(it, cid) }
+            .get()
+            .await()
+            .documents
+            .map { it.toObject(ChallengeProgressEvent::class.java)!! }
+            .groupBy { it.uid }
+            .map { (uid, events) -> uid to events.sumOf { it.impact } }
+            .sortedBy { (_, impact) -> -impact }
+            .take(count)
+
+        val users = data.map { (uid, _) -> uid }
+            .let { GreenTraceProviders.userProvider.getUserById(it) }
+            .groupBy { it.uid }
+
+        return data.map { (uid, impact) ->  users[uid]!!.first() to impact }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -376,6 +403,7 @@ class FirebaseCommunityManager : CommunityManager {
 
         val impactDelta = challenge.impact / challenge.goal * progressDelta
         val now = ZonedDateTime.now()
+        val uid = GreenTraceProviders.userProvider.uid()!!
 
         // update all relevant progress entries
         // re-fetch data in a txn to reduce race conditions
@@ -400,13 +428,14 @@ class FirebaseCommunityManager : CommunityManager {
                     min(state.progress + progressDelta, challenge.goal)
                 )
 
-                db.collection("communities")
+                val communityDoc = db.collection("communities")
                     .document(state.communityId)
+                communityDoc
                     .collection("challenge_event_log")
                     .document()
                     .let {
                         txn.set(it, ChallengeProgressEvent(
-                            GreenTraceProviders.userProvider.uid()!!,
+                            uid,
                             now.toEpochSecond(),
                             challenge.id,
                             challenge.name,
@@ -419,6 +448,16 @@ class FirebaseCommunityManager : CommunityManager {
         }.await()
     }
 
+    suspend fun filterToCurrentChallenge(query: Query, cid: String) =
+        db.collection("communities")
+            .document(cid)
+            .collection("challenge_states")
+            .document("metadata")
+            .get()
+            .await()
+            .getField<Long>("last_update")!!
+            .let { query.whereGreaterThanOrEqualTo("date", it) }
+
     override suspend fun challengeImpact(cid: String, uid: String, total: Boolean) =
         db.collection("communities")
             .document(cid)
@@ -429,15 +468,7 @@ class FirebaseCommunityManager : CommunityManager {
             }
             .let { query ->
                 if (total) query
-                else
-                    db.collection("communities")
-                        .document(cid)
-                        .collection("challenge_states")
-                        .document("metadata")
-                        .get()
-                        .await()
-                        .getField<Long>("last_update")!!
-                        .let { query.whereGreaterThanOrEqualTo("date", it) }
+                else filterToCurrentChallenge(query, cid)
             }
             .aggregate(AggregateField.sum("impact"))
             .get(AggregateSource.SERVER)
@@ -487,8 +518,9 @@ class FirebaseCommunityManager : CommunityManager {
                     val local = snapshot.metadata.hasPendingWrites()
                     coroutineScope.launch {
 
-                        val currentImpact = async { GreenTraceProviders.communityManager.challengeImpact(obs.cid) }
-                        val currentUserImpact = async { GreenTraceProviders.communityManager.challengeImpact(obs.cid, uid) }
+                        val currentImpact = async { challengeImpact(obs.cid) }
+                        val currentUserImpact = async { challengeImpact(obs.cid, uid) }
+                        val leaderboard = async { challengeLeaderboard(obs.cid) }
                         val result = snapshot.documents.map {
                             db.collection("challenges")
                                 .document(it.id)
@@ -497,7 +529,7 @@ class FirebaseCommunityManager : CommunityManager {
                         .map { (task, state) ->
                             task.await()!!.toObject(CommunityChallenge::class.java)!! to state
                         }
-                        obs.notify(result, currentImpact.await(), currentUserImpact.await(), local)
+                        obs.notify(result, leaderboard.await(), currentImpact.await(), currentUserImpact.await(), local)
                     }
                 }
             ObservedChallenges(listOf(reg, regMeta), updateJob, observers)
