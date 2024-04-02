@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Card
@@ -39,7 +41,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -47,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -77,6 +79,7 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
     var openAddMemberDialog by mutableStateOf(false)
     var openLeaveCommunityDialog by mutableStateOf(false)
     var openDeleteCommunityDialog by mutableStateOf(false)
+    var openAddProgressDialog by mutableStateOf(false)
     var info by mutableStateOf(info)
     var loading by mutableStateOf(false)
     var deleted by mutableStateOf(false)
@@ -86,6 +89,8 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
     var selectedChallenge by mutableStateOf(-1)
     var currentImpact by mutableStateOf(0f)
     var currentUserImpact by mutableStateOf(0f)
+
+    var challengeDialogInput by mutableStateOf("")
 
     fun showEditCommunityDialog() {
         newCommunityName = info.name
@@ -305,9 +310,9 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
             )
         }
 
-        if (model.selectedChallenge != -1) {
+        /*if (model.selectedChallenge != -1) {
             ChallengeDialog()
-        }
+        }*/
 
         Scaffold(
             topBar = {
@@ -386,20 +391,22 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                     )
                 }
 
-                Text("Challenges", fontSize = 24.sp)
-                LazyColumn(Modifier.height(160.dp)) {
+                Text("Challenges", fontSize = 24.sp, modifier = Modifier.align(Alignment.CenterHorizontally), style = MaterialTheme.typography.labelLarge)
+                LazyColumn(
+                    Modifier
+                        .height(235.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .padding(10.dp)) {
                     items(model.challenges.size) { index ->
                         val (challenge, _) = model.challenges[index]
                         Button(onClick = {
                             model.selectedChallenge = index
+                            model.openAddProgressDialog = true
                         }) { Text(challenge.name) }
                     }
-                    item {
-                        Text("Current impact: ${model.currentImpact}")
-                        Text("My current impact: ${model.currentUserImpact}")
-                    }
                 }
-
+                Text("Current impact: ${model.currentImpact}", fontSize = 24.sp, modifier = Modifier.align(Alignment.CenterHorizontally), style = MaterialTheme.typography.labelLarge)
+                Text("My current impact: ${model.currentUserImpact}", fontSize = 24.sp, modifier = Modifier.align(Alignment.CenterHorizontally), style = MaterialTheme.typography.labelLarge)
                 val scope = rememberCoroutineScope()
                 TextButton(
                     onClick = { scope.launch {
@@ -484,19 +491,24 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                     )
                 }
             }
+            when {
+                model.openAddProgressDialog -> {
+                    ChallengeDialog()
+                }
+            }
         }
     }
 
     private @Composable
     fun ChallengeDialog() {
         val model = rememberScreenModel { CommunityInfoScreenModel(info) }
-        var text by remember { mutableStateOf("") }
+        //var text by remember { mutableStateOf("") }
         val (challenge, state) = model.challenges[model.selectedChallenge]
-        Dialog(onDismissRequest = { model.selectedChallenge = -1 }) {
+        Dialog(onDismissRequest = { model.selectedChallenge = -1; model.openAddProgressDialog = false }) {
             Card(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(500.dp)
+                    //.fillMaxWidth()
+                    .height(350.dp)
                     .padding(16.dp),
                 shape = RoundedCornerShape(16.dp),
             ) {
@@ -507,11 +519,17 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text("Progress: ${state.progress} / ${challenge.goal}")
-                    Text("Description:\n${challenge.desc}")
-                    TextField(value = text, onValueChange = { text = it })
+                    Text(challenge.name, modifier = Modifier.padding(10.dp), style = MaterialTheme.typography.labelLarge)
+                    Text("${state.progress} / ${challenge.goal}", modifier = Modifier.padding(10.dp))
+                    if (challenge.desc.isNotBlank()) {
+                        Text(challenge.desc, modifier = Modifier.padding(10.dp))
+                    }
+                    TextField(value = model.challengeDialogInput, onValueChange = { model.challengeDialogInput = it }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.width(95.dp).padding(10.dp))
+                    Button(onClick = {model.openAddProgressDialog = false; model.selectedChallenge = -1; model.challengeDialogInput = ""}, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)) {Text("Cancel")}
                     Button(onClick = {
-                        model.addProgress(text.toFloatOrNull() ?: 0f)
+                        model.addProgress(model.challengeDialogInput.toFloatOrNull() ?: 0f)
+                        model.challengeDialogInput = ""
+                        model.openAddProgressDialog = false
                     }) { Text("Submit") }
                 }
             }
