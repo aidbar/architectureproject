@@ -28,6 +28,7 @@ import com.example.architectureproject.ui.theme.*
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.remember
 import androidx.compose.foundation.rememberScrollState
+import com.example.architectureproject.profile.UserLifestyle
 import com.example.architectureproject.tracking.FirebaseTrackingDataProvider
 import com.example.architectureproject.tracking.Meal
 import com.example.architectureproject.tracking.Purchase
@@ -324,7 +325,8 @@ fun CommuteSection(
     var destination by remember { mutableStateOf(initialDestination) }
 
     var expanded by remember { mutableStateOf(false) }
-    val transportationModes = listOf("car", "bus", "walk", "bike", "train", "plane", "ferry", "LRT")
+    //val transportationModes = listOf("car", "bus", "walk", "bike", "train", "plane", "ferry", "LRT")
+    val transportationModes = Transportation.Mode.entries.map { it.name }
     var selectedMode by remember { mutableStateOf(initialTransportationMode) }
 
     ExposedDropdownMenuBox(
@@ -394,7 +396,8 @@ fun CommuteSection(
 @Composable
 fun PurchaseSection(shoppingMethod: String, onShoppingMethodChange: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    val shoppingType = listOf("In-Store", "Online", "SecondHand")
+    //val shoppingType = listOf("In-Store", "Online", "SecondHand")
+    val shoppingType = UserLifestyle.ShoppingMethod.entries.map { it.name }
     var selectedShoppingType by remember { mutableStateOf(shoppingMethod) }
 
     ExposedDropdownMenuBox(
