@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.core.lifecycle.LifecycleEffect
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -66,7 +67,6 @@ import com.patrykandpatrick.vico.core.component.shape.shader.DynamicShaders
 import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
 import com.patrykandpatrick.vico.core.entry.entryOf
 import kotlinx.coroutines.launch
-import com.example.architectureproject.ui.theme.*
 
 enum class GraphOption {
     Weekly, Monthly, Yearly
@@ -133,9 +133,7 @@ class HomeScreen :Screen{
             Recommendation("Plan your week's meals to reduce food wastage", "meal"),
             Recommendation("Use ride-share instead of your next Uber trip", "commute"),
             Recommendation("Combine errands to reduce the number of trips", "commute"),
-            Recommendation("Buy in bulk to reduce packaging waste", "purchase"),
-            Recommendation("Upgrade to double or triple-pane windows for better insulation", "purchase"),
-            Recommendation("Install a rainwater harvesting system for watering plants and gardens", "purchase"),
+            Recommendation("Buy in bulk to reduce packaging waste", "purchase")
         )
 
         if(GreenTraceProviders.userProvider.hasUserLifestyle()) {
@@ -195,6 +193,9 @@ class HomeScreen :Screen{
         val model = rememberScreenModel { HomeScreenModel() }
         val user = remember { GreenTraceProviders.userProvider.userInfo() }
         LaunchedEffect(model.selectedTab) { model.fetchData() }
+        LifecycleEffect(
+            onStarted = { model.fetchData() }
+        )
 
         val randomRecommendations = retrieveRecommendations()
 
@@ -221,7 +222,7 @@ class HomeScreen :Screen{
                 lineBackgroundShader = DynamicShaders.fromBrush(
                     brush = Brush.verticalGradient(
                         listOf(
-                            Color(0xFF5FA573).copy(com.patrykandpatrick.vico.core.DefaultAlpha.LINE_BACKGROUND_SHADER_START),
+                            Color(0xFF009688).copy(com.patrykandpatrick.vico.core.DefaultAlpha.LINE_BACKGROUND_SHADER_START),
                             Color.White.copy(com.patrykandpatrick.vico.core.DefaultAlpha.LINE_BACKGROUND_SHADER_END)
                         )
                     )
@@ -260,7 +261,7 @@ class HomeScreen :Screen{
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Welcome ${user.name}!",
-                                color = Color(0xFF5FA573),
+                                color = Color(0xFF009688),
                                 fontSize = 25.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -309,22 +310,22 @@ class HomeScreen :Screen{
                                     .fillMaxHeight()
                                     .background(
                                         color = if (model.selectedTab == GraphOption.Weekly) Color(
-                                            0xFF5FA573
+                                            0xFF009688
                                         ) else Color.White,
                                         shape = RoundedCornerShape(
                                             topStart = 8.dp,
                                             bottomStart = 8.dp
                                         )
                                     )
-                                    .clickable {
-                                        model.selectedTab = GraphOption.Weekly
-                                    }
                                     .weight(1f)
                                     .padding(vertical = 5.dp)
                             ) {
                                 Text(
                                     text = "Weekly",
                                     modifier = Modifier
+                                        .clickable {
+                                            model.selectedTab = GraphOption.Weekly
+                                        }
                                         .padding(start = 28.dp, end = 10.dp),
                                     color = Color.Black
                                 )
@@ -340,18 +341,18 @@ class HomeScreen :Screen{
                                     .fillMaxHeight()
                                     .background(
                                         color = if (model.selectedTab == GraphOption.Monthly) Color(
-                                            0xFF5FA573
+                                            0xFF009688
                                         ) else Color.White
                                     )
-                                    .clickable {
-                                        model.selectedTab = GraphOption.Monthly
-                                    }
                                     .weight(1f)
                                     .padding(vertical = 5.dp)
                             ) {
                                 Text(
                                     text = "Monthly",
                                     modifier = Modifier
+                                        .clickable {
+                                            model.selectedTab = GraphOption.Monthly
+                                        }
                                         .padding(start = 25.dp, end = 25.dp),
                                     color = Color.Black
                                 )
@@ -367,19 +368,19 @@ class HomeScreen :Screen{
                                     .fillMaxHeight()
                                     .background(
                                         color = if (model.selectedTab == GraphOption.Yearly) Color(
-                                            0xFF5FA573
+                                            0xFF009688
                                         ) else Color.White,
                                         shape = RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp)
                                     )
-                                    .clickable {
-                                        model.selectedTab = GraphOption.Yearly
-                                    }
                                     .weight(1f)
                                     .padding(vertical = 5.dp)
                             ) {
                                 Text(
                                     text = "Yearly",
                                     modifier = Modifier
+                                        .clickable {
+                                            model.selectedTab = GraphOption.Yearly
+                                        }
                                         .padding(start = 30.dp, end = 25.dp),
                                     color = Color.Black
                                 )
@@ -400,7 +401,7 @@ class HomeScreen :Screen{
 
                 items(items = randomRecommendations, itemContent = { item ->
                     Card(
-                        border = BorderStroke(3.dp, Color(0xFF5FA573)),
+                        border = BorderStroke(3.dp, Color(0xFF009688)),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier
                             .fillMaxWidth()
