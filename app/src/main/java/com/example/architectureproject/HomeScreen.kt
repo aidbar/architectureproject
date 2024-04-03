@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.core.lifecycle.LifecycleEffect
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -192,6 +193,9 @@ class HomeScreen :Screen{
         val model = rememberScreenModel { HomeScreenModel() }
         val user = remember { GreenTraceProviders.userProvider.userInfo() }
         LaunchedEffect(model.selectedTab) { model.fetchData() }
+        LifecycleEffect(
+            onStarted = { model.fetchData() }
+        )
 
         val randomRecommendations = retrieveRecommendations()
 

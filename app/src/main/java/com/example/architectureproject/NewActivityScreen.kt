@@ -159,7 +159,7 @@ class NewActivityScreen : Screen {
                                         "Meal" -> Meal(
                                             date = selectedDateTime,
                                             name = "Meal on ${date.format(DateTimeFormatter.ISO_LOCAL_DATE)}",
-                                            type = Meal.Type.valueOf(foodType), // Convert foodType string to enum
+                                            type = Meal.Type.Breakfast, // Convert foodType string to enum
                                             contents = listOf(
                                                 Meal.Entry(
                                                     Meal.Entry.Type.valueOf(foodType), 1f
