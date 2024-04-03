@@ -12,20 +12,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Card
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.Create
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material3.AlertDialog
@@ -69,7 +66,6 @@ import com.example.architectureproject.community.CommunityChallengesObserver
 import com.example.architectureproject.community.CommunityInfo
 import com.example.architectureproject.community.CommunityObserver
 import com.example.architectureproject.profile.User
-import com.lightspark.composeqr.QrCodeView
 import kotlinx.coroutines.launch
 
 class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObserver, CommunityChallengesObserver {
@@ -230,7 +226,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                     },
                     navigationIcon = {
                         IconButton(onClick = { navigator.pop() }) {
-                            Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     }
                 )
@@ -282,9 +278,11 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                     )
                 }
                 Text("Community leaderboard", fontSize = 24.sp, modifier = Modifier.align(Alignment.CenterHorizontally), style = MaterialTheme.typography.labelLarge)
+                Text("Scroll down the list for more!", modifier = Modifier.align(Alignment.CenterHorizontally), style = MaterialTheme.typography.labelLarge)
                 LazyColumn(
                     Modifier
                         .height(100.dp)
+                        .fillMaxWidth(fraction = 0.85f)
                         .align(Alignment.CenterHorizontally)
                         .padding(10.dp)) {
                     items(model.leaderboard.size) { index ->
@@ -316,11 +314,13 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                     }
                 }
                 Text("Challenges", fontSize = 24.sp, modifier = Modifier.align(Alignment.CenterHorizontally), style = MaterialTheme.typography.labelLarge)
+                Text("Scroll down the list for more!", modifier = Modifier.align(Alignment.CenterHorizontally), style = MaterialTheme.typography.labelLarge)
                 LazyColumn(
                     modifier = Modifier
                         .height(300.dp)
-                        .fillMaxWidth()
+                        .fillMaxWidth(fraction = 0.85f)
                         .padding(10.dp)
+                        .align(Alignment.CenterHorizontally)
                 ) {
                     items(model.challenges.size) { index ->
                         val (challenge, _) = model.challenges[index]
@@ -475,13 +475,14 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         modifier = Modifier.verticalScroll(rememberScrollState())
                                            .align(Alignment.Center)
                     ) {
-                        Text("${state.progress} / ${challenge.goal}", modifier = Modifier.padding(10.dp), textAlign = TextAlign.Center)
+                        Text("${state.progress} out of ${challenge.goal}", modifier = Modifier.padding(10.dp), textAlign = TextAlign.Center)
                         if (challenge.desc.isNotBlank()) {
                             Text(challenge.desc, modifier = Modifier.padding(10.dp), textAlign = TextAlign.Center)
                         }
                         TextField(value = model.challengeDialogInput, onValueChange = { model.challengeDialogInput = it }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier
                             .width(95.dp)
-                            .padding(10.dp))
+                            .padding(10.dp)
+                            .align(Alignment.CenterHorizontally))
                     }
                 }
             },

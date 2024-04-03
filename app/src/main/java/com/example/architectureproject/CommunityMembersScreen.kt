@@ -10,6 +10,7 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,8 +26,8 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Card
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.DateRange
@@ -46,12 +47,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -79,6 +80,7 @@ class CommunityMembersScreenModel(info: CommunityInfo) : ScreenModel, CommunityO
     var usernameToInvite by mutableStateOf("")
     var openAddMemberDialog by mutableStateOf(false)
     var openRemoveMemberDialog by mutableStateOf(false)
+    var openViewMemberDialog by mutableStateOf(false)
     var deleted by mutableStateOf(false)
 
     override fun notify(info: List<CommunityInfo>, invites: List<CommunityInfo>, local: Boolean) {
@@ -267,7 +269,7 @@ class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
                         } },
                         navigationIcon = {
                             IconButton(onClick = { navigator.pop() }) {
-                                Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                             }
                         }
                     )
@@ -312,6 +314,7 @@ class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
         }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun MemberCard(
         info : CommunityInfo,
@@ -321,11 +324,12 @@ class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
     ) {
         val model = rememberScreenModel {CommunityMembersScreenModel(info)}
         val context = LocalContext.current
-        val openRemoveMemberDialog = remember {mutableStateOf(false)}
+        //val openRemoveMemberDialog = remember {mutableStateOf(false)}
 
-        Card(/*modifier = modifier.clickable {
+        Card(modifier = modifier.clickable {
             //navigator.push(UserScreen(member))
-        }*/) {
+            model.openViewMemberDialog = true
+        }) {
             //Column {
                 /*Image(
                     painter = painterResource(member.image),
@@ -357,11 +361,17 @@ class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
                         style = MaterialTheme.typography.labelMedium
                     )
                     Icon(iconStyle.Email, contentDescription = "email", modifier = Modifier.align(Alignment.CenterVertically))
-                    Text(
-                        text = member.email,
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                        style = MaterialTheme.typography.labelMedium
-                    )
+                    Box(modifier = Modifier
+                        .fillMaxWidth(fraction = 0.48f)
+                        .align(Alignment.CenterVertically)) {
+                        Text(
+                            text = member.email,
+                            //modifier = Modifier.align(Alignment.CenterVertically),
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                     //Icon(iconStyle.Delete, contentDescription = "remove member " + member.name + " from this community", modifier = Modifier.align(Alignment.CenterVertically))
                     if (isCreator) {
                         TextButton(
@@ -394,6 +404,19 @@ class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
                     dialogTitle = "Remove member",
                     dialogText = "Remove " + member.name + " from this community?"
                 )
+            }
+        }
+        when {
+            model.openViewMemberDialog -> {
+                AlertDialog(
+                    title = {Text("Member information")},
+                    text = {Text("Name: ${member.name} \nAge: ${member.age} years old\nEmail: ${member.email}")},
+                    onDismissRequest = { model.openViewMemberDialog = false },
+                    confirmButton = { },
+                    dismissButton = { TextButton(onClick = { model.openViewMemberDialog = false }) {Text("Close")} }
+                )
+                    
+
             }
         }
     }
