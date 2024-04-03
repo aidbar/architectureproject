@@ -72,3 +72,4 @@
 | 2024/03/31 |       |          |         |        |      |    2  | D6: Design pattern and some other report implementations |
 | 2024/04/01 | 7     |          |         |        |      |       | Implementing community page features, bug fixing and code refactoring |
 | 2024/04/01 |       |          |         |        |      |    6  | Minor UI change. D6 Design pattern, class diagram, seq diagram  |
+| 2024/04/02 | 7     |          |         |        |      |       | Code refactoring, bug fixes and UI improvements |
