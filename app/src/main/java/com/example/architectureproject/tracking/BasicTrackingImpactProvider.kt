@@ -2,7 +2,6 @@ package com.example.architectureproject.tracking
 
 import com.example.architectureproject.GreenTraceProviders
 import com.patrykandpatrick.vico.core.extension.sumOf
-import kotlin.random.Random
 
 class BasicTrackingImpactProvider : TrackingImpactProvider() {
     private fun computeMealEmissions(meal: Meal): Float {
@@ -20,7 +19,7 @@ class BasicTrackingImpactProvider : TrackingImpactProvider() {
         )
         return meal.contents.sumOf { entry ->
             (carbonFootprintPerType[entry.type] ?: 0f) * entry.quantity
-        } * 1000
+        }
     }
 
     private fun computeTransportationEmissions(transport: Transportation): Float {
