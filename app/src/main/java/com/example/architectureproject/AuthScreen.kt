@@ -28,7 +28,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import kotlinx.coroutines.launch
@@ -37,28 +36,17 @@ class AuthScreenModel : ScreenModel {
     private val provider = GreenTraceProviders.userProvider
     var email by mutableStateOf("")
     var password by mutableStateOf("")
-    var hasProfileInfo by mutableStateOf(false)
-    var error by mutableStateOf("")
 
-    fun login() {
-        screenModelScope.launch {
-            val err = provider.loginUser(email, password)
-            if (err != null) {
-                error = err
-            }
-        }
+    suspend fun login(): String? {
+        return provider.loginUser(email, password)
     }
 
-    fun registerAndLogin() {
-        screenModelScope.launch {
-            provider.createAndLoginUser(email, password)
-        }
+    suspend fun registerAndLogin(): String? {
+        return provider.createAndLoginUser(email, password)
     }
 
-    fun hasProfile() {
-        screenModelScope.launch {
-            hasProfileInfo = provider.hasUserProfile()
-        }
+    fun hasProfile(): Boolean {
+        return provider.hasUserProfile()
     }
 
 }
@@ -118,20 +106,17 @@ class AuthScreen : Screen {
                         ).show()
                     }else{
                         scope.launch {
-                            model.login()
-                            if (model.error.isNotEmpty()) {
-                                val err = model.error
+                            val error = model.login()
+                            if (error != null) {
                                 Toast.makeText(
                                     context,
-                                    "Error: $err",
+                                    "Error: $error",
                                     Toast.LENGTH_SHORT
                                 ).show()
-                                model.error = ""
                                 return@launch
                             }
 
-                            model.hasProfile()
-                            if (!model.hasProfileInfo) {
+                            if (!model.hasProfile()) {
                                 navigator?.push(NewAccountSetupScreen())
                                 return@launch
                             }
@@ -158,15 +143,13 @@ class AuthScreen : Screen {
                         ).show()
                     }else{
                         scope.launch {
-                            model.registerAndLogin()
-                            if (model.error.isNotEmpty()) {
-                                val err = model.error
+                            val error = model.registerAndLogin()
+                            if (error != null) {
                                 Toast.makeText(
                                     context,
-                                    "Error: $err",
+                                    "Error: $error",
                                     Toast.LENGTH_SHORT
                                 ).show()
-                                model.error = ""
                                 return@launch
                             }
 
