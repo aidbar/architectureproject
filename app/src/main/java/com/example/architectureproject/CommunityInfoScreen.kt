@@ -1,6 +1,5 @@
 package com.example.architectureproject
 
-import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -11,20 +10,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Card
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.rounded.Create
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material3.AlertDialog
@@ -67,7 +62,6 @@ import com.example.architectureproject.community.CommunityChallengesObserver
 import com.example.architectureproject.community.CommunityInfo
 import com.example.architectureproject.community.CommunityObserver
 import com.example.architectureproject.profile.User
-import com.lightspark.composeqr.QrCodeView
 import kotlinx.coroutines.launch
 
 class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObserver, CommunityChallengesObserver {
@@ -78,7 +72,7 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
     var newCommunityName by mutableStateOf(info.name)
     var newCommunityLocation by mutableStateOf(info.location)
     var openEditCommunityDialog by mutableStateOf(false)
-    var openAddMemberDialog by mutableStateOf(false)
+    //var openAddMemberDialog by mutableStateOf(false)
     var openLeaveCommunityDialog by mutableStateOf(false)
     var openDeleteCommunityDialog by mutableStateOf(false)
     var openAddProgressDialog by mutableStateOf(false)
@@ -86,7 +80,7 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
     var loading by mutableStateOf(false)
     var deleted by mutableStateOf(false)
 
-    var usernameToInvite by mutableStateOf("")
+    //var usernameToInvite by mutableStateOf("")
     var challenges by mutableStateOf(listOf<Pair<CommunityChallenge, CommunityChallengeState>>())
     var leaderboard by mutableStateOf(listOf<Pair<User, Float>>())
     var selectedChallenge by mutableStateOf(-1)
@@ -122,10 +116,6 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
 
     fun dismissEditCommunityDialog() {
         openEditCommunityDialog = false
-    }
-    
-    fun dismissAddMemberDialog() {
-        openAddMemberDialog = false
     }
 
     fun dismissLeaveCommunityDialog() {
@@ -169,27 +159,6 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
         this.currentUserImpact = currentUserImpact
     }
 
-    fun sendInvite(context: Context) {
-        screenModelScope.launch {
-            val user = GreenTraceProviders.userProvider.getUserByEmail(usernameToInvite)
-            if (user != null) { //this is where the calls to check the validity of the username are to be performed
-                GreenTraceProviders.communityManager.inviteUser(user.uid, info.id)
-                println("Invite sent!")
-                usernameToInvite = ""
-                Toast.makeText(context, "Invite sent!", Toast.LENGTH_LONG).show()
-                return@launch
-            }
-
-            //display an error message if the user does not exist
-            println("This user does not exist. Check the username and try again.")
-            Toast.makeText(
-                context,
-                "This user does not exist. Check the username and try again.",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-    }
-
     fun addProgress(delta: Float) {
         val (challenge, _) = challenges[selectedChallenge]
         screenModelScope.launch {
@@ -224,98 +193,6 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
             return
         }
 
-        if(model.openAddMemberDialog) {
-            AlertDialog(
-                onDismissRequest = { model.dismissAddMemberDialog() },
-                title = {
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = "Add Member",
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .align(Alignment.CenterVertically)
-                                .padding(start = 16.dp, end = 0.dp)
-                        )
-                        IconButton(
-                            onClick = { model.openAddMemberDialog = false },
-                            modifier = Modifier.align(Alignment.CenterVertically)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Close"
-                            )
-                        }
-                    }
-                },
-                dismissButton = {
-
-                },
-                text = {
-                    Column(Modifier.verticalScroll(rememberScrollState())) {
-                        Text(
-                            text = "Use the QR code or link below to invite others to join " + model.info.name + ":",
-                            modifier = Modifier
-                                .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
-                                .align(Alignment.CenterHorizontally),
-                            textAlign = TextAlign.Center,
-                            fontSize = 19.sp,
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                        QrCodeView(
-                            data = model.info.inviteLink,
-                            modifier = Modifier
-                                .size(180.dp)
-                                .align(Alignment.CenterHorizontally)
-                                .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
-                        )
-                        SelectionContainer(modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)) {
-                            Text(model.info.inviteLink)
-                        }
-
-                        Text(
-                            text = "(OR) Enter their username below:",
-                            modifier = Modifier
-                                .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
-                                .align(Alignment.CenterHorizontally),
-                            textAlign = TextAlign.Center,
-                            fontSize = 19.sp,
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                        TextField(
-                            value = model.usernameToInvite,
-                            onValueChange = { model.usernameToInvite = it },
-                            label = { Text("Username") },
-                            modifier = Modifier.padding(10.dp),
-                            singleLine = true
-                        )
-                        TextButton(
-                            onClick = { model.sendInvite(context) },
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .fillMaxWidth(),
-                            enabled = model.usernameToInvite.isNotBlank(),
-                            colors = ButtonDefaults.buttonColors()
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Text("Invite")
-                            }
-                        }
-
-                    }
-                },
-                confirmButton = {
-
-                }
-            )
-        }
-
         /*if (model.selectedChallenge != -1) {
             ChallengeDialog()
         }*/
@@ -330,7 +207,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(model.info.name)
-                            IconButton(
+                            /*IconButton(
                                 onClick = {
                                     model.openAddMemberDialog = true
                                 }
@@ -340,7 +217,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                                     contentDescription = "Add member",
                                     modifier = Modifier.size(30.dp)
                                 )
-                            }
+                            }*/
                         }
                     },
                     navigationIcon = {
