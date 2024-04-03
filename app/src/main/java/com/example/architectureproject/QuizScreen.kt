@@ -2,12 +2,7 @@
 
 package com.example.architectureproject
 
-import android.content.Intent
-import android.net.Uri
-import android.util.Log
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,25 +29,39 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
-import com.example.architectureproject.ui.theme.*
+
+class QuizScreenModel(private val selectedQuiz: Quiz) : ScreenModel {
+    var userResponses by mutableStateOf(List(selectedQuiz.questions.size) { -1 })
+    var score by mutableIntStateOf(-1)
+    var showQuizScore by mutableStateOf(false)
+
+    fun calculateScore() {
+        var currentScore = 0
+        for (i in selectedQuiz.questions.indices) {
+            if (userResponses[i] == selectedQuiz.questions[i].correctAnswerIndex) {
+                currentScore += 1
+            }
+        }
+
+        score = (currentScore * 100 / selectedQuiz.questions.size)
+    }
+}
 
 class QuizScreen(private val selectedQuiz: Quiz) : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        val userResponses = remember { mutableStateOf(List(selectedQuiz.questions.size) { -1 }) }
-        var score = remember { mutableIntStateOf(-1) }
-        var showQuizScore by remember { mutableStateOf(false) }
-
+        val model = rememberScreenModel { QuizScreenModel(selectedQuiz) }
         LazyColumn(
             modifier = Modifier
                 .padding(16.dp)
@@ -81,13 +90,13 @@ class QuizScreen(private val selectedQuiz: Quiz) : Screen {
                     Text(text = "${index + 1}. ${question.text}")
 
                     question.options.forEachIndexed { optionIndex, option ->
-                        val isOptionSelected = userResponses.value[index] == optionIndex
+                        val isOptionSelected = model.userResponses[index] == optionIndex
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
                                 selected = isOptionSelected,
                                 onClick = {
-                                    userResponses.value = userResponses.value.toMutableList().also {
+                                    model.userResponses = model.userResponses.toMutableList().also {
                                         it[index] = if (isOptionSelected) -1 else optionIndex
                                     }
                                 }
@@ -109,8 +118,8 @@ class QuizScreen(private val selectedQuiz: Quiz) : Screen {
                 ) {
                     Button(
                         onClick = {
-                            score.value = calculateScore(selectedQuiz.questions, userResponses.value)
-                            showQuizScore = true
+                            model.calculateScore()
+                            model.showQuizScore = true
                         },
                     ) {
                         Text("Check Score")
@@ -119,9 +128,9 @@ class QuizScreen(private val selectedQuiz: Quiz) : Screen {
             }
         }
 
-        if (showQuizScore) {
+        if (model.showQuizScore) {
             Dialog(onDismissRequest = {
-                showQuizScore = false
+                model.showQuizScore = false
             }) {
                 Box(
                     modifier = Modifier
@@ -137,9 +146,9 @@ class QuizScreen(private val selectedQuiz: Quiz) : Screen {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Your Score: ${score.value}%", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                            Text("Your Score: ${model.score}%", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                             IconButton(
-                                onClick = { showQuizScore = false }
+                                onClick = { model.showQuizScore = false }
                             ) {
                                 Icon(Icons.Default.Close, contentDescription = "Close")
                             }
@@ -158,16 +167,5 @@ class QuizScreen(private val selectedQuiz: Quiz) : Screen {
                 Box(modifier = Modifier.size(1.dp))
             }
         }
-    }
-
-    private fun calculateScore(questions: List<Question>, userResponses: List<Int>): Int {
-        var currentScore = 0
-        for (i in questions.indices) {
-            if (userResponses[i] == questions[i].correctAnswerIndex) {
-                currentScore += 1
-            }
-        }
-
-        return (currentScore * 100 / questions.size)
     }
 }

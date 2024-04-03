@@ -6,25 +6,34 @@ package com.example.architectureproject
 //import com.patrykandpatrick.vico.core.axis.AxisPosition
 //import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
 //import com.patrykandpatrick.vico.compose.chart.line.lineChart
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Card
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Email
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -33,17 +42,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import cafe.adriel.voyager.core.lifecycle.LifecycleEffect
 import cafe.adriel.voyager.core.model.ScreenModel
@@ -57,6 +68,7 @@ import com.example.architectureproject.community.CommunityInfo
 import com.example.architectureproject.community.CommunityObserver
 import com.example.architectureproject.profile.User
 import com.example.architectureproject.ui.theme.ArchitectureProjectTheme
+import com.lightspark.composeqr.QrCodeView
 import kotlinx.coroutines.launch
 
 class CommunityMembersScreenModel(info: CommunityInfo) : ScreenModel, CommunityObserver {
@@ -65,7 +77,10 @@ class CommunityMembersScreenModel(info: CommunityInfo) : ScreenModel, CommunityO
     var community by mutableStateOf(info)
     var members by mutableStateOf(listOf<User>())
     var loading by mutableStateOf(true)
+    var usernameToInvite by mutableStateOf("")
+    var openAddMemberDialog by mutableStateOf(false)
     var openRemoveMemberDialog by mutableStateOf(false)
+    var openViewMemberDialog by mutableStateOf(false)
     var deleted by mutableStateOf(false)
 
     override fun notify(info: List<CommunityInfo>, invites: List<CommunityInfo>, local: Boolean) {
@@ -85,6 +100,29 @@ class CommunityMembersScreenModel(info: CommunityInfo) : ScreenModel, CommunityO
             GreenTraceProviders.communityManager.removeUserFromCommunity(memberID, communityID)
         }
     }
+    fun sendInvite(context: Context) {
+        screenModelScope.launch {
+            val user = GreenTraceProviders.userProvider.getUserByEmail(usernameToInvite)
+            if (user != null) { //this is where the calls to check the validity of the username are to be performed
+                GreenTraceProviders.communityManager.inviteUser(user.uid, community.id)
+                println("Invite sent!")
+                usernameToInvite = ""
+                Toast.makeText(context, "Invite sent!", Toast.LENGTH_LONG).show()
+                return@launch
+            }
+
+            //display an error message if the user does not exist
+            println("This user does not exist. Check the username and try again.")
+            Toast.makeText(
+                context,
+                "This user does not exist. Check the username and try again.",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+    fun dismissAddMemberDialog() {
+        openAddMemberDialog = false
+    }
 
     fun start() {
         GreenTraceProviders.communityManager.registerObserver(this)
@@ -102,6 +140,7 @@ class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
+        val context = LocalContext.current
         val model = rememberScreenModel { CommunityMembersScreenModel(info) }
         LifecycleEffect(
             onStarted = { model.start() },
@@ -112,15 +151,125 @@ class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
             navigator.pop()
             return
         }
+        if(model.openAddMemberDialog) {
+            AlertDialog(
+                onDismissRequest = { model.dismissAddMemberDialog() },
+                title = {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Add Member",
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .align(Alignment.CenterVertically)
+                                .padding(start = 16.dp, end = 0.dp)
+                        )
+                        IconButton(
+                            onClick = { model.openAddMemberDialog = false },
+                            modifier = Modifier.align(Alignment.CenterVertically)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close"
+                            )
+                        }
+                    }
+                },
+                dismissButton = {
+
+                },
+                text = {
+                    Column(Modifier.verticalScroll(rememberScrollState())) {
+                        Text(
+                            text = "Use the QR code or link below to invite others to join " + model.community.name + ":",
+                            modifier = Modifier
+                                .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
+                                .align(Alignment.CenterHorizontally),
+                            textAlign = TextAlign.Center,
+                            fontSize = 19.sp,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        QrCodeView(
+                            data = model.community.inviteLink,
+                            modifier = Modifier
+                                .size(180.dp)
+                                .align(Alignment.CenterHorizontally)
+                                .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
+                        )
+                        SelectionContainer(modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)) {
+                            Text(model.community.inviteLink)
+                        }
+
+                        Text(
+                            text = "(OR) Enter their username below:",
+                            modifier = Modifier
+                                .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
+                                .align(Alignment.CenterHorizontally),
+                            textAlign = TextAlign.Center,
+                            fontSize = 19.sp,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        TextField(
+                            value = model.usernameToInvite,
+                            onValueChange = { model.usernameToInvite = it },
+                            label = { Text("Username") },
+                            modifier = Modifier
+                                .padding(10.dp)
+                                .align(Alignment.CenterHorizontally),
+                            singleLine = true
+                        )
+                        TextButton(
+                            onClick = { model.sendInvite(context) },
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth(),
+                            enabled = model.usernameToInvite.isNotBlank(),
+                            colors = ButtonDefaults.buttonColors()
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text("Invite")
+                            }
+                        }
+
+                    }
+                },
+                confirmButton = {
+
+                }
+            )
+        }
 
         ArchitectureProjectTheme {
             Scaffold(
                 topBar = {
                     TopAppBar(
-                        title = { Text("Community members") },
+                        title = { Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Community members")
+                            IconButton(
+                                onClick = {
+                                    model.openAddMemberDialog = true
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Add,
+                                    contentDescription = "Add member",
+                                    modifier = Modifier.size(30.dp)
+                                )
+                            }
+                        } },
                         navigationIcon = {
                             IconButton(onClick = { navigator.pop() }) {
-                                Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                             }
                         }
                     )
@@ -165,6 +314,7 @@ class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
         }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun MemberCard(
         info : CommunityInfo,
@@ -174,11 +324,12 @@ class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
     ) {
         val model = rememberScreenModel {CommunityMembersScreenModel(info)}
         val context = LocalContext.current
-        val openRemoveMemberDialog = remember {mutableStateOf(false)}
+        //val openRemoveMemberDialog = remember {mutableStateOf(false)}
 
-        Card(/*modifier = modifier.clickable {
+        Card(modifier = modifier.clickable {
             //navigator.push(UserScreen(member))
-        }*/) {
+            model.openViewMemberDialog = true
+        }) {
             //Column {
                 /*Image(
                     painter = painterResource(member.image),
@@ -210,11 +361,17 @@ class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
                         style = MaterialTheme.typography.labelMedium
                     )
                     Icon(iconStyle.Email, contentDescription = "email", modifier = Modifier.align(Alignment.CenterVertically))
-                    Text(
-                        text = member.email,
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                        style = MaterialTheme.typography.labelMedium
-                    )
+                    Box(modifier = Modifier
+                        .fillMaxWidth(fraction = 0.48f)
+                        .align(Alignment.CenterVertically)) {
+                        Text(
+                            text = member.email,
+                            //modifier = Modifier.align(Alignment.CenterVertically),
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                     //Icon(iconStyle.Delete, contentDescription = "remove member " + member.name + " from this community", modifier = Modifier.align(Alignment.CenterVertically))
                     if (isCreator) {
                         TextButton(
@@ -247,6 +404,19 @@ class CommunityMembersScreen (private val info: CommunityInfo) :Screen {
                     dialogTitle = "Remove member",
                     dialogText = "Remove " + member.name + " from this community?"
                 )
+            }
+        }
+        when {
+            model.openViewMemberDialog -> {
+                AlertDialog(
+                    title = {Text("Member information")},
+                    text = {Text("Name: ${member.name} \nAge: ${member.age} years old\nEmail: ${member.email}")},
+                    onDismissRequest = { model.openViewMemberDialog = false },
+                    confirmButton = { },
+                    dismissButton = { TextButton(onClick = { model.openViewMemberDialog = false }) {Text("Close")} }
+                )
+                    
+
             }
         }
     }

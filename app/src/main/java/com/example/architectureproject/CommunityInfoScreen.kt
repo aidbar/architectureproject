@@ -1,28 +1,28 @@
 package com.example.architectureproject
 
-import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Card
 import androidx.compose.material.FloatingActionButton
+import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.Create
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material3.AlertDialog
@@ -40,14 +40,15 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,7 +66,6 @@ import com.example.architectureproject.community.CommunityChallengesObserver
 import com.example.architectureproject.community.CommunityInfo
 import com.example.architectureproject.community.CommunityObserver
 import com.example.architectureproject.profile.User
-import com.lightspark.composeqr.QrCodeView
 import kotlinx.coroutines.launch
 
 class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObserver, CommunityChallengesObserver {
@@ -76,19 +76,22 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
     var newCommunityName by mutableStateOf(info.name)
     var newCommunityLocation by mutableStateOf(info.location)
     var openEditCommunityDialog by mutableStateOf(false)
-    var openAddMemberDialog by mutableStateOf(false)
+    //var openAddMemberDialog by mutableStateOf(false)
     var openLeaveCommunityDialog by mutableStateOf(false)
     var openDeleteCommunityDialog by mutableStateOf(false)
+    var openAddProgressDialog by mutableStateOf(false)
     var info by mutableStateOf(info)
     var loading by mutableStateOf(false)
     var deleted by mutableStateOf(false)
 
-    var usernameToInvite by mutableStateOf("")
+    //var usernameToInvite by mutableStateOf("")
     var challenges by mutableStateOf(listOf<Pair<CommunityChallenge, CommunityChallengeState>>())
     var leaderboard by mutableStateOf(listOf<Pair<User, Float>>())
     var selectedChallenge by mutableStateOf(-1)
     var currentImpact by mutableStateOf(0f)
     var currentUserImpact by mutableStateOf(0f)
+
+    var challengeDialogInput by mutableStateOf("")
 
     fun showEditCommunityDialog() {
         newCommunityName = info.name
@@ -111,16 +114,12 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
     }
     fun deleteCommunity() {
         screenModelScope.launch {
-            //GreenTraceProviders.communityManager.deleteCommunity(info.id) //this line is to be uncommented when pull request #33 is merged
+            GreenTraceProviders.communityManager.deleteCommunity(info.id)
         }
     }
 
     fun dismissEditCommunityDialog() {
         openEditCommunityDialog = false
-    }
-    
-    fun dismissAddMemberDialog() {
-        openAddMemberDialog = false
     }
 
     fun dismissLeaveCommunityDialog() {
@@ -164,27 +163,6 @@ class CommunityInfoScreenModel(info: CommunityInfo) : ScreenModel, CommunityObse
         this.currentUserImpact = currentUserImpact
     }
 
-    fun sendInvite(context: Context) {
-        screenModelScope.launch {
-            val user = GreenTraceProviders.userProvider.getUserByEmail(usernameToInvite)
-            if (user != null) { //this is where the calls to check the validity of the username are to be performed
-                GreenTraceProviders.communityManager.inviteUser(user.uid, info.id)
-                println("Invite sent!")
-                usernameToInvite = ""
-                Toast.makeText(context, "Invite sent!", Toast.LENGTH_LONG).show()
-                return@launch
-            }
-
-            //display an error message if the user does not exist
-            println("This user does not exist. Check the username and try again.")
-            Toast.makeText(
-                context,
-                "This user does not exist. Check the username and try again.",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-    }
-
     fun addProgress(delta: Float) {
         val (challenge, _) = challenges[selectedChallenge]
         screenModelScope.launch {
@@ -219,101 +197,9 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
             return
         }
 
-        if(model.openAddMemberDialog) {
-            AlertDialog(
-                onDismissRequest = { model.dismissAddMemberDialog() },
-                title = {
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = "Add Member",
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .align(Alignment.CenterVertically)
-                                .padding(start = 16.dp, end = 0.dp)
-                        )
-                        IconButton(
-                            onClick = { model.openAddMemberDialog = false },
-                            modifier = Modifier.align(Alignment.CenterVertically)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Close"
-                            )
-                        }
-                    }
-                },
-                dismissButton = {
-
-                },
-                text = {
-                    Column(Modifier.verticalScroll(rememberScrollState())) {
-                        Text(
-                            text = "Use the QR code or link below to invite others to join " + model.info.name + ":",
-                            modifier = Modifier
-                                .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
-                                .align(Alignment.CenterHorizontally),
-                            textAlign = TextAlign.Center,
-                            fontSize = 19.sp,
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                        QrCodeView(
-                            data = model.info.inviteLink,
-                            modifier = Modifier
-                                .size(180.dp)
-                                .align(Alignment.CenterHorizontally)
-                                .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
-                        )
-                        SelectionContainer(modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)) {
-                            Text(model.info.inviteLink)
-                        }
-
-                        Text(
-                            text = "(OR) Send enter their username below:",
-                            modifier = Modifier
-                                .padding(start = 10.dp, top = 10.dp, bottom = 5.dp, end = 0.dp)
-                                .align(Alignment.CenterHorizontally),
-                            textAlign = TextAlign.Center,
-                            fontSize = 19.sp,
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                        TextField(
-                            value = model.usernameToInvite,
-                            onValueChange = { model.usernameToInvite = it },
-                            label = { Text("Username") },
-                            modifier = Modifier.padding(10.dp),
-                            singleLine = true
-                        )
-                        TextButton(
-                            onClick = { model.sendInvite(context) },
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .fillMaxWidth(),
-                            enabled = model.usernameToInvite.isNotBlank(),
-                            colors = ButtonDefaults.buttonColors()
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Text("Invite")
-                            }
-                        }
-
-                    }
-                },
-                confirmButton = {
-
-                }
-            )
-        }
-
-        if (model.selectedChallenge != -1) {
+        /*if (model.selectedChallenge != -1) {
             ChallengeDialog()
-        }
+        }*/
 
         Scaffold(
             topBar = {
@@ -325,7 +211,7 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(model.info.name)
-                            IconButton(
+                            /*IconButton(
                                 onClick = {
                                     model.openAddMemberDialog = true
                                 }
@@ -335,12 +221,12 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                                     contentDescription = "Add member",
                                     modifier = Modifier.size(30.dp)
                                 )
-                            }
+                            }*/
                         }
                     },
                     navigationIcon = {
                         IconButton(onClick = { navigator.pop() }) {
-                            Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     }
                 )
@@ -391,21 +277,89 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                         style = MaterialTheme.typography.labelMedium,
                     )
                 }
-
-                Text("Challenges", fontSize = 24.sp)
-                LazyColumn(Modifier.height(160.dp)) {
-                    items(model.challenges.size) { index ->
-                        val (challenge, _) = model.challenges[index]
-                        Button(onClick = {
-                            model.selectedChallenge = index
-                        }) { Text(challenge.name) }
-                    }
-                    item {
-                        Text("Current impact: ${model.currentImpact}")
-                        Text("My current impact: ${model.currentUserImpact}")
+                Text("Community leaderboard", fontSize = 24.sp, modifier = Modifier.align(Alignment.CenterHorizontally), style = MaterialTheme.typography.labelLarge)
+                Text("Scroll down the list for more!", modifier = Modifier.align(Alignment.CenterHorizontally), style = MaterialTheme.typography.labelLarge)
+                LazyColumn(
+                    Modifier
+                        .height(100.dp)
+                        .fillMaxWidth(fraction = 0.85f)
+                        .align(Alignment.CenterHorizontally)
+                        .padding(10.dp)) {
+                    items(model.leaderboard.size) { index ->
+                        val (user, points) = model.leaderboard[index]
+                        Surface(
+                            color = Color.LightGray,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 10.dp, horizontal = 16.dp)
+                            ) {
+                                Text(
+                                    text = user.name,
+                                    fontSize = 18.sp,
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                                Text(
+                                    text = "$points",
+                                    fontSize = 18.sp,
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
+                        }
                     }
                 }
-
+                Text("Challenges", fontSize = 24.sp, modifier = Modifier.align(Alignment.CenterHorizontally), style = MaterialTheme.typography.labelLarge)
+                Text("Scroll down the list for more!", modifier = Modifier.align(Alignment.CenterHorizontally), style = MaterialTheme.typography.labelLarge)
+                LazyColumn(
+                    modifier = Modifier
+                        .height(300.dp)
+                        .fillMaxWidth(fraction = 0.85f)
+                        .padding(10.dp)
+                        .align(Alignment.CenterHorizontally)
+                ) {
+                    items(model.challenges.size) { index ->
+                        val (challenge, _) = model.challenges[index]
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp, horizontal = 16.dp),
+                            elevation = 4.dp
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                            ) {
+                                Text(
+                                    text = challenge.name,
+                                    fontSize = 18.sp,
+                                    style = MaterialTheme.typography.titleSmall
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    Button(
+                                        onClick = {
+                                            model.selectedChallenge = index
+                                            model.openAddProgressDialog = true
+                                        }
+                                    ) {
+                                        Text("View Details")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Text("Current impact: ${model.currentImpact}", fontSize = 24.sp, modifier = Modifier.align(Alignment.CenterHorizontally), style = MaterialTheme.typography.labelLarge)
+                Text("My current impact: ${model.currentUserImpact}", fontSize = 24.sp, modifier = Modifier.align(Alignment.CenterHorizontally), style = MaterialTheme.typography.labelLarge)
                 val scope = rememberCoroutineScope()
                 TextButton(
                     onClick = { scope.launch {
@@ -490,38 +444,56 @@ data class CommunityInfoScreen(val info: CommunityInfo): Screen {
                     )
                 }
             }
-        }
-    }
-
-    private @Composable
-    fun ChallengeDialog() {
-        val model = rememberScreenModel { CommunityInfoScreenModel(info) }
-        var text by remember { mutableStateOf("") }
-        val (challenge, state) = model.challenges[model.selectedChallenge]
-        Dialog(onDismissRequest = { model.selectedChallenge = -1 }) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(500.dp)
-                    .padding(16.dp),
-                shape = RoundedCornerShape(16.dp),
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text("Progress: ${state.progress} / ${challenge.goal}")
-                    Text("Description:\n${challenge.desc}")
-                    TextField(value = text, onValueChange = { text = it })
-                    Button(onClick = {
-                        model.addProgress(text.toFloatOrNull() ?: 0f)
-                    }) { Text("Submit") }
+            when {
+                model.openAddProgressDialog -> {
+                    ChallengeDialog()
                 }
             }
         }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    private @Composable
+    fun ChallengeDialog() {
+        val model = rememberScreenModel { CommunityInfoScreenModel(info) }
+        //var text by remember { mutableStateOf("") }
+        val (challenge, state) = model.challenges[model.selectedChallenge]
+        AlertDialog(
+            onDismissRequest = { model.selectedChallenge = -1; model.openAddProgressDialog = false },
+            title = {
+                Text(
+                    text = challenge.name,
+                    textAlign = TextAlign.Center
+                )
+            },
+            dismissButton = {
+                Button(onClick = {model.openAddProgressDialog = false; model.selectedChallenge = -1; model.challengeDialogInput = ""}, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)) {Text("Cancel")}
+            },
+            text = {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.verticalScroll(rememberScrollState())
+                                           .align(Alignment.Center)
+                    ) {
+                        Text("${state.progress} out of ${challenge.goal}", modifier = Modifier.padding(10.dp), textAlign = TextAlign.Center)
+                        if (challenge.desc.isNotBlank()) {
+                            Text(challenge.desc, modifier = Modifier.padding(10.dp), textAlign = TextAlign.Center)
+                        }
+                        TextField(value = model.challengeDialogInput, onValueChange = { model.challengeDialogInput = it }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier
+                            .width(95.dp)
+                            .padding(10.dp)
+                            .align(Alignment.CenterHorizontally))
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    model.addProgress(model.challengeDialogInput.toFloatOrNull() ?: 0f)
+                    model.challengeDialogInput = ""
+                    model.openAddProgressDialog = false
+                }) { Text("Submit") }
+            }
+        )
     }
 
     @Composable

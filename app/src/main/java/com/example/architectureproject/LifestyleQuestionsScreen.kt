@@ -1,6 +1,7 @@
 package com.example.architectureproject
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -38,16 +40,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import com.example.architectureproject.profile.UserLifestyle
 import kotlinx.coroutines.launch
-
-private val userResponses = UserLifestyle.Builder()
 
 class NewAccountSetupScreen : Screen {
     @Composable
@@ -56,6 +61,7 @@ class NewAccountSetupScreen : Screen {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -90,14 +96,33 @@ class NewAccountSetupScreen : Screen {
     }
 }
 
+class ProfileSetupScreenModel : ScreenModel {
+    var nameState by mutableStateOf(TextFieldValue())
+    var bioState by mutableStateOf(TextFieldValue())
+    var ageState by mutableStateOf(TextFieldValue())
+
+    suspend fun updateUserProfile() {
+        //screenModelScope.launch {
+            GreenTraceProviders.userProvider.userProfile(
+                nameState.text,
+                bioState.text,
+                ageState.text.toInt()
+            )
+        //}
+    }
+}
 class ProfileSetupScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
         val scope = rememberCoroutineScope()
+        val model = rememberScreenModel{ProfileSetupScreenModel()}
+        var displayLifestyleScreen by remember{ mutableStateOf(false) }
+        val context = LocalContext.current
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -138,22 +163,22 @@ class ProfileSetupScreen : Screen {
             Spacer(modifier = Modifier.height(16.dp))
 
             // Text input fields
-            val nameState = remember { mutableStateOf(TextFieldValue()) }
+            //val nameState = remember { mutableStateOf(TextFieldValue()) }
             OutlinedTextField(
-                value = nameState.value,
-                onValueChange = { nameState.value = it },
+                value = model.nameState,
+                onValueChange = { model.nameState = it },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
                 shape = RoundedCornerShape(32.dp),
                 singleLine = true,
-                placeholder = { Text(text = "Alias") }
+                placeholder = { Text(text = "Alias (required)") }
             )
 
-            val bioState = remember { mutableStateOf(TextFieldValue()) }
+            //val bioState = remember { mutableStateOf(TextFieldValue()) }
             OutlinedTextField(
-                value = bioState.value,
-                onValueChange = { bioState.value = it },
+                value = model.bioState,
+                onValueChange = { model.bioState = it },
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -162,39 +187,40 @@ class ProfileSetupScreen : Screen {
                 placeholder = { Text(text = "Bio") }
             )
 
-            val ageState = remember { mutableStateOf(TextFieldValue()) }
+            //val ageState = remember { mutableStateOf(TextFieldValue()) }
             OutlinedTextField(
-                value = ageState.value,
-                onValueChange = { ageState.value = it },
+                value = model.ageState,
+                onValueChange = { model.ageState = it },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
                 shape = RoundedCornerShape(32.dp),
-                placeholder = { Text(text = "Age") }
+                placeholder = { Text(text = "Age (required)") }
             )
 
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
                 onClick = {
-                    val ageStr = ageState.value.text.trim()
-                    if (ageStr.isEmpty() || ageState.value.text.contains(Regex.fromLiteral("[^0-9]"))) {
+                    val ageStr = model.ageState.text.trim()
+                    if(model.nameState.text.isBlank()) {
+                        Toast.makeText(context, "Please enter an alias!", Toast.LENGTH_SHORT).show()
+                    }
+                    if (ageStr.isEmpty() || model.ageState.text.contains(Regex.fromLiteral("[^0-9]"))) {
                         Log.e("ProfileSetupScreen", "bad age value: $ageStr")
+                        Toast.makeText(context, "Please enter your age as a number!", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
 
                     scope.launch {
-                        GreenTraceProviders.userProvider?.userProfile(
-                            nameState.value.text,
-                            bioState.value.text,
-                            ageStr.toInt()
-                        )?.let { Log.e("updateUserProfile", it) }
+                        model.updateUserProfile()
                         navigator?.push(StartQuestionsScreen())
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = nameState.value.text.isNotEmpty()
+                enabled = model.nameState.text.isNotEmpty()
             ) {
                 Text("Accept")
             }
@@ -209,6 +235,7 @@ class StartQuestionsScreen() : Screen {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
 //            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
@@ -245,7 +272,7 @@ class StartQuestionsScreen() : Screen {
             }
 
             Button(
-                onClick = { navigator?.push(TransportationQScreen(hasLifestyleResponses = false)) },
+                onClick = { navigator?.push(TransportationQScreen(hasLifestyleResponses = false, UserLifestyle.Builder())) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Continue")
@@ -254,48 +281,59 @@ class StartQuestionsScreen() : Screen {
     }
 }
 
-class TransportationQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
+class TransportationQScreenModel(hasLifestyleResponses : Boolean, val userResponses: UserLifestyle.Builder) : ScreenModel {
+    fun saveResponses() {
+        userResponses.transportationPreference = selectedPrimaryOption.second
+        if (selectedSecondaryOption.second) {
+            userResponses.disabilities = setOf(UserLifestyle.Disability.DifficultyWalking)
+        }
+    }
+
+    val primary_options = listOf(
+        "Walking" to UserLifestyle.TransportationMethod.Walk,
+        "Cycling" to UserLifestyle.TransportationMethod.Cycle,
+        "Public Transportation (Bus, Train, Subway)" to UserLifestyle.TransportationMethod.PublicTransport,
+        "Personal Vehicle (Car, Motorcycle)" to UserLifestyle.TransportationMethod.PersonalVehicle,
+        "Carpooling" to UserLifestyle.TransportationMethod.Carpool,
+        "Remote/Work from Home (No Commute)" to UserLifestyle.TransportationMethod.None
+    )
+    val secondary_options = listOf(
+        "Yes" to true, "No" to false
+    )
+
+    var selectedPrimaryOption by if(hasLifestyleResponses) {
+        val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
+        val preferenceString = primary_options.find { it.second == userLifestyle.transportationPreference }?.first ?: ""
+        mutableStateOf(preferenceString to userLifestyle.transportationPreference)
+    } else {
+        mutableStateOf("" to userResponses.transportationPreference)
+    }
+
+    var selectedSecondaryOption by if(hasLifestyleResponses) {
+            val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
+            if(userLifestyle.disabilities.isNotEmpty()) {
+                mutableStateOf("Yes" to true)
+            } else {
+                mutableStateOf("No" to false)
+            }
+        } else {
+            mutableStateOf("" to false)
+        }
+}
+
+class TransportationQScreen(private val hasLifestyleResponses: Boolean = false,
+                            private val userResponses: UserLifestyle.Builder) : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        val primary_options = listOf(
-            "Walking" to UserLifestyle.TransportationMethod.Walk,
-            "Cycling" to UserLifestyle.TransportationMethod.Cycle,
-            "Public Transportation (Bus, Train, Subway)" to UserLifestyle.TransportationMethod.PublicTransport,
-            "Personal Vehicle (Car, Motorcycle)" to UserLifestyle.TransportationMethod.PersonalVehicle,
-            "Carpooling" to UserLifestyle.TransportationMethod.Carpool,
-            "Remote/Work from Home (No Commute)" to UserLifestyle.TransportationMethod.None
-        )
-        val secondary_options = listOf(
-            "Yes" to true, "No" to false
-        )
-
-        val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
-
-        var selectedPrimaryOption by remember {
-            if(hasLifestyleResponses) {
-                val preferenceString = primary_options.find { it.second == userLifestyle.transportationPreference }?.first ?: ""
-                mutableStateOf(preferenceString to userLifestyle.transportationPreference)
-            } else {
-                mutableStateOf("" to userResponses.transportationPreference)
-            }
-        }
-
-        var selectedSecondaryOption by remember {
-            if(hasLifestyleResponses) {
-                if(userLifestyle.disabilities.isNotEmpty()) {
-                    mutableStateOf("Yes" to true)
-                } else {
-                    mutableStateOf("No" to false)
-                }
-            } else {
-                mutableStateOf("" to false)
-            }
+        val model = rememberScreenModel {
+            TransportationQScreenModel(hasLifestyleResponses, userResponses)
         }
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
         ) {
             Row(
@@ -313,16 +351,16 @@ class TransportationQScreen(private val hasLifestyleResponses: Boolean = false) 
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            primary_options.forEach { option ->
+            model.primary_options.forEach { option ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .padding(bottom = 8.dp)
-                        .clickable { selectedPrimaryOption = option }
+                        .clickable { model.selectedPrimaryOption = option }
                 ) {
                     RadioButton(
-                        selected = selectedPrimaryOption == option,
-                        onClick = { selectedPrimaryOption = option }
+                        selected = model.selectedPrimaryOption == option,
+                        onClick = { model.selectedPrimaryOption = option }
                     )
                     Text(text = option.first, modifier = Modifier.padding(start = 8.dp))
                 }
@@ -335,16 +373,16 @@ class TransportationQScreen(private val hasLifestyleResponses: Boolean = false) 
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            secondary_options.forEach { option ->
+            model.secondary_options.forEach { option ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .padding(bottom = 8.dp)
-                        .clickable { selectedSecondaryOption = option }
+                        .clickable { model.selectedSecondaryOption = option }
                 ) {
                     RadioButton(
-                        selected = selectedSecondaryOption == option,
-                        onClick = { selectedSecondaryOption = option }
+                        selected = model.selectedSecondaryOption == option,
+                        onClick = { model.selectedSecondaryOption = option }
                     )
                     Text(text = option.first, modifier = Modifier.padding(start = 8.dp))
                 }
@@ -368,14 +406,11 @@ class TransportationQScreen(private val hasLifestyleResponses: Boolean = false) 
                 Spacer(modifier = Modifier.width(16.dp))
                 Button(
                     onClick = {
-                        userResponses.transportationPreference = selectedPrimaryOption.second
-                        if (selectedSecondaryOption.second) {
-                            userResponses.disabilities = setOf(UserLifestyle.Disability.DifficultyWalking)
-                        }
-                        navigator?.push(FoodQScreen(hasLifestyleResponses = hasLifestyleResponses))
+                        model.saveResponses()
+                        navigator?.push(FoodQScreen(hasLifestyleResponses = hasLifestyleResponses, model.userResponses))
                     },
                     modifier = Modifier.width(150.dp),
-                    enabled = selectedPrimaryOption.first.isNotEmpty() && selectedSecondaryOption.first.isNotEmpty()
+                    enabled = model.selectedPrimaryOption.first.isNotEmpty() && model.selectedSecondaryOption.first.isNotEmpty()
                 ) {
                     Text("NEXT")
                 }
@@ -386,47 +421,57 @@ class TransportationQScreen(private val hasLifestyleResponses: Boolean = false) 
     }
 }
 
-class FoodQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
+class FoodQScreenModel(hasLifestyleResponses: Boolean, val userResponses: UserLifestyle.Builder) : ScreenModel {
+    fun saveResponses() {
+        userResponses.diet = selectedRestrictionOption.second
+        userResponses.locallySourcedFoodPreference = selectedFrequencyOption.second
+    }
+
+    val restriction_options = listOf(
+        "No Restrictions" to UserLifestyle.Diet.None,
+        "Vegetarian (No Meat)" to UserLifestyle.Diet.Vegetarian,
+        "Vegan (No Animal Products)" to UserLifestyle.Diet.Vegan,
+        "Pescatarian (Fish, No Other Meat)" to UserLifestyle.Diet.Pescatarian
+    )
+    val frequency_options = listOf(
+        "Always" to UserLifestyle.Frequency.Always,
+        "Sometimes" to UserLifestyle.Frequency.Sometimes,
+        "Rarely" to UserLifestyle.Frequency.Rarely,
+        "Never" to UserLifestyle.Frequency.Never
+    )
+
+    var selectedRestrictionOption by if(hasLifestyleResponses) {
+            val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
+            val preferenceString = restriction_options.find { it.second == userLifestyle.diet }?.first ?: ""
+            mutableStateOf(preferenceString to userLifestyle.diet)
+        } else {
+            mutableStateOf("" to userResponses.diet)
+        }
+
+    var selectedFrequencyOption by if(hasLifestyleResponses) {
+            val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
+            val preferenceString = frequency_options.find { it.second == userLifestyle.locallySourcedFoodPreference }?.first ?: ""
+            mutableStateOf(preferenceString to userLifestyle.locallySourcedFoodPreference)
+        } else {
+            mutableStateOf("" to userResponses.locallySourcedFoodPreference)
+        }
+}
+
+class FoodQScreen(private val hasLifestyleResponses: Boolean = false,
+    private val userResponses: UserLifestyle.Builder) : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        val restriction_options = listOf(
-            "No Restrictions" to UserLifestyle.Diet.None,
-            "Vegetarian (No Meat)" to UserLifestyle.Diet.Vegetarian,
-            "Vegan (No Animal Products)" to UserLifestyle.Diet.Vegan,
-            "Pescatarian (Fish, No Other Meat)" to UserLifestyle.Diet.Pescatarian
-        )
-        val frequency_options = listOf(
-            "Always" to UserLifestyle.Frequency.Always,
-            "Sometimes" to UserLifestyle.Frequency.Sometimes,
-            "Rarely" to UserLifestyle.Frequency.Rarely,
-            "Never" to UserLifestyle.Frequency.Never
-        )
-
-        val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
-
-        var selectedRestrictionOption by remember {
-            if(hasLifestyleResponses) {
-                val preferenceString = restriction_options.find { it.second == userLifestyle.diet }?.first ?: ""
-                mutableStateOf(preferenceString to userLifestyle.diet)
-            } else {
-                mutableStateOf("" to userResponses.diet)
-            }
-        }
-
-        var selectedFrequencyOption by remember {
-            if(hasLifestyleResponses) {
-                val preferenceString = frequency_options.find { it.second == userLifestyle.locallySourcedFoodPreference }?.first ?: ""
-                mutableStateOf(preferenceString to userLifestyle.locallySourcedFoodPreference)
-            } else {
-                mutableStateOf("" to userResponses.locallySourcedFoodPreference)
-            }
+        val model = rememberScreenModel {
+            FoodQScreenModel(hasLifestyleResponses, userResponses)
         }
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),){
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+        ){
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -442,16 +487,16 @@ class FoodQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            restriction_options.forEach { option ->
+            model.restriction_options.forEach { option ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .padding(bottom = 8.dp)
-                        .clickable { selectedRestrictionOption = option }
+                        .clickable { model.selectedRestrictionOption = option }
                 ) {
                     RadioButton(
-                        selected = selectedRestrictionOption == option,
-                        onClick = { selectedRestrictionOption = option }
+                        selected = model.selectedRestrictionOption == option,
+                        onClick = { model.selectedRestrictionOption = option }
                     )
                     Text(text = option.first, modifier = Modifier.padding(start = 8.dp))
                 }
@@ -464,16 +509,16 @@ class FoodQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            frequency_options.forEach { option ->
+            model.frequency_options.forEach { option ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .padding(bottom = 8.dp)
-                        .clickable { selectedFrequencyOption = option }
+                        .clickable { model.selectedFrequencyOption = option }
                 ) {
                     RadioButton(
-                        selected = selectedFrequencyOption == option,
-                        onClick = { selectedFrequencyOption = option }
+                        selected = model.selectedFrequencyOption == option,
+                        onClick = { model.selectedFrequencyOption = option }
                     )
                     Text(text = option.first, modifier = Modifier.padding(start = 8.dp))
                 }
@@ -497,12 +542,11 @@ class FoodQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
                 Spacer(modifier = Modifier.width(16.dp))
                 Button(
                     onClick = {
-                        userResponses.diet = selectedRestrictionOption.second
-                        userResponses.locallySourcedFoodPreference = selectedFrequencyOption.second
-                        navigator?.push(ShoppingQScreen(hasLifestyleResponses = hasLifestyleResponses))
+                        model.saveResponses()
+                        navigator?.push(ShoppingQScreen(hasLifestyleResponses = hasLifestyleResponses, model.userResponses))
                     },
                     modifier = Modifier.width(150.dp),
-                    enabled = selectedFrequencyOption.first.isNotEmpty() && selectedRestrictionOption.first.isNotEmpty()
+                    enabled = model.selectedFrequencyOption.first.isNotEmpty() && model.selectedRestrictionOption.first.isNotEmpty()
                 ) {
                     Text("NEXT")
                 }
@@ -511,40 +555,50 @@ class FoodQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
     }
 }
 
-class ShoppingQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
-    @Composable
-    override fun Content() {
-        val navigator = LocalNavigator.current
-        val primary_options = listOf(
-            "In-Store" to UserLifestyle.ShoppingMethod.InStore,
-            "Online" to UserLifestyle.ShoppingMethod.Online,
-            "Combination of Both" to UserLifestyle.ShoppingMethod.Both
-        )
-        val secondary_options = listOf(
-            "Greatly" to UserLifestyle.Frequency.Always,
-            "Moderately" to UserLifestyle.Frequency.Sometimes,
-            "Slightly" to UserLifestyle.Frequency.Rarely,
-            "Not at All" to UserLifestyle.Frequency.Never,
-        )
+class ShoppingQScreenModel(hasLifestyleResponses: Boolean, val userResponses: UserLifestyle.Builder) : ScreenModel {
+    suspend fun saveResponses() {
+        userResponses.shoppingPreference = selectedPrimaryOption.second
+        userResponses.sustainabilityInfluence = selectedSecondaryOption.second
+        GreenTraceProviders.userProvider.userLifestyle(userResponses.build())
+            ?.let { Log.e("updateLifestyle", it) }
+    }
 
-        val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
+    val primary_options = listOf(
+        "In-Store" to UserLifestyle.ShoppingMethod.InStore,
+        "Online" to UserLifestyle.ShoppingMethod.Online,
+        "Combination of Both" to UserLifestyle.ShoppingMethod.Both
+    )
+    val secondary_options = listOf(
+        "Greatly" to UserLifestyle.Frequency.Always,
+        "Moderately" to UserLifestyle.Frequency.Sometimes,
+        "Slightly" to UserLifestyle.Frequency.Rarely,
+        "Not at All" to UserLifestyle.Frequency.Never,
+    )
 
-        var selectedPrimaryOption by remember {
-            if(hasLifestyleResponses) {
-                val preferenceString = primary_options.find { it.second == userLifestyle.shoppingPreference }?.first ?: ""
-                mutableStateOf(preferenceString to userLifestyle.shoppingPreference)
-            } else {
-                mutableStateOf("" to userResponses.shoppingPreference)
-            }
+    var selectedPrimaryOption by if(hasLifestyleResponses) {
+            val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
+            val preferenceString = primary_options.find { it.second == userLifestyle.shoppingPreference }?.first ?: ""
+            mutableStateOf(preferenceString to userLifestyle.shoppingPreference)
+        } else {
+            mutableStateOf("" to userResponses.shoppingPreference)
         }
 
-        var selectedSecondaryOption by remember {
-            if(hasLifestyleResponses) {
-                val preferenceString = secondary_options.find { it.second == userLifestyle.sustainabilityInfluence }?.first ?: ""
-                mutableStateOf(preferenceString to userLifestyle.sustainabilityInfluence)
-            } else {
-                mutableStateOf("" to userResponses.sustainabilityInfluence)
-            }
+    var selectedSecondaryOption by if(hasLifestyleResponses) {
+            val userLifestyle = GreenTraceProviders.userProvider.userLifestyle()
+            val preferenceString = secondary_options.find { it.second == userLifestyle.sustainabilityInfluence }?.first ?: ""
+            mutableStateOf(preferenceString to userLifestyle.sustainabilityInfluence)
+        } else {
+            mutableStateOf("" to userResponses.sustainabilityInfluence)
+        }
+}
+
+class ShoppingQScreen(private val hasLifestyleResponses: Boolean = false,
+    private val userResponses: UserLifestyle.Builder) : Screen {
+    @Composable
+    override fun Content() {
+        val navigator = LocalNavigator.currentOrThrow
+        val model = rememberScreenModel {
+            ShoppingQScreenModel(hasLifestyleResponses, userResponses)
         }
 
         val scope = rememberCoroutineScope()
@@ -573,16 +627,16 @@ class ShoppingQScreen(private val hasLifestyleResponses: Boolean = false) : Scre
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                primary_options.forEach { option ->
+                model.primary_options.forEach { option ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .padding(bottom = 8.dp)
-                            .clickable { selectedPrimaryOption = option }
+                            .clickable { model.selectedPrimaryOption = option }
                     ) {
                         RadioButton(
-                            selected = selectedPrimaryOption == option,
-                            onClick = { selectedPrimaryOption = option }
+                            selected = model.selectedPrimaryOption == option,
+                            onClick = { model.selectedPrimaryOption = option }
                         )
                         Text(text = option.first, modifier = Modifier.padding(start = 8.dp))
                     }
@@ -596,62 +650,52 @@ class ShoppingQScreen(private val hasLifestyleResponses: Boolean = false) : Scre
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                secondary_options.forEach { option ->
+                model.secondary_options.forEach { option ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .padding(bottom = 8.dp)
-                            .clickable { selectedSecondaryOption = option }
+                            .clickable { model.selectedSecondaryOption = option }
                     ) {
                         RadioButton(
-                            selected = selectedSecondaryOption == option,
-                            onClick = { selectedSecondaryOption = option }
+                            selected = model.selectedSecondaryOption == option,
+                            onClick = { model.selectedSecondaryOption = option }
                         )
                         Text(text = option.first, modifier = Modifier.padding(start = 8.dp))
                     }
                 }
-            }
 
-
-            Spacer(modifier = Modifier.weight(1f))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                OutlinedButton(
-                    onClick = {
-                        navigator?.pop()
-                    },
-                    modifier = Modifier.width(150.dp)
+                Spacer(modifier = Modifier.weight(1f))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Text("BACK")
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Button(
-                    onClick = {
-                        userResponses.shoppingPreference = selectedPrimaryOption.second
-                        userResponses.sustainabilityInfluence = selectedSecondaryOption.second
-
-                        scope.launch {
-                            GreenTraceProviders.userProvider.userLifestyle(userResponses.build())
-                                ?.let { Log.e("updateLifestyle", it) }
-                            if(hasLifestyleResponses) {
-                                navigator?.apply {
-                                    repeat(3) {
-                                        pop()
-                                    }
+                    OutlinedButton(
+                        onClick = {
+                            navigator?.pop()
+                        },
+                        modifier = Modifier.width(150.dp)
+                    ) {
+                        Text("BACK")
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                model.saveResponses()
+                                navigator.popUntilRoot()
+                                if (navigator.lastItemOrNull !is ProfileScreen) {
+                                    navigator.push(MainScreen(false))
                                 }
-                            } else {
-                                navigator?.push(MainScreen(false))
                             }
-                        }
-                    },
-                    modifier = Modifier.width(150.dp),
-                    enabled = selectedPrimaryOption.first.isNotEmpty() && selectedSecondaryOption.first.isNotEmpty()
-                ) {
-                    Text("COMPLETE")
+                        },
+                        modifier = Modifier.width(150.dp),
+                        enabled = model.selectedPrimaryOption.first.isNotEmpty() && model.selectedSecondaryOption.first.isNotEmpty()
+                    ) {
+                        Text("COMPLETE")
+                    }
                 }
             }
         }
