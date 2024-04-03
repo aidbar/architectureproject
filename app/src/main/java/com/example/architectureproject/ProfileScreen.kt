@@ -45,6 +45,7 @@ import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import coil.compose.rememberAsyncImagePainter
+import com.example.architectureproject.profile.UserLifestyle
 import com.example.architectureproject.ui.theme.Green40
 import kotlinx.coroutines.launch
 
@@ -179,7 +180,8 @@ class ProfileScreen : Screen {
             Button(
                 onClick = {
                     navigator?.push(TransportationQScreen(hasLifestyleResponses =
-                        GreenTraceProviders.userProvider.hasUserLifestyle()
+                        GreenTraceProviders.userProvider.hasUserLifestyle(),
+                        UserLifestyle.Builder()
                     ))
                 },
                 modifier = Modifier

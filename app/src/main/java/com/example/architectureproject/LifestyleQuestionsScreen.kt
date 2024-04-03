@@ -54,8 +54,6 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.example.architectureproject.profile.UserLifestyle
 import kotlinx.coroutines.launch
 
-private val userResponses = UserLifestyle.Builder()
-
 class NewAccountSetupScreen : Screen {
     @Composable
     override fun Content() {
@@ -274,7 +272,7 @@ class StartQuestionsScreen() : Screen {
             }
 
             Button(
-                onClick = { navigator?.push(TransportationQScreen(hasLifestyleResponses = false)) },
+                onClick = { navigator?.push(TransportationQScreen(hasLifestyleResponses = false, UserLifestyle.Builder())) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Continue")
@@ -283,7 +281,14 @@ class StartQuestionsScreen() : Screen {
     }
 }
 
-class TransportationQScreenModel(hasLifestyleResponses : Boolean) : ScreenModel {
+class TransportationQScreenModel(hasLifestyleResponses : Boolean, val userResponses: UserLifestyle.Builder) : ScreenModel {
+    fun saveResponses() {
+        userResponses.transportationPreference = selectedPrimaryOption.second
+        if (selectedSecondaryOption.second) {
+            userResponses.disabilities = setOf(UserLifestyle.Disability.DifficultyWalking)
+        }
+    }
+
     val primary_options = listOf(
         "Walking" to UserLifestyle.TransportationMethod.Walk,
         "Cycling" to UserLifestyle.TransportationMethod.Cycle,
@@ -316,11 +321,14 @@ class TransportationQScreenModel(hasLifestyleResponses : Boolean) : ScreenModel 
         }
 }
 
-class TransportationQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
+class TransportationQScreen(private val hasLifestyleResponses: Boolean = false,
+                            private val userResponses: UserLifestyle.Builder) : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        val model = rememberScreenModel { TransportationQScreenModel(hasLifestyleResponses) }
+        val model = rememberScreenModel {
+            TransportationQScreenModel(hasLifestyleResponses, userResponses)
+        }
 
         Column(
             modifier = Modifier
@@ -398,11 +406,8 @@ class TransportationQScreen(private val hasLifestyleResponses: Boolean = false) 
                 Spacer(modifier = Modifier.width(16.dp))
                 Button(
                     onClick = {
-                        userResponses.transportationPreference = model.selectedPrimaryOption.second
-                        if (model.selectedSecondaryOption.second) {
-                            userResponses.disabilities = setOf(UserLifestyle.Disability.DifficultyWalking)
-                        }
-                        navigator?.push(FoodQScreen(hasLifestyleResponses = hasLifestyleResponses))
+                        model.saveResponses()
+                        navigator?.push(FoodQScreen(hasLifestyleResponses = hasLifestyleResponses, model.userResponses))
                     },
                     modifier = Modifier.width(150.dp),
                     enabled = model.selectedPrimaryOption.first.isNotEmpty() && model.selectedSecondaryOption.first.isNotEmpty()
@@ -416,7 +421,12 @@ class TransportationQScreen(private val hasLifestyleResponses: Boolean = false) 
     }
 }
 
-class FoodQScreenModel(hasLifestyleResponses: Boolean) : ScreenModel {
+class FoodQScreenModel(hasLifestyleResponses: Boolean, val userResponses: UserLifestyle.Builder) : ScreenModel {
+    fun saveResponses() {
+        userResponses.diet = selectedRestrictionOption.second
+        userResponses.locallySourcedFoodPreference = selectedFrequencyOption.second
+    }
+
     val restriction_options = listOf(
         "No Restrictions" to UserLifestyle.Diet.None,
         "Vegetarian (No Meat)" to UserLifestyle.Diet.Vegetarian,
@@ -447,12 +457,13 @@ class FoodQScreenModel(hasLifestyleResponses: Boolean) : ScreenModel {
         }
 }
 
-class FoodQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
+class FoodQScreen(private val hasLifestyleResponses: Boolean = false,
+    private val userResponses: UserLifestyle.Builder) : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
         val model = rememberScreenModel {
-            FoodQScreenModel(hasLifestyleResponses)
+            FoodQScreenModel(hasLifestyleResponses, userResponses)
         }
 
         Column(
@@ -531,9 +542,8 @@ class FoodQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
                 Spacer(modifier = Modifier.width(16.dp))
                 Button(
                     onClick = {
-                        userResponses.diet = model.selectedRestrictionOption.second
-                        userResponses.locallySourcedFoodPreference = model.selectedFrequencyOption.second
-                        navigator?.push(ShoppingQScreen(hasLifestyleResponses = hasLifestyleResponses))
+                        model.saveResponses()
+                        navigator?.push(ShoppingQScreen(hasLifestyleResponses = hasLifestyleResponses, model.userResponses))
                     },
                     modifier = Modifier.width(150.dp),
                     enabled = model.selectedFrequencyOption.first.isNotEmpty() && model.selectedRestrictionOption.first.isNotEmpty()
@@ -545,7 +555,14 @@ class FoodQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
     }
 }
 
-class ShoppingQScreenModel(hasLifestyleResponses: Boolean) : ScreenModel {
+class ShoppingQScreenModel(hasLifestyleResponses: Boolean, val userResponses: UserLifestyle.Builder) : ScreenModel {
+    suspend fun saveResponses() {
+        userResponses.shoppingPreference = selectedPrimaryOption.second
+        userResponses.sustainabilityInfluence = selectedSecondaryOption.second
+        GreenTraceProviders.userProvider.userLifestyle(userResponses.build())
+            ?.let { Log.e("updateLifestyle", it) }
+    }
+
     val primary_options = listOf(
         "In-Store" to UserLifestyle.ShoppingMethod.InStore,
         "Online" to UserLifestyle.ShoppingMethod.Online,
@@ -575,12 +592,13 @@ class ShoppingQScreenModel(hasLifestyleResponses: Boolean) : ScreenModel {
         }
 }
 
-class ShoppingQScreen(private val hasLifestyleResponses: Boolean = false) : Screen {
+class ShoppingQScreen(private val hasLifestyleResponses: Boolean = false,
+    private val userResponses: UserLifestyle.Builder) : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val model = rememberScreenModel {
-            ShoppingQScreenModel(hasLifestyleResponses)
+            ShoppingQScreenModel(hasLifestyleResponses, userResponses)
         }
 
         val scope = rememberCoroutineScope()
@@ -665,12 +683,8 @@ class ShoppingQScreen(private val hasLifestyleResponses: Boolean = false) : Scre
                     Spacer(modifier = Modifier.width(16.dp))
                     Button(
                         onClick = {
-                            userResponses.shoppingPreference = model.selectedPrimaryOption.second
-                            userResponses.sustainabilityInfluence = model.selectedSecondaryOption.second
-
                             scope.launch {
-                                GreenTraceProviders.userProvider.userLifestyle(userResponses.build())
-                                    ?.let { Log.e("updateLifestyle", it) }
+                                model.saveResponses()
                                 navigator.popUntilRoot()
                                 if (navigator.lastItemOrNull !is ProfileScreen) {
                                     navigator.push(MainScreen(false))
