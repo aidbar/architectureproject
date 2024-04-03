@@ -79,3 +79,4 @@
 | 2024/04/02 |       |   2.5    |         |        |      |       | Minor UI improvements on communityInfoScreen (leaderboard, challengeList and challengeDialog)   |
 | 2024/04/03 | 1     |    1     |   1     |   1    |  1   |   1   | Team meeting to prepare for the final project presentation |
 | 2024/04/03 | 0.5   |   0.5    |   0.5   |   0.5  |  0.5 |  0.5  | Final project presentation |
+| 2024/04/03 | 1     |          |         |        |      |       | Working on D7 document |
