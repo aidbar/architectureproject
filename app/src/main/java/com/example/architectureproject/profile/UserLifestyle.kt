@@ -22,7 +22,7 @@ data class UserLifestyle(val disabilities: Set<Disability>,
         var sustainabilityInfluence: Frequency = Frequency.Sometimes,
         var locallySourcedFoodPreference: Frequency = Frequency.Sometimes,
         var shoppingPreference: ShoppingMethod = ShoppingMethod.Both
-    ) { fun build() = UserLifestyle(this) }
+    ): java.io.Serializable { fun build() = UserLifestyle(this) }
 
     enum class ShoppingMethod { Online, InStore, Both }
     enum class Disability { DifficultyWalking }
