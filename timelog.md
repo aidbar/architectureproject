@@ -74,3 +74,4 @@
 | 2024/04/01 |       |          |         |        |      |    6  | Minor UI change. D6 Design pattern, class diagram, seq diagram  |
 | 2024/04/02 | 7     |          |         |        |      |       | Code refactoring, bug fixes and UI improvements |
 | 2024/04/03 | 1     |          |         |        |      |       | Small UI improvements |
+| 2024/04/03 | 0.5   |          |         |        |      |       | Recording a video for the final presentation |
