@@ -32,6 +32,8 @@ import com.example.architectureproject.tracking.FirebaseTrackingDataProvider
 import com.example.architectureproject.tracking.Meal
 import com.example.architectureproject.tracking.Purchase
 import com.example.architectureproject.tracking.TrackingActivity
+import com.example.architectureproject.tracking.RecurrenceSchedule
+import com.example.architectureproject.tracking.TrackingDataGranularity
 import com.example.architectureproject.tracking.TrackingDataProvider
 import com.example.architectureproject.tracking.Transportation
 import kotlinx.coroutines.Dispatchers
@@ -66,6 +68,19 @@ class NewActivityScreen : Screen {
         val scrollState = rememberScrollState()
         var saveAttempted by remember { mutableStateOf(false) }
 
+        var mealRecurrenceFrequency by remember { mutableStateOf("") }
+        var mealRecurrenceIntervalText by remember { mutableStateOf("1") }
+        var mealEndDate by remember { mutableStateOf<LocalDate?>(null) }
+
+        // Define separate states for Commute
+        var commuteRecurrenceFrequency by remember { mutableStateOf("") }
+        var commuteRecurrenceIntervalText by remember { mutableStateOf("1") }
+        var commuteEndDate by remember { mutableStateOf<LocalDate?>(null) }
+
+        // Define separate states for Purchase
+        var purchaseRecurrenceFrequency by remember { mutableStateOf("") }
+        var purchaseRecurrenceIntervalText by remember { mutableStateOf("1") }
+        var purchaseEndDate by remember { mutableStateOf<LocalDate?>(null) }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -89,18 +104,36 @@ class NewActivityScreen : Screen {
                 when (activityType) {
                     "Meal" -> {
                         MealSection(foodType) { foodType = it }
-                        RecurrenceOption("Meal", isMealRecurring, { isMealRecurring = it })
+                        RecurrenceOption("Meal", isMealRecurring, { isMealRecurring = it }
+                            , recurrenceFrequency = mealRecurrenceFrequency,
+                            onRecurrenceFrequencyChange = { mealRecurrenceFrequency = it },
+                            recurrenceIntervalText = mealRecurrenceIntervalText,
+                            onRecurrenceIntervalChange = { mealRecurrenceIntervalText = it },
+                            endDate = mealEndDate,
+                            onEndDateChange = { mealEndDate = it })
                     }
                     "Commute" -> {
                         CommuteSection(    initialTransportationMode = transportationMode,
                             onTransportationModeChange = { newMode ->
                                 transportationMode = newMode // Here we update the state in the parent
                             }, departure, destination, stops) { stops.add("") }
-                        RecurrenceOption("Commute", isCommuteRecurring, { isCommuteRecurring = it })
+                        RecurrenceOption("Commute", isCommuteRecurring, { isCommuteRecurring = it }
+                            , recurrenceFrequency = commuteRecurrenceFrequency,
+                            onRecurrenceFrequencyChange = { commuteRecurrenceFrequency = it },
+                            recurrenceIntervalText = commuteRecurrenceIntervalText,
+                            onRecurrenceIntervalChange = { commuteRecurrenceIntervalText = it },
+                            endDate = commuteEndDate,
+                            onEndDateChange = { commuteEndDate = it })
                     }
                     "Purchase" -> {
                         PurchaseSection(shoppingMethod) { shoppingMethod = it }
-                        RecurrenceOption("Purchase", isPurchaseRecurring, { isPurchaseRecurring = it })
+                        RecurrenceOption("Purchase", isPurchaseRecurring, { isPurchaseRecurring = it }
+                            , recurrenceFrequency = purchaseRecurrenceFrequency,
+                            onRecurrenceFrequencyChange = { purchaseRecurrenceFrequency = it },
+                            recurrenceIntervalText = purchaseRecurrenceIntervalText,
+                            onRecurrenceIntervalChange = { purchaseRecurrenceIntervalText = it },
+                            endDate = purchaseEndDate,
+                            onEndDateChange = { purchaseEndDate = it })
                     }
                 }
 
@@ -132,6 +165,19 @@ class NewActivityScreen : Screen {
                                                     Meal.Entry.Type.valueOf(foodType), 1f
                                                 )
                                             ),
+                                            schedule = if (isMealRecurring) {
+                                                val unit = when (mealRecurrenceFrequency) {
+                                                    "Daily" -> TrackingDataGranularity.Day
+                                                    "Weekly" -> TrackingDataGranularity.Week
+                                                    else -> TrackingDataGranularity.Day // Defaulting to Day if somehow an unexpected value is received.
+                                                }
+                                                RecurrenceSchedule(
+                                                    unit = unit,
+                                                    period = mealRecurrenceIntervalText.toIntOrNull() ?: 1, // Safely parsing to Int, defaulting to 1.
+                                                    endDate = mealEndDate?.atStartOfDay(ZoneId.systemDefault()) // Converting LocalDate to ZonedDateTime.
+                                                )
+                                            } else null
+
                                         )
                                         "Commute" -> Transportation(
                                             date = selectedDateTime,
@@ -139,19 +185,42 @@ class NewActivityScreen : Screen {
                                             stops = stops.map {
                                                 Transportation.Stop(it, 0.0, 0.0)
                                             },
-                                            mode = Transportation.Mode.valueOf(transportationMode)
+                                            mode = Transportation.Mode.valueOf(transportationMode),
+                                            schedule = if (isCommuteRecurring) {
+                                                val unit = when (recurrenceFrequency) {
+                                                    "Daily" -> TrackingDataGranularity.Day
+                                                    "Weekly" -> TrackingDataGranularity.Week
+                                                    else -> TrackingDataGranularity.Day // Defaulting to Day if somehow an unexpected value is received.
+                                                }
+                                                RecurrenceSchedule(
+                                                    unit = unit,
+                                                    period = recurrenceIntervalText.toIntOrNull() ?: 1, // Safely parsing to Int, defaulting to 1.
+                                                    endDate = null//endDate?.atStartOfDay(ZoneId.systemDefault()) // Converting LocalDate to ZonedDateTime.
+                                                )
+                                            } else null
                                         )
                                         "Purchase" -> Purchase(
                                             date = selectedDateTime,
                                             name = "Purchase on ${date.format(DateTimeFormatter.ISO_LOCAL_DATE)}",
                                             plasticBag = false,
-                                            source = Purchase.Source.valueOf(shoppingMethod)
+                                            source = Purchase.Source.valueOf(shoppingMethod),
+                                            schedule = if (isPurchaseRecurring) {
+                                                val unit = when (purchaseRecurrenceFrequency) {
+                                                    "Daily" -> TrackingDataGranularity.Day
+                                                    "Weekly" -> TrackingDataGranularity.Week
+                                                    else -> TrackingDataGranularity.Day // Defaulting to Day if somehow an unexpected value is received.
+                                                }
+                                                RecurrenceSchedule(
+                                                    unit = unit,
+                                                    period = purchaseRecurrenceIntervalText.toIntOrNull() ?: 1, // Safely parsing to Int, defaulting to 1.
+                                                    endDate = mealEndDate?.atStartOfDay(ZoneId.systemDefault()) // Converting LocalDate to ZonedDateTime.
+                                                )
+                                            } else null
                                         )
                                         else -> throw IllegalArgumentException("Invalid activity type")
                                     }
                                     Log.d("MyAppTag", "The value of myImmutableValue is: $activity")
-                                    val result =
-                                        GreenTraceProviders.trackingProvider.addActivity(activity)
+                                    val result = GreenTraceProviders.trackingProvider.addActivity(activity)
                                     // Handle result (e.g., show a confirmation message)
                                     withContext(Dispatchers.Main) {
                                         Toast.makeText(
@@ -405,72 +474,97 @@ private fun showTimePicker(
     }, currentTime.hour, currentTime.minute, true).show()
 }
 @Composable
-fun RecurrenceOption(activityType: String, isRecurring: Boolean, onRecurringChange: (Boolean) -> Unit) {
+fun RecurrenceOption(
+    activityType: String,
+    isRecurring: Boolean,
+    onRecurringChange: (Boolean) -> Unit,
+    recurrenceFrequency: String,
+    onRecurrenceFrequencyChange: (String) -> Unit,
+    recurrenceIntervalText: String,
+    onRecurrenceIntervalChange: (String) -> Unit,
+    endDate: LocalDate?,
+    onEndDateChange: (LocalDate?) -> Unit
+) {
     val context = LocalContext.current
-    var recurrenceFrequency by remember { mutableStateOf("") }
-    var recurrenceIntervalText by remember { mutableStateOf("1") }
-    var endDate by remember { mutableStateOf<LocalDate?>(null) }
 
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("$activityType is recurring:", modifier = Modifier.padding(end = 8.dp))
             Switch(
                 checked = isRecurring,
-                onCheckedChange = { isChecked ->
-                    onRecurringChange(isChecked)
-                    if (!isChecked) {
-                        recurrenceIntervalText = "1" // Reset to default if not recurring
-                        endDate = null // Clear the end date if recurrence is turned off
+                onCheckedChange = {
+                    onRecurringChange(it)
+                    if (!it) {
+                        // Reset to defaults if not recurring
+                        onRecurrenceIntervalChange("1")
+                        onEndDateChange(null)
                     }
                 }
             )
         }
         if (isRecurring) {
-            // Frequency
-            Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                Text("Frequency:", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 4.dp)) // Tiny padding below the text
-                DropdownMenu(
-                    selectedFrequency = recurrenceFrequency,
-                    onFrequencyChange = { newFrequency -> recurrenceFrequency = newFrequency }
-                )
-            }
+            // Frequency Dropdown
+            DropdownMenu(
+                selectedFrequency = recurrenceFrequency,
+                onFrequencyChange = onRecurrenceFrequencyChange
+            )
 
             // Every (n) days/weeks
-            Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                Text("Every (n) days/weeks:", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 4.dp)) // Tiny padding below the text
-                OutlinedTextField(
-                    value = recurrenceIntervalText,
-                    onValueChange = { newValue ->
-                        recurrenceIntervalText = newValue.filter { it.isDigit() }
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+            EveryNDaysWeeksInput(
+                recurrenceIntervalText = recurrenceIntervalText,
+                onRecurrenceIntervalChange = onRecurrenceIntervalChange
+            )
 
             // End Date (Optional)
-            Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                Text("End Date (Optional):", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 1.dp)) // Consistent padding for visual harmony
-                val endDateText = endDate?.format(DateTimeFormatter.ISO_LOCAL_DATE) ?: "Select Date"
-                Button(
-                    onClick = {
-                        showDatePicker(context, endDate ?: LocalDate.now()) { selectedDate ->
-                            endDate = selectedDate
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(endDateText)
-                }
-            }
+            EndDateInput(
+                endDate = endDate,
+                onEndDateChange = onEndDateChange,
+                context = context
+            )
         }
     }
 }
 
 
 
+@Composable
+fun EveryNDaysWeeksInput(
+    recurrenceIntervalText: String,
+    onRecurrenceIntervalChange: (String) -> Unit
+) {
+    Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+        Text("Every (n) days/weeks:", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 4.dp))
+        OutlinedTextField(
+            value = recurrenceIntervalText,
+            onValueChange = onRecurrenceIntervalChange,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
 
+@Composable
+fun EndDateInput(
+    endDate: LocalDate?,
+    onEndDateChange: (LocalDate?) -> Unit,
+    context: Context
+) {
+    Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+        Text("End Date (Optional):", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 4.dp))
+        val endDateText = endDate?.format(DateTimeFormatter.ISO_LOCAL_DATE) ?: "Select Date"
+        Button(
+            onClick = {
+                showDatePicker(context, endDate ?: LocalDate.now()) { selectedDate ->
+                    onEndDateChange(selectedDate)
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(endDateText)
+        }
+    }
+}
 
 
 
