@@ -646,43 +646,42 @@ class ShoppingQScreen(private val hasLifestyleResponses: Boolean = false) : Scre
                         Text(text = option.first, modifier = Modifier.padding(start = 8.dp))
                     }
                 }
-            }
 
-
-            Spacer(modifier = Modifier.weight(1f))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                OutlinedButton(
-                    onClick = {
-                        navigator?.pop()
-                    },
-                    modifier = Modifier.width(150.dp)
+                Spacer(modifier = Modifier.weight(1f))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Text("BACK")
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Button(
-                    onClick = {
-                        userResponses.shoppingPreference = model.selectedPrimaryOption.second
-                        userResponses.sustainabilityInfluence = model.selectedSecondaryOption.second
+                    OutlinedButton(
+                        onClick = {
+                            navigator?.pop()
+                        },
+                        modifier = Modifier.width(150.dp)
+                    ) {
+                        Text("BACK")
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Button(
+                        onClick = {
+                            userResponses.shoppingPreference = model.selectedPrimaryOption.second
+                            userResponses.sustainabilityInfluence = model.selectedSecondaryOption.second
 
-                        scope.launch {
-                            GreenTraceProviders.userProvider.userLifestyle(userResponses.build())
-                                ?.let { Log.e("updateLifestyle", it) }
+                            scope.launch {
+                                GreenTraceProviders.userProvider.userLifestyle(userResponses.build())
+                                    ?.let { Log.e("updateLifestyle", it) }
                                 navigator.popUntilRoot()
                                 if (navigator.lastItemOrNull !is ProfileScreen) {
                                     navigator.push(MainScreen(false))
                                 }
-                        }
-                    },
-                    modifier = Modifier.width(150.dp),
-                    enabled = model.selectedPrimaryOption.first.isNotEmpty() && model.selectedSecondaryOption.first.isNotEmpty()
-                ) {
-                    Text("COMPLETE")
+                            }
+                        },
+                        modifier = Modifier.width(150.dp),
+                        enabled = model.selectedPrimaryOption.first.isNotEmpty() && model.selectedSecondaryOption.first.isNotEmpty()
+                    ) {
+                        Text("COMPLETE")
+                    }
                 }
             }
         }
