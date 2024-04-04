@@ -55,6 +55,7 @@
 | 2024/03/19 |   2.5 |   2.5    |   2.5   |    2.5 |  2.5 |  2.5  | Team meeting for D4
 | 2024/03/20 |   1   |    1     |    1    |    1   |  1   |   1   |  D5
 | 2024/03/20 |       |          |         |        |      |   0.5 |  D5 class diagram and observer class
+| 2024/03/23 |       |          |         |        | 0.5  |       | Work on D5 diagram and strategy pattern          |
 | 2024/03/23 |       |          |         |        |  2   |       | Begin work on activity recurrence logic          |
 | 2024/03/24 |       |          |         |    2.5 |      |       | Carbon footprint calculation algorithm         
 | 2024/03/25 |       |          |         |        |      |  1.5  | Activity UI and D6
@@ -73,10 +74,13 @@
 | 2024/04/01 | 7     |          |         |        |      |       | Implementing community page features, bug fixing and code refactoring |
 | 2024/04/01 |       |          |         |        |      |    6  | Minor UI change. D6 Design pattern, class diagram, seq diagram  |
 | 2024/04/01 |       |   1.5    |         |        |      |       | Wrote the harm mitigation part for D7                                                           |
+| 2024/04/01 |       |          |         |        |  4   |       | Test and fix community challenges API, implement community invite by email |
 | 2024/04/02 | 7     |          |         |        |      |       | Code refactoring, bug fixes and UI improvements |
+| 2024/04/02 |       |          |         |        |  4   |       | Code refactoring and bug fixes, implement leaderboard API |
 | 2024/04/03 | 1     |          |         |        |      |       | Small UI improvements |
 | 2024/04/03 | 0.5   |          |         |        |      |       | Recording a video for the final presentation |
 | 2024/04/02 |       |   2.5    |         |        |      |       | Minor UI improvements on communityInfoScreen (leaderboard, challengeList and challengeDialog)   |
 | 2024/04/03 | 1     |    1     |   1     |   1    |  1   |   1   | Team meeting to prepare for the final project presentation |
 | 2024/04/03 | 0.5   |   0.5    |   0.5   |   0.5  |  0.5 |  0.5  | Final project presentation |
 | 2024/04/03 | 1     |          |         |        |      |       | Working on D7 document |
+| 2024/04/03 |       |          |         |        |  1   |       | Work on D6 & D7 |
