@@ -13,7 +13,7 @@
 | 2024/01/25 |   1   |          |         |  0.5   |      |       | Editing the project proposal presentation slides                                                                                            |
 | 2024/01/26 |       |          |         |        |      | 1     | Editing project proposal and presentation prep                                                                                              |
 | 2024/01/30 |       |          |         |     1  |      |       | Create Project Mockup                                                                                                                       |
-| 2024/01/30 |  1.5  |    1.5   |         |   1.5  | 1.5  | 1.5   | Team meeting for finalizing the project proposal                                                                                            |
+| 2024/01/30 |  1.5  |    1.5   |  1.5    |   1.5  | 1.5  | 1.5   | Team meeting for finalizing the project proposal                                                                                            |
 | 2024/02/07 |  1    |    1     |     1   |   1    | 1    | 1     | Team meeting for writing the buddy evaluation                                                                                               |
 | 2024/02/15 |  2.5  |    2.5   |    2.5  |   2.5  | 2.5  | 2.5   | Team meeting for discussing the next steps in app development                                                                               |
 | 2024/02/15 |       |          |         |    2   |      |       | In-App Routing Implementation & pages setup                                                                                                 |
