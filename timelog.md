@@ -12,6 +12,7 @@
 | 2024/01/23 |  2.5  |          |         |        |      |       | Editing the project proposal and drawing sequence diagrams                                                                                  |
 | 2024/01/25 |   1   |          |         |  0.5   |      |       | Editing the project proposal presentation slides                                                                                            |
 | 2024/01/26 |       |          |         |        |      | 1     | Editing project proposal and presentation prep                                                                                              |
+| 2024/01/26 |       |          |    1    |        |      |       | Editing project proposal and fixes grammars                                                                                                 |
 | 2024/01/30 |       |          |         |     1  |      |       | Create Project Mockup                                                                                                                       |
 | 2024/01/30 |  1.5  |    1.5   |  1.5    |   1.5  | 1.5  | 1.5   | Team meeting for finalizing the project proposal                                                                                            |
 | 2024/02/07 |  1    |    1     |     1   |   1    | 1    | 1     | Team meeting for writing the buddy evaluation                                                                                               |
