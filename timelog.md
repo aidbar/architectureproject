@@ -53,6 +53,7 @@
 | 2024/03/14 |       |    5     |         |        |      |       | Integrated News API in Kotlin by using coroutines and OkHttp client library                                                                 |
 | 2024/03/15 |       |   4.5    |         |        |      |       | Implemented Quiz screen and 4 static quizzes along with calculating quiz score functionality   
 | 2024/03/15 |       |          |         |        |  1   |       | Start working on activity tracking logic targeting Firestore           |
+| 2024/03/16 |       |          |  4      |        |      |       | "Create new activity" ui improvements and refactoring the data models                                                                       |
 | 2024/03/17 |       |          |         |        |  2   |       | Research on how to overcome various Firestore limitations, and continue work on activity tracking           |
 | 2024/03/18 |       |          |         |        |  2.5 |       | Finish up work on activity tracking in Firestore & test it          |
 | 2024/03/19 |   2.5 |   2.5    |   2.5   |    2.5 |  2.5 |  2.5  | Team meeting for D4
@@ -69,6 +70,7 @@
 | 2024/03/26 |       |    3     |         |        |      |       | Made UI improvements to community invite page                                                                                               |
 | 2024/03/27 |       |          |         |        |  2   |       | Code cleanup, implement contact us and firestore community info observers           |
 | 2024/03/28 |       |          |         |        |  4.5 |       | Initial implementation of Firestore community challenges logic & related observables          |
+| 2024/03/28 |       |          |  2.5    |        |      |       | recurring activity front end ui setup                                                                                      |
 | 2024/03/29 |       |   1.5    |         |        |      |       | Research on finding appropriate query phrase to retrieve only eco-friendly related articles on Learn tab                                    |
 | 2024/03/29 |       |   4.5    |         |        |      |       | UI improvements for profile page, added functionality to update user lifestyle responses on profile page                                    |
 | 2024/03/29 | 3     |          |         |        |      |       | UI improvements for HomeScreen and NewActivityScreen |
@@ -79,9 +81,11 @@
 | 2024/04/01 |       |   1.5    |         |        |      |       | Wrote the harm mitigation part for D7                                                           |
 | 2024/04/01 |       |          |         |        |  4   |       | Test and fix community challenges API, implement community invite by email |
 | 2024/04/02 | 7     |          |         |        |      |       | Code refactoring, bug fixes and UI improvements |
+| 2024/04/02 |       |          |  8      |        |      |       | "Create new activity" page data model fix getting all the correct data passed into the API                                               |
 | 2024/04/02 |       |          |         |        |  4   |       | Code refactoring and bug fixes, implement leaderboard API |
 | 2024/04/03 | 1     |          |         |        |      |       | Small UI improvements |
 | 2024/04/03 | 0.5   |          |         |        |      |       | Recording a video for the final presentation |
+| 2024/04/03 |       |          |  1      |        |      |       | "Create new activity" bug fix                                            |
 | 2024/04/02 |       |   2.5    |         |        |      |       | Minor UI improvements on communityInfoScreen (leaderboard, challengeList and challengeDialog)   |
 | 2024/04/03 | 1     |    1     |   1     |   1    |  1   |   1   | Team meeting to prepare for the final project presentation |
 | 2024/04/03 | 0.5   |   0.5    |   0.5   |   0.5  |  0.5 |  0.5  | Final project presentation |
