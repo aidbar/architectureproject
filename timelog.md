@@ -27,6 +27,7 @@
 | 2024/02/26 |  4.5  |          |         |        |      |       | Scrollable list of the communities the user is currently in (placeholder data + data model)                                                 |
 | 2024/02/27 |   5   |          |         |        |      |       | "Create new community" pop-up for the "Community" tab                                                                                       |
 | 2024/02/27 |       |          |         |        |  1   |       | Add user info and lifestyle data & interfaces                                                                                       |
+| 2024/02/28 |       |          |  4.5    |        |      |       | "Create new activity" ui basic layout setup                                                                                       |
 | 2024/03/01 |       |    2     |         |        |      |       | Research on how to create database in cloud firestore and retrieve documents                                                                |
 | 2024/03/01 |  2.5  |   2.5    |  2.5    |  2.5   |  2.5 | 2.5   | Team meeting for preparing for the app demo                                                                                                 |
 | 2024/03/02 |       |          |         |        |  3   |       | Fix crashes upon close, add community/user info & related interfaces |
@@ -36,6 +37,7 @@
 | 2024/03/04 |       |          |         |    1   |      |       | Added In-App Privacy Policy                                                                                                                 |
 | 2024/03/03 |       |          |         |        |      | 1.5   | Backend: User class                                                                                                                         |
 | 2024/03/04 |       |          |         |        |      | 2     | LearnScreen UI                                                                                                                                 |
+| 2024/03/04 |       |          |  3.5    |        |      |       | "Create new activity page" populating ui with front-end mock data                                                                           |
 | 2024/03/04 |   6   |          |         |        |      |       | Working on CommunityScreen and CommunityMembersScreen                                                                                       |
 | 2024/03/05 |  1.5  |          |         |        |      |       | "Edit community" and "remove member from community" buttons for community creator (UI only)                                                 |
 | 2024/03/05 |       |          |         |   1.5  |      |       | Implemented Learn Page UI                                                                                                                   |
