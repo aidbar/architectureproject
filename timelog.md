@@ -66,7 +66,7 @@
 | 2024/03/25 |       |    5     |         |        |      |       | Research on various ecofriendly task recommendations, Created task recommendation list based on user responses to lifestyle questions       |
 | 2024/03/25 |       |          |         |        |  1.5 |       | Fix and test recurring activities          |
 | 2024/03/26 | 4     |    4     |   4     |    4   |  4   |  4    | Team meeting for finalizing the app and starting on D6 |
-| 2024/03/26 |       |          |         |        |      |   1   | Activity page UI improvement/changing color scheme
+| 2024/03/26 |       |          |         |        |      |   1  | Activity page UI improvement/changing color scheme
 | 2024/03/26 |       |    3     |         |        |      |       | Made UI improvements to community invite page                                                                                               |
 | 2024/03/27 |       |          |         |        |  2   |       | Code cleanup, implement contact us and firestore community info observers           |
 | 2024/03/28 |       |          |         |        |  4.5 |       | Initial implementation of Firestore community challenges logic & related observables          |
@@ -91,3 +91,4 @@
 | 2024/04/03 | 0.5   |   0.5    |   0.5   |   0.5  |  0.5 |  0.5  | Final project presentation |
 | 2024/04/03 | 1     |          |         |        |      |       | Working on D7 document |
 | 2024/04/03 |       |          |         |        |  1   |       | Work on D6 & D7 |
+| 2024/04/04 |       |          |         |        |      |   2   | User case diagram, D6, D7 |
