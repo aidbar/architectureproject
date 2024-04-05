@@ -38,7 +38,7 @@
 | 2024/03/04 |   6   |          |         |        |      |       | Working on CommunityScreen and CommunityMembersScreen                                                                                       |
 | 2024/03/05 |  1.5  |          |         |        |      |       | "Edit community" and "remove member from community" buttons for community creator (UI only)                                                 |
 | 2024/03/05 |       |          |         |   1.5  |      |       | Implemented Learn Page UI                                                                                                                   |
-| 2024/03/06 |   1   |    1     |         |    1   |  1   |  1    | Team meeting before the D3 demo                                                                                                             |
+| 2024/03/06 |   1   |    1     |    1    |    1   |  1   |  1    | Team meeting before the D3 demo                                                                                                             |
 | 2024/03/06 |   0.5 |   0.5    |  0.5    |   0.5  |  0.5 | 0.5   | D3 demo (attending the presentations of other groups and presenting our own presentation                                                    |
 | 2024/03/06 |   2.5 |   2.5    |         |    2.5 | 2.5  |  1    | Team meeting for working on D3 deliverable document                                                                                         |
 | 2024/03/06 |   1.5 |          |         |        |      |       | Working on D3 deliverable document                                                                                                          |      
