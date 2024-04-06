@@ -91,4 +91,6 @@
 | 2024/04/03 | 0.5   |   0.5    |   0.5   |   0.5  |  0.5 |  0.5  | Final project presentation |
 | 2024/04/03 | 1     |          |         |        |      |       | Working on D7 document |
 | 2024/04/03 |       |          |         |        |  1   |       | Work on D6 & D7 |
+| 2024/04/03 |       |          |         |   2.5  |      |       | D6 |
 | 2024/04/04 |       |          |         |        |      |   2   | User case diagram, D6, D7 |
+
